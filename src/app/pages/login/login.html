@@ -1,0 +1,60 @@
+<div class="login-wrapper">
+
+<div class="login-page">
+  <div class="login-left">
+  </div>
+
+  <div class="login-right">
+    <div class="login-form-container">
+      
+      <div class="login-header">
+        <h1 class="brand-name">BARTHAUER</h1>
+        <div class="brand-underline"></div>
+        <h3 class="brand-subtitle">SOFTWARE TUNISIA</h3>
+      </div>
+
+      <form (ngSubmit)="login()" class="dx-login-form">
+        
+        <div class="form-group">
+          <label class="dx-field-label">Email Address</label>
+          <dx-text-box
+            [(value)]="email"
+            placeholder="name@gmail.com"
+            mode="email"
+            class="dx-custom-textbox">
+          </dx-text-box>
+        </div>
+
+        <div class="form-group">
+          <label class="dx-field-label">Password</label>
+          <dx-text-box
+            [(value)]="password"
+            placeholder="Enter your password"
+            mode="password"
+            class="dx-custom-textbox">
+           
+          </dx-text-box>
+        </div>
+
+        <div class="form-options">
+          <a routerLink="/forget-password" 
+          class="forgot-link">Forgot password?</a>
+        </div>
+
+       <dx-button
+  text="Login"
+  type="default"
+  stylingMode="contained"
+  class="dx-login-button"
+  (onClick)="login()">
+</dx-button>
+        <div class="register-section">
+          <span class="register-text">Don't have an account?</span>
+          <a routerLink="/register" class="register-link">Register now</a>
+        </div>
+
+      </form>
+    </div>
+  </div>
+</div>
+</div>
