@@ -1,2 +1,5 @@
-
-<router-outlet />
+@if (connectedUserRole) {
+  <app-layout><router-outlet /></app-layout>
+} @else {
+  <router-outlet />
+}
