@@ -54,8 +54,8 @@ import { environment } from '../../../environments/environment';
     DxValidatorModule,
     DxValidationGroupComponent
   ],
-  templateUrl: './MyAbsences.html',
-  styleUrls: ['./MyAbsences.scss'],
+  templateUrl: './myAbsences.html',
+  styleUrls: ['./myAbsences.scss'],
   encapsulation: ViewEncapsulation.None
 })
 export class MyAbsences implements OnInit, OnDestroy {

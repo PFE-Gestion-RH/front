@@ -47,11 +47,11 @@ import { CreatePermissionDto, PermissionDto } from '../../../models/auth/permiss
     DxValidatorModule,
     DxValidationGroupComponent
   ],
-  templateUrl: './MyPermissions.html',
-  styleUrls: ['./MyPermissions.scss'],
+  templateUrl: './myPermissions.html',
+  styleUrls: ['./myPermissions.scss'],
   encapsulation: ViewEncapsulation.None
 })
-export class MyPermissions implements OnInit, OnDestroy { 
+export class MyPermissions implements OnInit, OnDestroy {
 
   @ViewChild('validationGroup') validationGroupRef: any;
 
@@ -104,8 +104,8 @@ export class MyPermissions implements OnInit, OnDestroy {
     private http: HttpClient,
     private sharedService: SharedService,
     private cdr: ChangeDetectorRef,
-    private signalRService: SignalRService 
-  ) {}
+    private signalRService: SignalRService
+  ) { }
 
   ngOnInit(): void {
     this.initSharedDataSource();
@@ -113,8 +113,8 @@ export class MyPermissions implements OnInit, OnDestroy {
     // ← ajouté
     this.statusSub = this.signalRService.requestStatusChanged$.subscribe(event => {
       if (event.type === 'Permission') {
-       this.sharedDataSource.reload();
-this.cardDataSource.reload();
+        this.sharedDataSource.reload();
+        this.cardDataSource.reload();
         this.cdr.detectChanges();
       }
     });
@@ -132,10 +132,10 @@ this.cardDataSource.reload();
 
   getStatusLabel(status: string): string {
     const labels: Record<string, string> = {
-      'PendingTeamLead':        'Pending Team Lead',
-      'PendingAdministration':  'Pending Administration',
-      'Accepted':               'Accepted',
-      'RejectedTeamLead':       'Rejected by Team Lead',
+      'PendingTeamLead': 'Pending Team Lead',
+      'PendingAdministration': 'Pending Administration',
+      'Accepted': 'Accepted',
+      'RejectedTeamLead': 'Rejected by Team Lead',
       'RejectedAdministration': 'Rejected by Administration',
     };
     return labels[status] ?? status ?? '';
@@ -143,61 +143,61 @@ this.cardDataSource.reload();
 
   getStatusClass(status: string): string {
     const classes: Record<string, string> = {
-      'PendingTeamLead':        'pending',
-      'PendingAdministration':  'pending',
-      'Accepted':               'approved',
-      'RejectedTeamLead':       'rejected',
+      'PendingTeamLead': 'pending',
+      'PendingAdministration': 'pending',
+      'Accepted': 'approved',
+      'RejectedTeamLead': 'rejected',
       'RejectedAdministration': 'rejected',
     };
     return classes[status] ?? '';
   }
 
-initSharedDataSource(): void {
-  const storeConfig = {
-    key: 'id',
-    load: (loadOptions: any) => {
-      const take = (loadOptions.take && loadOptions.take > 0)
-        ? loadOptions.take
-        : this.pageSize;
-      const skip = loadOptions.skip ?? 0;
-      const page = Math.floor(skip / take) + 1;
+  initSharedDataSource(): void {
+    const storeConfig = {
+      key: 'id',
+      load: (loadOptions: any) => {
+        const take = (loadOptions.take && loadOptions.take > 0)
+          ? loadOptions.take
+          : this.pageSize;
+        const skip = loadOptions.skip ?? 0;
+        const page = Math.floor(skip / take) + 1;
 
-      return firstValueFrom(
-        this.http.get<ApiResponse<any>>(
-          `${environment.apiUrl}/demande/my/permissions?page=${page}&pageSize=${take}`,
-          { headers: this.getHeaders() }
-        )
-      ).then(res => {
-        if (res.isSuccess) {
-          const data = res.data;
-          return {
-            data: Array.isArray(data) ? data : data.items ?? [],
-            totalCount: Array.isArray(data) ? data.length : data.totalCount ?? 0
-          };
-        }
-        return { data: [], totalCount: 0 };
-      });
-    }
-  };
+        return firstValueFrom(
+          this.http.get<ApiResponse<any>>(
+            `${environment.apiUrl}/demande/my/permissions?page=${page}&pageSize=${take}`,
+            { headers: this.getHeaders() }
+          )
+        ).then(res => {
+          if (res.isSuccess) {
+            const data = res.data;
+            return {
+              data: Array.isArray(data) ? data : data.items ?? [],
+              totalCount: Array.isArray(data) ? data.length : data.totalCount ?? 0
+            };
+          }
+          return { data: [], totalCount: 0 };
+        });
+      }
+    };
 
-  this.sharedDataSource = new DataSource({
-    onLoadingChanged: (isLoading) => {
-      this.isLoading = isLoading;
-      this.cdr.detectChanges();
-    },
-    store: new CustomStore(storeConfig),
-    pageSize: this.pageSize,
-    paginate: true,
-    requireTotalCount: true
-  });
+    this.sharedDataSource = new DataSource({
+      onLoadingChanged: (isLoading) => {
+        this.isLoading = isLoading;
+        this.cdr.detectChanges();
+      },
+      store: new CustomStore(storeConfig),
+      pageSize: this.pageSize,
+      paginate: true,
+      requireTotalCount: true
+    });
 
-  this.cardDataSource = new DataSource({
-    store: new CustomStore(storeConfig),
-    pageSize: this.pageSize,
-    paginate: true,
-    requireTotalCount: true
-  });
-}
+    this.cardDataSource = new DataSource({
+      store: new CustomStore(storeConfig),
+      pageSize: this.pageSize,
+      paginate: true,
+      requireTotalCount: true
+    });
+  }
   onDateChanged(e: any): void {
     if (this.permissionDate) {
       const d = new Date(this.permissionDate);
@@ -296,8 +296,8 @@ initSharedDataSource(): void {
         if (res.isSuccess) {
           this.sharedService.showToastMessage(ToastType.Success, 'Permission submitted successfully');
           this.showPopup = false;
-this.sharedDataSource.reload();
-this.cardDataSource.reload();
+          this.sharedDataSource.reload();
+          this.cardDataSource.reload();
         } else {
           this.sharedService.showToastMessage(ToastType.Error, res.error || 'Failed');
         }
