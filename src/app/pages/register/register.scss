@@ -1,88 +1,132 @@
-.login-container {
+$color-gray-light: #cccccc;
+$color-gray-text: #999999;
+
+.register-page {
+  min-height: 100vh;
+  background: var(--color-bg-white);
+  font-family: 'Segoe UI', 'Roboto', sans-serif;
   display: flex;
-  justify-content: center;
-  align-items: flex-start;
-  margin-top: 50px;
+  flex-direction: column;
+
+  .main-content {
+    display: flex !important;
+    justify-content: center !important;
+    align-items: center !important;
+    flex: 1 !important;
+    padding: 30px 20px !important;
+    flex-direction: row !important;
+    overflow: visible !important;
+  }
 }
 
-.login-card {
-  width: 400px;
-  padding: 30px;
-  box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+// CARD
+
+.register-card {
+  width: 100%;
+  max-width: 500px;
+  background: var(--color-bg-white);
   border-radius: 12px;
+  padding: 30px 36px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.06);
 }
 
-.login-header {
-  text-align: center;
-  margin-bottom: 20px;
-}
+// TITRES
 
-.login-header .logo {
-  width: 100px;
-  margin-bottom: 10px;
-}
-
-.login-header h1 {
-  margin: 0;
-  font-size: 28px;
-  color: #0d3351; 
-}
-
-.login-header h3 {
-  margin: 0;
-  font-size: 16px;
-  color: #3c3c3c; 
-}
-
-.login-title {
-  text-align: center;
-  font-size: 22px;
-  margin-bottom: 20px;
-  color: #0d3351;
-}
-
-.form-field {
-  width: 100%;
-  margin-bottom: 15px;
-}
-
-.form-options {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 20px;
-  font-size: 14px;
-}
-
-.form-options a {
-  text-decoration: none;
-  color: #0d3351;
-}
-
-.form-options a:hover {
-  text-decoration: underline;
-}
-
-.login-button {
-  width: 100%;
-  margin-top: 10px;
-  padding: 10px 0;
-  font-size: 16px;
+.register-title {
+  font-size: 24px;
   font-weight: 600;
-}
-
-.register-link {
+  color: var(--color-primary);
   text-align: center;
-  margin-top: 20px;
-  font-size: 14px;
+  margin-bottom: 5px;
 }
 
-.register-link a {
-  color: #3c3c3c;
-  font-weight: bold;
-  text-decoration: none;
+.register-subtitle {
+  font-size: 11px;
+  color: var(--color-accent);
+  text-align: center;
+  margin-bottom: 20px;
 }
 
-.register-link a:hover {
-  text-decoration: underline;
+// FORMULAIRE
+
+.register-form {
+  .form-group {
+    margin-bottom: 14px;
+
+    .field-label {
+      display: block;
+      font-size: 12px;
+      font-weight: 500;
+      color: var(--color-primary);
+      margin-bottom: 5px;
+    }
+  }
+
+  .input-wrapper {
+    height: 52px;
+  }
+}
+
+// LIENS
+
+.signin-row {
+  text-align: center;
+  margin-top: 16px;
+  font-size: 12px;
+
+  span {
+    color: var(--color-accent);
+  }
+
+  a {
+    color: var(--color-secondary);
+    font-weight: 500;
+    text-decoration: none;
+    margin-left: 4px;
+    cursor: pointer;
+
+    &:hover {
+      text-decoration: underline;
+    }
+  }
+}
+
+// ANIMATIONS
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateX(-50%) translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+}
+
+// RESPONSIVE
+
+@media (max-width: 480px) {
+  .register-page .main-content {
+    padding: 16px !important;
+  }
+
+  .register-card {
+    padding: 24px 20px;
+    margin: 0;
+  }
+
+  .register-form {
+    .input-wrapper {
+      height: 48px;
+    }
+
+    .form-group {
+      margin-bottom: 10px;
+    }
+  }
+
+  .register-title {
+    font-size: 20px;
+  }
 }

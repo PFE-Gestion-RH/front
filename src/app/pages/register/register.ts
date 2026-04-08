@@ -1,58 +1,116 @@
 import { Component } from '@angular/core';
-import { FormsModule, NgForm } from '@angular/forms';
-import { Router } from '@angular/router';
+import { CommonModule } from '@angular/common';
+import { Router, RouterModule } from '@angular/router';
 import { HttpClient } from '@angular/common/http';
-import { RouterModule } from '@angular/router';
-import { MatButtonModule } from '@angular/material/button';
-import { MatInputModule } from '@angular/material/input';
-import { MatCardModule } from '@angular/material/card';
-import { MatFormFieldModule } from '@angular/material/form-field';
-import { MatCheckboxModule } from '@angular/material/checkbox';
+import { ToastType } from '../../components/toast/toast';
+import { DxButtonModule, DxTextBoxModule } from 'devextreme-angular';
+import { ApiResponse } from '../../models/auth/api-response.model';
+import { SharedService } from '../../services/shared.service';
+import { environment } from '../../environments/environment';
+
+type RegisterData = string;
 
 @Component({
   selector: 'app-register',
   standalone: true,
-  imports: [
-    RouterModule,
-    FormsModule,
-    MatButtonModule,
-    MatInputModule,
-    MatCardModule,
-    MatFormFieldModule,
-    MatCheckboxModule
-  ],
+  imports: [CommonModule, RouterModule, DxTextBoxModule, DxButtonModule],
   templateUrl: './register.html',
-  styleUrls: ['./register.scss']
+  styleUrls: ['./register.scss'],
 })
 export class Register {
-  fullName = '';
+  LastName = '';
+  FirstName = '';
   email = '';
   password = '';
   confirmPassword = '';
-  rememberMe = false;
 
-  constructor(private http: HttpClient, private router: Router) {}
+  passwordMode: 'password' | 'text' = 'password';
+  confirmPasswordMode: 'password' | 'text' = 'password';
+
+  isLoading = false;
+  emailFocused = false;
+  passwordFocused = false;
+  ConfirmpasswordFocused = false;
+  FirstNameFocused = false;
+  LastNameFocused = false;
+
+  passwordButtonOptions: any;
+  confirmPasswordButtonOptions: any;
+
+
+  constructor(
+    private http: HttpClient,
+    private router: Router,
+    private sharedService: SharedService 
+  ) {
+    this.initPasswordButtons();
+  }
+
+  private initPasswordButtons() {
+    this.passwordButtonOptions = {
+      icon: 'eyeclose',
+      stylingMode: 'text',
+      onClick: () => this.togglePassword(),
+    };
+    this.confirmPasswordButtonOptions = {
+      icon: 'eyeclose',
+      stylingMode: 'text',
+      onClick: () => this.toggleConfirmPassword(),
+    };
+  }
+
+  togglePassword() {
+    this.passwordMode = this.passwordMode === 'password' ? 'text' : 'password';
+    this.passwordButtonOptions = {
+      ...this.passwordButtonOptions,
+      icon: this.passwordMode === 'password' ? 'eyeclose' : 'eyeopen',
+    };
+  }
+
+  toggleConfirmPassword() {
+    this.confirmPasswordMode = this.confirmPasswordMode === 'password' ? 'text' : 'password';
+    this.confirmPasswordButtonOptions = {
+      ...this.confirmPasswordButtonOptions,
+      icon: this.confirmPasswordMode === 'password' ? 'eyeclose' : 'eyeopen',
+    };
+  }
 
   register() {
-    if (this.password !== this.confirmPassword) {
-      alert("Les mots de passe ne correspondent pas");
+    if (this.isLoading) return;
+
+    if (!this.LastName || !this.FirstName || !this.email || !this.password || !this.confirmPassword) {
+      this.sharedService.showToastMessage(ToastType.Warning, 'Please fill in all fields');
       return;
     }
 
-    const formData = new FormData();
-    formData.append('fullName', this.fullName);
-    formData.append('email', this.email);
-    formData.append('password', this.password);
+    if (this.password !== this.confirmPassword) {
+      this.sharedService.showToastMessage(ToastType.Error, 'Passwords do not match');
+      return;
+    }
 
-    this.http.post('http://localhost:5000/api/account/register', formData)
+    this.isLoading = true;
+
+    const body = { LastName: this.LastName, FirstName: this.FirstName, email: this.email, password: this.password };
+
+    this.http.post<ApiResponse<RegisterData>>(`${environment.apiUrl}/account/register`, body)
       .subscribe({
-        next: (res: any) => {
-          alert(res?.message || "Inscription réussie !");
-          this.router.navigate(['/login']);
+        next: (res) => {
+          if (res.isSuccess) {
+            this.sharedService.showToastMessage(ToastType.Success, res.message || 'Registration successful! Check your email.');
+            setTimeout(() => this.router.navigate(['/login']), 2000);
+          } else {
+            this.sharedService.showToastMessage(ToastType.Error, res.message || 'Registration failed');
+          }
+          this.isLoading = false;
         },
         error: (err) => {
-          alert(err?.error?.message || "Erreur lors de l'inscription");
+          this.sharedService.showToastMessage(ToastType.Error, err?.error?.message || 'Registration failed');
+          this.isLoading = false;
         }
       });
+  }
+
+  goToSignIn() {
+    this.router.navigate(['/login']);
   }
 }

@@ -1,0 +1,182 @@
+<div class="team-permissions-page">
+  <div class="team-permissions-grid" style="position: relative;">
+
+    <dx-load-panel
+      [visible]="isLoading"
+      [position]="{ of: '.team-permissions-grid' }"
+      [showIndicator]="true"
+      [showPane]="true"
+      [shading]="true"
+      [shadingColor]="'rgba(255,255,255,0.6)'"
+      message="Loading...">
+    </dx-load-panel>
+
+    <div class="app-page-header">
+      <h2 class="page-title">Team Permissions</h2>
+       <dx-check-box
+    [(value)]="pendingOnly"
+    text="For me"
+    (onValueChanged)="onFilterChange()">
+  </dx-check-box>
+    </div>
+
+    <!-- TABLE  -->
+    <div class="table-view">
+      <dx-data-grid
+        [dataSource]="sharedDataSource"
+        [columns]="columns"
+        [showBorders]="false"
+        [showRowLines]="true"
+        [showColumnLines]="false"
+        [hoverStateEnabled]="true"
+        keyExpr="id"
+   [remoteOperations]="{ paging: true, filtering: false, sorting: false }">
+        <dxo-load-panel [enabled]="false"></dxo-load-panel>
+        <dxo-search-panel [visible]="true" placeholder="Search..."></dxo-search-panel>
+        <dxo-selection mode="none"></dxo-selection>
+        <dxo-editing [allowUpdating]="false" [allowDeleting]="false" [allowAdding]="false"></dxo-editing>
+        <dxo-paging [enabled]="true" [pageSize]="pageSize"></dxo-paging>
+        <dxo-pager [visible]="true" [showNavigationButtons]="true" [showInfo]="true"
+          infoText="{0}-{1} of {2} permissions">
+        </dxo-pager>
+
+      </dx-data-grid>
+    </div>
+
+    <!-- CARDS  -->
+    <div class="cards-view" [class.is-loading]="isLoading">
+ <dx-card-view
+  [dataSource]="cardDataSource"
+  keyExpr="id"
+  [cardMinWidth]="280"
+  cardsPerRow="auto"
+  [remoteOperations]="{ paging: true }">
+
+        <dxo-card-view-search-panel [visible]="true" placeholder="Search..."></dxo-card-view-search-panel>
+        <dxo-card-view-paging [enabled]="true" [pageSize]="pageSize"></dxo-card-view-paging>
+        <dxo-card-view-pager [visible]="true" [showNavigationButtons]="true" [showInfo]="true"
+          infoText="{0}-{1} of {2} permissions">
+        </dxo-card-view-pager>
+
+        <dxi-card-view-column dataField="employeeName" [visible]="false" [allowSearch]="true"></dxi-card-view-column>
+        <dxi-card-view-column dataField="reason" [visible]="false" [allowSearch]="true"></dxi-card-view-column>
+        <dxi-card-view-column dataField="startDate" [visible]="false" [allowSearch]="true"></dxi-card-view-column>
+
+        <dxi-card-view-column
+          caption=""
+          [calculateFieldValue]="getCardData"
+          fieldValueTemplate="cardBodyTemplate"
+          [allowSorting]="false"
+          [allowSearch]="false"
+          [allowFiltering]="false">
+        </dxi-card-view-column>
+
+        <div *dxTemplate="let params of 'cardBodyTemplate'" class="card-body-template">
+          <div class="card-top">
+            <div class="card-avatar">
+              <i class="dx-icon dx-icon-clock"></i>
+            </div>
+            <div class="card-info">
+              <h4 class="card-name">{{ params.field.value?.employeeName }}</h4>
+              <span class="card-role">{{ params.field.value?.reason }}</span>
+            </div>
+            <span class="badge" [class]="getStatusClass(params.field.value?.status)">
+              {{ getStatusLabel(params.field.value?.status) }}
+            </span>
+          </div>
+          <div class="card-email-row">
+            <span class="card-email">
+              {{ params.field.value?.startDate | date:'dd/MM/yyyy' }} —
+              {{ params.field.value?.startTime?.substring(0,5) }} to
+              {{ params.field.value?.endTime?.substring(0,5) }}
+            </span>
+          </div>
+          <div class="card-divider"></div>
+          <div class="card-actions">
+            @if (params.field.value?.status === 'PendingTeamLead') {
+              <button class="action-btn approve-btn"
+                (click)="approveRequest(params.field.value); $event.stopPropagation()">
+                <i class="dx-icon dx-icon-check"></i> Approve
+              </button>
+              <button class="action-btn reject-btn"
+                (click)="rejectRequest(params.field.value); $event.stopPropagation()">
+                <i class="dx-icon dx-icon-close"></i> Reject
+              </button>
+            }
+          </div>
+        </div>
+
+      </dx-card-view>
+    </div>
+
+  </div>
+
+  <!-- Popup confirmation Approve -->
+  <dx-popup [(visible)]="showApprovePopup" [width]="400" [height]="'auto'"
+    [maxHeight]="'80vh'" title="Confirm Approval" [showCloseButton]="!isProcessing">
+    <div *dxTemplate="let data of 'content'" class="profile-form">
+      <div class="form-section">
+        <p class="delete-message">
+          Approve permission request from
+          <strong>{{ selectedRequest?.employeeName }}</strong> ?
+        </p>
+      </div>
+      <div class="form-actions">
+        <dx-button text="Cancel" [disabled]="isProcessing" (onClick)="showApprovePopup = false"></dx-button>
+        <dx-button [disabled]="isProcessing" type="default" (onClick)="confirmApprove()">
+          <div *dxTemplate="let data of 'content'" style="display:flex;align-items:center;gap:8px;">
+            <dx-load-indicator [visible]="isProcessing" height="16" width="16"></dx-load-indicator>
+            <span>{{ isProcessing ? 'Approving...' : 'Approve' }}</span>
+          </div>
+        </dx-button>
+      </div>
+    </div>
+  </dx-popup>
+
+<!-- Popup 1 — Confirm Rejection -->
+<dx-popup [(visible)]="showRejectPopup" [width]="400" [height]="'auto'"
+  [maxHeight]="'80vh'" title="Confirm Rejection" [showCloseButton]="!isProcessing">
+  <div *dxTemplate="let data of 'content'" class="profile-form">
+    <div class="form-section">
+      <p class="delete-message">
+        Reject permission request from
+        <strong>{{ selectedRequest?.employeeName }}</strong> ?
+      </p>
+    </div>
+    <div class="form-actions">
+      <dx-button text="Cancel" [disabled]="isProcessing"
+        (onClick)="showRejectPopup = false">
+      </dx-button>
+      <dx-button text="Confirmer" type="danger" [disabled]="isProcessing"
+        (onClick)="openReasonPopup()">
+      </dx-button>
+    </div>
+  </div>
+</dx-popup>
+
+<!-- Popup 2 — Reason of Rejection -->
+<dx-popup [(visible)]="showReasonPopup" [width]="400" [height]="'auto'"
+  [maxHeight]="'80vh'" title="Reason of Rejection" [showCloseButton]="!isProcessing">
+  <div *dxTemplate="let data of 'content'" class="profile-form">
+    <div class="form-section">
+      <label>Notes</label>
+      <textarea
+        [(ngModel)]="rejectionReason"
+        placeholder="Enter rejection reason..."
+        rows="4"
+        style="width:100%; border:2px solid #e5e7eb; border-radius:8px; padding:10px;
+               font-size:14px; resize:vertical; font-family:inherit;
+               box-sizing:border-box; margin-top:8px;">
+      </textarea>
+    </div>
+    <div class="form-actions">
+      <dx-button [disabled]="isProcessing" type="danger" (onClick)="confirmReject()">
+        <div *dxTemplate="let data of 'content'" style="display:flex;align-items:center;gap:8px;">
+          <dx-load-indicator [visible]="isProcessing" height="16" width="16"></dx-load-indicator>
+          <span>{{ isProcessing ? 'Rejecting...' : 'Confirmer' }}</span>
+        </div>
+      </dx-button>
+    </div>
+  </div>
+</dx-popup>
+</div>

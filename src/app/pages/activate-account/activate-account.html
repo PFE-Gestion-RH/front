@@ -1,0 +1,52 @@
+<div class="activate-page">
+  
+  <div class="page-header">
+    <div class="header-logo">
+      <h1 class="brand-name">BARTHAUER</h1>
+      <div class="brand-line"></div>
+      <span class="brand-subtitle">SOFTWARE TUNISIA</span>
+    </div>
+  </div>
+
+  <div class="main-content">
+    
+    <div class="activation-card">
+      
+      @if (loading) {
+        <div class="loading-state">
+          <dx-load-indicator
+            [visible]="true"
+            [height]="60"
+            [width]="60">
+          </dx-load-indicator>
+          <h3 class="loading-text">Activating your account...</h3>
+          <p class="loading-subtext">Please wait while we verify your email</p>
+        </div>
+      }
+
+      @if (!loading) {
+        <div class="result-state">
+          
+          <div class="status-icon" [class.success]="isSuccess" [class.error]="!isSuccess">
+            <span>{{ isSuccess ? '✓' : '✕' }}</span>
+          </div>
+          
+          <h2 class="status-title">
+            @if (isSuccess) {
+              Account Activated!
+            } @else {
+              Already Activated!
+            }
+          </h2>
+          
+          @if (isSuccess) {
+            <p class="redirect-text">Redirecting to login in 5 seconds...</p>
+          }
+          
+        </div>
+      }
+
+    </div>
+  </div>
+
+</div>

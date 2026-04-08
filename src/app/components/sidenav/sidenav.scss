@@ -1,0 +1,119 @@
+.sidenav {
+  width: 220px;
+  min-height: calc(100vh - 56px);
+  background: var(--color-primary);
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+  transition: width 0.3s ease, transform 0.3s ease;
+  overflow: hidden;
+}
+
+.sidenav-section {
+  padding: 16px 0 8px;
+
+  .section-title {
+    font-size: 10px;
+    font-weight: 600;
+    color: rgba(255, 255, 255, 0.35);
+    letter-spacing: 1.5px;
+    padding: 0 20px;
+    display: block;
+    margin-bottom: 6px;
+  }
+}
+
+.sidenav-bottom {
+  margin-top: auto;
+  padding: 16px 0;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.nav-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.nav-item {
+  .nav-link {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: 8px 16px;
+    color: rgba(255, 255, 255, 0.65);
+    text-decoration: none;
+    font-size: 13.5px;
+    transition: all 0.2s ease;
+    border-left: 3px solid transparent;
+
+    &:hover {
+      color: white;
+      background: rgba(255, 255, 255, 0.06);
+    }
+  }
+
+  &.active .nav-link {
+    color: white;
+    background: rgba(255, 255, 255, 0.1);
+    border-left-color: var(--color-secondary);
+    font-weight: 500;
+  }
+}
+
+.nav-dx-icon {
+  ::ng-deep .dx-button-content {
+    padding: 4px;
+  }
+
+  ::ng-deep .dx-icon {
+    color: rgba(255, 255, 255, 0.65) !important;
+    font-size: 18px !important;
+  }
+}
+
+.nav-item.active .nav-dx-icon ::ng-deep .dx-icon {
+  color: white !important;
+}
+
+@media (max-width: 1024px) {
+  .sidenav {
+    position: fixed;
+    top: 56px;
+    left: -220px;
+    height: calc(100vh - 56px);
+    width: 220px;
+    z-index: 99;
+    flex-direction: column;
+    overflow-y: auto;
+    overflow-x: hidden;
+
+    &::after {
+      content: '';
+      position: fixed;
+      z-index: 98;
+      top: 56px;
+      left: 0px;
+      transition: all 0.3s;
+      pointer-events: none;
+    }
+  }
+}
+
+.sidenav-closed {
+  width: 0 !important;
+}
+
+/* sidenav overlay */
+@media (max-width: 1024px) {
+  .sidenav-open {
+    left: 0 !important;
+
+    &::after {
+      left: 220px !important;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.3);
+    }
+  }
+
+}

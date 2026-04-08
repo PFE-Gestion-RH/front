@@ -1,0 +1,34 @@
+.layout-content {
+  display: flex;
+  height: calc(100vh - 56px);
+  overflow: hidden;
+
+  app-sidenav {
+    flex-shrink: 0;
+  }
+
+  router-outlet {
+    display: none;
+  }
+
+  .page-container {
+    flex: 1;
+    overflow: hidden;
+    min-width: 0;
+    min-height: 0;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    box-sizing: border-box;
+    position: relative;
+  }
+
+  @media (max-width: 768px) {
+    flex-direction: column;
+    height: calc(100vh - 56px);
+
+    app-sidenav {
+      width: 100%;
+    }
+  }
+}

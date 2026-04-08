@@ -1,16 +1,13 @@
-export class User {
-  FirstName: string;
-  LastName: string;
-  Id: string;
-  Email: string;
-  Role: UserRole;
-  Token: string;
-
-  get FullName(): string {
-    return [this.FirstName, this.LastName].filter(Boolean).join(' ');
-  }
+export interface User {
+  id: number;
+  firstName: string;
+  lastName: string;
+  email: string;
+  role: UserRole;
+  isActive: boolean;
+  teamId?: number | null;
+profilePicture?: string;
 }
-
 export enum UserRole {
   Employee = 'Employee',
   TeamLead = 'TeamLead',

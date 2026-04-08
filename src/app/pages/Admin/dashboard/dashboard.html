@@ -1,1 +1,18 @@
-<p>dashboard works!</p>
+<div class="dashboard-wrapper" #wrapper>
+
+  @if (errorMessage) {
+    <div class="error">{{ errorMessage }}</div>
+  }
+
+  @if (!isLoaded && !errorMessage) {
+    <div class="loading">Chargement du rapport...</div>
+  }
+
+  @if (isLoaded && showReport) {
+    <powerbi-report
+      [embedConfig]="reportConfig"
+      [cssClassName]="'powerbi-report'"
+    ></powerbi-report>
+  }
+
+</div>

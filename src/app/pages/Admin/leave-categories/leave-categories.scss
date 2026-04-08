@@ -1,0 +1,107 @@
+// leave-categories.component.scss
+// ViewEncapsulation.None — tout le commun est dans styles.scss
+
+.leave-categories-page {
+  padding: 32px;
+  background: var(--color-bg);
+  height: 100%;
+  width: 100%;
+  box-sizing: border-box;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+
+  .leave-categories-grid {
+    background: var(--color-bg-white);
+    border-radius: 12px;
+    box-shadow: 0 2px 12px rgba(26, 58, 92, 0.08);
+    overflow: hidden;
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-height: 0;
+  }
+
+  // Card template — spécifique Leave Categories
+  .card-body-template {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    padding: 16px;
+
+    .card-top {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+
+      .card-avatar {
+        width: 44px;
+        height: 44px;
+        border-radius: 50%;
+        background: var(--color-secondary);
+        color: white;
+        font-size: 15px;
+        font-weight: 700;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+        text-transform: uppercase;
+      }
+
+      .card-info {
+        flex: 1;
+        min-width: 0;
+
+        .card-name {
+          margin: 0 0 2px 0;
+          font-size: 15px;
+          font-weight: 700;
+          color: var(--color-primary);
+          white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
+        }
+
+        .card-role { font-size: 12px; color: var(--color-accent); }
+      }
+
+      .badge {
+        padding: 3px 10px;
+        border-radius: 20px;
+        font-size: 11px;
+        font-weight: 600;
+        flex-shrink: 0;
+        background: rgba(59, 138, 178, 0.1);
+        color: var(--color-secondary);
+      }
+    }
+
+    .card-divider { height: 1px; background: var(--color-bg-left); margin: 2px 0; }
+
+    .card-actions {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      align-items: center;
+      margin-top: 4px;
+    }
+  }
+
+  // Responsive
+  @media (max-width: 1024px) { padding: 16px; }
+  @media (max-width: 768px)  { padding: 12px; }
+
+  @media (max-width: 600px) {
+    padding: 8px;
+
+    .card-body-template {
+      .card-actions {
+        gap: 6px !important;
+        flex-wrap: wrap !important;
+        .action-btn { padding: 6px 14px !important; font-size: 12px !important; }
+      }
+    }
+  }
+}

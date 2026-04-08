@@ -1,0 +1,192 @@
+
+.activate-page {
+  min-height: 100vh;
+  background: var(--color-bg-white);
+  font-family: 'Segoe UI', 'Roboto', sans-serif;
+}
+
+// NOTIFICATION INLINE
+
+.inline-notification {
+  position: fixed;
+  top: 80px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px 24px;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  z-index: 1000;
+  min-width: 300px;
+  max-width: 90%;
+  animation: slideDown 0.3s ease;
+
+  &.success {
+    background: #D1FAE5;
+    border: 1px solid var(--color-success);
+    color: #065F46;
+  }
+
+  &.error {
+    background: #FEE2E2;
+    border: 1px solid var(--color-error);
+    color: #991B1B;
+  }
+
+  .notification-icon {
+    font-size: 20px;
+    font-weight: bold;
+    flex-shrink: 0;
+  }
+
+  .notification-text {
+    font-size: 14px;
+    font-weight: 500;
+    flex: 1;
+  }
+
+  .notification-close {
+    background: none;
+    border: none;
+    font-size: 20px;
+    cursor: pointer;
+    opacity: 0.6;
+    color: inherit;
+
+    &:hover {
+      opacity: 1;
+    }
+  }
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateX(-50%) translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+}
+
+.main-content {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: calc(100vh - 100px);
+  padding: 40px 20px;
+}
+
+// CARD
+
+.activation-card {
+  width: 100%;
+  max-width: 420px;
+  background: var(--color-bg-white);
+  border-radius: 12px;
+  padding: 50px 40px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.06);
+  text-align: center;
+}
+
+// LOADING STATE
+
+.loading-state {
+  ::ng-deep {
+    .dx-loadindicator-wrapper {
+      color: var(--color-secondary);
+    }
+  }
+
+  .loading-text {
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--color-primary);
+    margin-top: 24px;
+    margin-bottom: 8px;
+  }
+
+  .loading-subtext {
+    font-size: 13px;
+    color: var(--color-accent);
+  }
+}
+
+// RESULT 
+
+.result-state {
+  .status-icon {
+    width: 80px;
+    height: 80px;
+    margin: 0 auto 24px auto;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 36px;
+    font-weight: bold;
+
+    &.success {
+      background: rgba(16, 185, 129, 0.1);
+      color: var(--color-success);
+    }
+
+    &.error {
+      background: rgba(239, 68, 68, 0.1);
+      color: var(--color-error);
+    }
+  }
+
+  .status-title {
+    font-size: 22px;
+    font-weight: 600;
+    color: var(--color-primary);
+    margin-bottom: 12px;
+  }
+
+  .status-message {
+    font-size: 14px;
+    color: var(--color-accent);
+    line-height: 1.6;
+    margin-bottom: 8px;
+    word-break: break-word;
+  }
+
+  .redirect-text {
+    font-size: 12px;
+    color: var(--color-accent);
+    opacity: 0.8;
+    margin-bottom: 24px;
+  }
+}
+
+
+// RESPONSIVE
+
+@media (max-width: 480px) {
+  .main-content {
+    padding: 20px;
+    min-height: calc(100vh - 80px);
+  }
+
+  .inline-notification {
+    left: 16px;
+    right: 16px;
+    transform: none;
+    min-width: auto;
+  }
+
+  .activation-card {
+    padding: 30px 20px;
+    margin: 0 16px;
+  }
+
+  .status-icon {
+    width: 60px !important;
+    height: 60px !important;
+    font-size: 28px !important;
+  }
+}

@@ -1,71 +1,103 @@
 import { HttpClient } from '@angular/common/http';
 import { Component } from '@angular/core';
-import { Router, RouterModule } from '@angular/router';
-import {
-  DxButtonModule,
-  DxCheckBoxModule,
-  DxTextBoxModule,
-  DxValidationSummaryModule,
-  DxValidatorModule,
-} from 'devextreme-angular';
+import { Router } from '@angular/router';
+import { FormsModule } from '@angular/forms';
+import { CommonModule } from '@angular/common';
+import { DxButtonModule, DxTextBoxModule } from 'devextreme-angular';
+
+import { LoginResponse } from '../../models/auth/LoginResponse';
 import { ApiResponse } from '../../models/auth/api-response.model';
-import { User } from '../../models/auth/user.model';
+import { SharedService } from '../../services/shared.service';
+import { ToastType } from '../../components/toast/toast';
+import { environment } from '../../environments/environment';
 
 @Component({
   selector: 'app-login',
   standalone: true,
-  imports: [
-    DxTextBoxModule,
-    DxButtonModule,
-    DxCheckBoxModule,
-    DxValidatorModule,
-    DxValidationSummaryModule,
-    RouterModule,
-  ],
+  imports: [CommonModule, FormsModule, DxTextBoxModule, DxButtonModule],
   templateUrl: './login.html',
   styleUrls: ['./login.scss'],
 })
 export class Login {
   email = '';
   password = '';
-  rememberMe: boolean = false;
+  rememberMe = false;
+  passwordMode: 'password' | 'text' = 'password';
+  errorMessage = '';
+  emailFocused = false;
+  passwordFocused = false;
+
+  passwordButtonOptions: any = {
+    icon: 'eyeclose',
+    stylingMode: 'contained',
+    type:'normal',
+    onClick: () => this.togglePassword(),
+  };
 
   constructor(
     private http: HttpClient,
     private router: Router,
+    private sharedService: SharedService
   ) {}
 
-  login() {
-    const body = {
-      Email: this.email,
-      Password: this.password,
+  togglePassword() {
+    this.passwordMode = this.passwordMode === 'password' ? 'text' : 'password';
+    this.passwordButtonOptions = {
+      icon: this.passwordMode === 'password' ? 'eyeclose' : 'eyeopen',
+      stylingMode: 'text',
+      onClick: () => this.togglePassword(),
     };
+  }
 
-    this.http.post<ApiResponse<User>>('http://localhost:5000/api/account/login', body).subscribe({
-      next: (res) => {
-        console.log('✅ Réponse reçue:', res);
+  onLogin() {
+    if (!this.email || !this.password) {
+      this.sharedService.showToastMessage(ToastType.Warning, 'Please enter email and password');
+      return;
+    }
 
-        // Stockez seulement le token et user séparément ou tout data
-        localStorage.setItem('userInfo', JSON.stringify(res.data));
-        console.log('💾 Stocké dans localStorage:', localStorage.getItem('userInfo'));
+    this.errorMessage = '';
 
-        // Vérifiez que le router est bien injecté
-        console.log('🔄 Tentative de redirection...');
+    this.http
+      .post<ApiResponse<LoginResponse>>(`${environment.apiUrl}/account/login`, {
+        email: this.email,
+        password: this.password,
+      })
+      .subscribe({
+        next: (res) => {
+          if (res.isSuccess && res.data) {
+            this.sharedService.setUser(res.data.user, res.data.token);
 
-        // Essayez navigate au lieu de navigateByUrl
-        this.router
-          .navigate(['/admindashboard'])
-          .then((success) => {
-            console.log('Navigation réussie?', success);
-          })
-          .catch((err) => {
-            console.error('Erreur navigation:', err);
-          });
-      },
-      error: (err) => {
-        console.error('❌ Erreur HTTP:', err);
-        alert(err.error?.message || 'Erreur de connexion');
-      },
-    });
+            const role = res.data.user.role?.toUpperCase();
+
+          if (role === 'ADMIN') {
+    this.sharedService.showToastMessage(ToastType.Success, 'Login successful!');
+    this.router.navigate(['/admin']); 
+} else if (role === 'EMPLOYEE') {
+    this.sharedService.showToastMessage(ToastType.Success, 'Login successful!');
+    this.router.navigate(['/employee']); 
+} else if (role === 'TEAMLEAD') {
+    this.sharedService.showToastMessage(ToastType.Success, 'Login successful!');
+    this.router.navigate(['/teamlead']); 
+} else {
+              this.sharedService.showToastMessage(ToastType.Warning, 'Role not recognized');
+            }
+          } else {
+            this.errorMessage = res.error || res.message || 'Login failed';
+            this.sharedService.showToastMessage(ToastType.Error, this.errorMessage);
+          }
+        },
+        error: (err) => {
+          this.errorMessage = err.error?.message || err.error?.Message || err.error?.title || 'Login failed';
+          this.sharedService.showToastMessage(ToastType.Error, this.errorMessage, 3000);
+        },
+      });
+  }
+
+  goToForgot() {
+    this.router.navigate(['/forget-password']);
+  }
+
+  goToRegister() {
+    this.router.navigate(['/register']);
   }
 }

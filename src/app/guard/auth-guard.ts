@@ -1,18 +1,39 @@
 import { inject } from '@angular/core';
-import { CanActivateFn, Router } from '@angular/router';
+import { CanActivateFn, Router, ActivatedRouteSnapshot } from '@angular/router';
 
-export const AuthGuard: CanActivateFn = (route, state) => {
+export const AuthGuard: CanActivateFn = (route: ActivatedRouteSnapshot) => {
   const router = inject(Router);
 
-  // Récupère userInfo dans le localStorage
-  const localData = JSON.parse(localStorage.getItem('userInfo') ?? '{}');
+  const token = localStorage.getItem('token');
+  const userJson = localStorage.getItem('user');
 
-  if (!localData?.token) {
-    // pas connecté → redirige vers login
+  if (!token || !userJson) {
     router.navigate(['/login']);
     return false;
   }
 
-  // connecté → accès autorisé
+  try {
+    const payload = JSON.parse(atob(token.split('.')[1]));
+    if (Date.now() > payload.exp * 1000) {
+      localStorage.removeItem('token');  
+      localStorage.removeItem('user');  
+      router.navigate(['/login']);
+      return false;
+    }
+  } catch {
+    localStorage.removeItem('token');   
+    localStorage.removeItem('user');    
+    router.navigate(['/login']);
+    return false;
+  }
+
+  const user = JSON.parse(userJson);
+  const requiredRole = route.data['role'] as string;
+
+  if (requiredRole && user.role.toUpperCase() !== requiredRole.toUpperCase()) {
+    router.navigate(['/login']);
+    return false;
+  }
+
   return true;
 };

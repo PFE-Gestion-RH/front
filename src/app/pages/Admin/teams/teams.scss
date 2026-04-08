@@ -1,0 +1,281 @@
+.teams-page {
+  padding: 32px;
+  background: var(--color-bg);
+  height: 100%;
+  width: 100%;
+  box-sizing: border-box;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+
+  .teams-grid {
+    background: var(--color-bg-white);
+    border-radius: 12px;
+    box-shadow: 0 2px 12px rgba(26, 58, 92, 0.08);
+    overflow: hidden;
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-height: 0;
+  }
+
+  // ─── Card template ────────────────────────────────────────────────────────
+  .card-body-template {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    padding: 16px;
+
+    .card-top {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+
+      .card-avatar {
+        width: 44px;
+        height: 44px;
+        border-radius: 50%;
+        background: var(--color-secondary);
+        color: white;
+        font-size: 15px;
+        font-weight: 700;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+        text-transform: uppercase;
+      }
+
+      .card-info {
+        flex: 1;
+        min-width: 0;
+
+        .card-name {
+          margin: 0 0 2px 0;
+          font-size: 15px;
+          font-weight: 700;
+          color: var(--color-primary);
+          white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
+        }
+
+        .card-role { font-size: 12px; color: var(--color-accent); }
+      }
+
+      .badge.members-count {
+        padding: 3px 10px;
+        border-radius: 20px;
+        font-size: 11px;
+        font-weight: 600;
+        flex-shrink: 0;
+        white-space: nowrap;
+        background: rgba(59, 138, 178, 0.1);
+        color: var(--color-secondary);
+      }
+    }
+
+    .card-email-row {
+      .card-email {
+        font-size: 13px;
+        color: var(--color-accent);
+        display: block;
+        font-style: italic;
+      }
+
+      .members-badges-small {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 4px;
+
+        .member-badge-small {
+          display: inline-flex;
+          align-items: center;
+          padding: 2px 8px;
+          border-radius: 12px;
+          font-size: 11px;
+          font-weight: 500;
+          background: rgba(59, 138, 178, 0.08);
+          color: var(--color-secondary);
+          border: 1px solid rgba(59, 138, 178, 0.15);
+
+          &.more {
+            background: rgba(26, 58, 92, 0.08);
+            color: var(--color-accent);
+            border-color: var(--color-bg-left);
+          }
+        }
+      }
+    }
+
+    .card-divider { height: 1px; background: var(--color-bg-left); margin: 2px 0; }
+
+    .card-actions {
+      display: flex;
+      flex-direction: row;
+      gap: 6px;
+      flex-wrap: wrap;
+      align-items: center;
+      margin-top: 4px;
+    }
+  }
+
+  // ─── Member badges (selected in form) ────────────────────────────────────
+  .selected-badges {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+
+  .member-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 3px 10px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 500;
+    background: rgba(59, 138, 178, 0.1);
+    color: var(--color-secondary);
+    border: 1px solid rgba(59, 138, 178, 0.2);
+
+    &.selected { background: rgba(59, 138, 178, 0.15); }
+
+    .badge-remove {
+      background: none;
+      border: none;
+      cursor: pointer;
+      color: var(--color-accent);
+      font-size: 10px;
+      padding: 0;
+      &:hover { color: #EF4444; }
+    }
+  }
+
+  .no-members {
+    font-size: 12px;
+    color: var(--color-placeholder);
+    font-style: italic;
+  }
+
+  .add-member-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 3px 10px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 500;
+    background: rgba(26, 58, 92, 0.08);
+    color: var(--color-primary);
+    border: 1px dashed var(--color-accent);
+    cursor: pointer;
+    transition: all 0.2s;
+    outline: none;
+    font-family: inherit;
+
+    &:hover {
+      background: rgba(59, 138, 178, 0.1);
+      border-color: var(--color-secondary);
+      color: var(--color-secondary);
+    }
+
+    i.dx-icon { font-size: 11px; }
+  }
+
+  // ─── Add Members popup list ───────────────────────────────────────────────
+  .members-list-section {
+    overflow-y: auto;
+    max-height: 340px;
+  }
+
+  .member-list-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 0;
+    border-bottom: 1px solid var(--color-bg-left);
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+    user-select: none;
+
+    &:last-child { border-bottom: none; }
+
+    &:hover .member-list-name {
+      color: var(--color-secondary);
+    }
+
+    &:active { background: transparent; }
+  }
+
+  .member-list-name {
+    font-size: 13px;
+    color: var(--color-text);
+    transition: color 0.15s;
+  }
+
+  // ─── dx-check-box override ────────────────────────────────────────────────
+  ::ng-deep {
+    .member-list-row {
+      .dx-checkbox-checked .dx-checkbox-icon {
+        background-color: var(--color-secondary);
+        border-color: var(--color-secondary);
+      }
+
+      .dx-checkbox-icon {
+        border-color: var(--color-accent);
+        border-radius: 4px;
+        width: 16px;
+        height: 16px;
+      }
+
+      .dx-checkbox:focus-visible .dx-checkbox-icon {
+        outline: 2px solid var(--color-secondary);
+        outline-offset: 2px;
+      }
+    }
+  }
+
+  // ─── Responsive ──────────────────────────────────────────────────────────
+  @media (max-width: 1024px) {
+    padding: 16px;
+    .teams-grid { flex: 1; min-height: 0; max-height: none; }
+  }
+
+  @media (max-width: 768px) { padding: 12px; }
+
+  @media (max-width: 600px) {
+    padding: 8px;
+
+    .card-body-template {
+      gap: 0 !important;
+      padding: 10px 12px !important;
+
+      .card-top {
+        gap: 10px;
+
+        .card-avatar { width: 34px !important; height: 34px !important; font-size: 12px !important; }
+        .card-info {
+          .card-name { font-size: 13px !important; }
+          .card-role { font-size: 11px !important; }
+        }
+        .badge { font-size: 10px !important; padding: 2px 7px !important; }
+      }
+
+      .card-divider { margin: 6px 0 5px !important; }
+
+      .card-actions {
+        gap: 6px !important;
+        flex-wrap: wrap !important;
+
+        .action-btn {
+          padding: 6px 14px !important;
+          font-size: 12px !important;
+          border-radius: 6px !important;
+          i.dx-icon { font-size: 13px !important; width: 13px !important; height: 13px !important; }
+        }
+      }
+    }
+  }
+}

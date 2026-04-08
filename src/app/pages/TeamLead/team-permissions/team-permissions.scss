@@ -1,0 +1,39 @@
+.card-pager {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 6px;
+  padding: 12px 16px;
+
+  .pager-info {
+    margin-right: 12px;
+    color: #888;
+    font-size: 13px;
+  }
+
+  .pager-btn {
+    min-width: 32px;
+    height: 32px;
+    border: 1px solid #ddd;
+    background: white;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 14px;
+    color: #333;
+
+    &:hover:not(:disabled) {
+      background: #f0f0f0;
+    }
+
+    &.active {
+      background: #337ab7;
+      color: white;
+      border-color: #337ab7;
+    }
+
+    &:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+    }
+  }
+}

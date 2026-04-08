@@ -1,271 +1,184 @@
-$primary-blue: #2e7d9a;
-$dark-blue: #1a5276;
-$light-gray: #e8eaed;
-$text-dark: #2c3e50;
-$text-muted: #7f8c8d;
-
-* {
-  box-sizing: border-box;
-}
-
-.login-wrapper {
-  height: 100vh;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: #e8eaed; 
-}
 
 .login-page {
   display: flex;
-  width: 80%;         
-  max-width: 1100px;   
-  min-height: 600px;  
-  border-radius: 14px;
+  width: 100vw;
+  height: 100vh;
+  font-family: 'Segoe UI', 'Roboto', 'Arial', sans-serif;
   overflow: hidden;
-  box-shadow: 0 30px 80px rgba(0, 0, 0, 0.15);
 }
 
 .login-left {
-  flex: 1;
-  background: linear-gradient(135deg, $dark-blue 0%, #1a3a52 100%);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 40px;
-  position: relative;
-  
-  &::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: radial-gradient(circle at 30% 50%, rgba(255,255,255,0.05) 0%, transparent 50%);
-  }
-
+  width: 45%;
+  background-color: var(--color-bg-left);
 }
 
 .login-right {
-  flex: 1;
-  background-color: $light-gray;
+  width: 55%;
+  background: white;
   display: flex;
   align-items: center;
   justify-content: center;
   padding: 40px;
+
+  .login-form-container {
+    width: 100%;
+    max-width: 400px;
+    display: flex;
+    flex-direction: column;
+  }
 }
 
-.login-form-container {
-  width: 100%;
-  max-width: 380px;
-}
-
-.login-header {
+// Logo login 
+.brand-header {
   text-align: center;
-  margin-bottom: 40px;
-  
+  margin-bottom: 50px;
+
   .brand-name {
-    font-size: 28px;
-    font-weight: 800;
-    color: $text-dark;
-    letter-spacing: 2px;
-    margin: 0;
-    text-transform: uppercase;
+    font-size: 32px;
+    font-weight: 700;
+    color: var(--color-primary);
+    letter-spacing: 4px;
+    margin-bottom: 6px;
   }
-  
-  .brand-underline {
-    width: 40px;
-    height: 3px;
-    background-color: $primary-blue;
-    margin: 8px auto;
-    border-radius: 2px;
+
+  .brand-line {
+    width: 80px;
+    height: 4px;
+    background: var(--color-line);
+    margin: 0 auto 8px auto;
   }
-  
+
   .brand-subtitle {
-    font-size: 11px;
-    font-weight: 600;
-    color: $text-muted;
-    letter-spacing: 3px;
-    margin: 8px 0 0 0;
+    font-size: 14px;
+    color: var(--color-primary);
+    letter-spacing: 8px;
     text-transform: uppercase;
+    font-weight: 400;
+    opacity: 0.9;
   }
 }
 
-.dx-login-form {
-  .form-group {
-    margin-bottom: 20px;
-    
-    .dx-field-label {
-      display: block;
-      font-size: 16px;
-      font-weight: 500;
-      color: #1a3a52;
-      margin-bottom: 6px;
-    }
-  }
+// Error message  
+.error-message {
+  margin-bottom: 20px;
 }
 
-::ng-deep {
-  .dx-custom-textbox {
-    .dx-texteditor-input {
-      background-color: white ;
-      border-radius: 6px ;
-      border: 1px solid #ddd ;
-      padding: 1px 190px 1px 10px ;
-      font-size: 14px ;
-      height: 46px ;
+// Checkbox login
+.remember-row {
+  margin: 20px 0 28px 0;
+}
 
-    .dx-custom-textbox {
-    width: 100% ;   
-     .dx-button-content {
-    display: flex ;      
-    justify-content: center ; 
-    align-items: center ;   
-    height: 50px ;       
-  }
-  }
-      &:focus {
-        border-color: $primary-blue ;
-        box-shadow: 0 0 0 3px rgba(46, 125, 154, 0.1) ;
-      }
-    }
-    
-    .dx-texteditor-container {
-      border: none ;
-      background: transparent ;
-    }
-    
-    .dx-texteditor-buttons-container {
-      right: 10px ;
-      
-      .dx-button {
-        color: $text-muted ;
-        
-        .dx-icon {
-          font-size: 18px ;
-        }
-      }
-    }
-    
-    &.dx-state-focused .dx-texteditor-input {
-      border-color: $primary-blue ;
-    }
-  }
-
-  .dx-custom-checkbox {
-    .dx-checkbox-icon {
-      width: 18px ;
-      height: 18px ;
-      border-radius: 3px ;
-      border: 1px solid #ccc ;
-    }
-    
-    &.dx-checkbox-checked .dx-checkbox-icon {
-      background-color: $primary-blue ;
-      border-color: $primary-blue ;
-    }
-    
-    .dx-checkbox-text {
-      font-size: 13px ;
-      color: $text-dark ;
-      padding-left: 8px ;
-    }
-  }
-
-  .dx-login-button {
-    display: block ;        
-  width: 100% ;           
-  padding: 6px 0 ;       
-  border-radius: 10px ;    
-  background-color: #2e7d9a ;
-  box-shadow: 0 6px 18px rgba(46, 125, 154, 0.3) ;
-  border: none ;
-  
-    .dx-button-content {
-      padding: 14px ;
-      justify-content: center ;
-    }
-    .dx-button-text {
-      color: #dde1e2 ;
-      font-size: 15px ;
-      letter-spacing: 0.5px ;
-    }
-      &:hover {
-        background-color: darken($primary-blue, 5%) ;
-        box-shadow: 0 6px 16px rgba(46, 125, 154, 0.4) ;
-      }
-    }
-    .dx-button-content {
-    display: flex ;      
-    justify-content: center ; 
-    align-items: center ;   
-    height: 10px ;          
-  }
-
-  }
-
-  
-.form-options {
+.custom-checkbox {
   display: flex;
   align-items: center;
-  justify-content: flex-end;
-  margin-bottom: 25px;
-  margin-top: 5px;
-  
-  .forgot-link {
-    font-size: 12px;
-    color: $text-muted;
-    text-decoration: none;
-    transition: color 0.2s;
-    
-    &:hover {
-      color: $primary-blue;
-      text-decoration: underline;
+  cursor: pointer;
+  user-select: none;
+
+  input {
+    position: absolute;
+    opacity: 0;
+  }
+
+  .checkmark {
+    position: relative;
+    height: 20px;
+    width: 20px;
+    background: white;
+    border: 2px solid var(--color-primary);
+    border-radius: 4px;
+    margin-right: 12px;
+    transition: all 0.2s;
+
+    &::after {
+      content: '';
+      position: absolute;
+      display: none;
+      left: 6px;
+      top: 2px;
+      width: 5px;
+      height: 10px;
+      border: solid white;
+      border-width: 0 2px 2px 0;
+      transform: rotate(45deg);
     }
+  }
+
+  input:checked ~ .checkmark {
+    background: var(--color-primary);
+    border-color: var(--color-primary);
+  }
+
+  input:checked ~ .checkmark::after {
+    display: block;
+  }
+
+  .checkbox-text {
+    font-size: 14px;
+    color: var(--color-primary);
   }
 }
 
-.register-section {
+// Links  login
+.forgot-row {
   text-align: center;
-  margin-top: 25px;
-  padding-top: 20px;
-  border-top: 1px solid #ddd;
-  
-  .register-text {
-    font-size: 13px;
-    color: $text-muted;
-  }
-  
-  .register-link {
-    font-size: 13px;
-    color: $primary-blue;
+  margin-top: 24px;
+
+  a {
+    color: var(--color-primary);
+    font-size: 14px;
     text-decoration: none;
-    margin-left: 5px;
-    font-weight: 600;
-    
+    cursor: pointer;
+    font-weight: 500;
+
     &:hover {
       text-decoration: underline;
     }
   }
 }
 
+.register-row {
+  text-align: center;
+  margin-top: 24px;
+  font-size: 14px;
+
+  span {
+    color: var(--color-accent);
+  }
+
+  .register-link {
+    color: var(--color-primary);
+    font-weight: 700;
+    text-decoration: none;
+    margin-left: 4px;
+    cursor: pointer;
+
+    &:hover {
+      text-decoration: underline;
+    }
+  }
+}
+
+// Responsive  login
 @media (max-width: 900px) {
   .login-left {
     display: none;
   }
-  
+
   .login-right {
-    flex: 1;
+    width: 100%;
   }
 }
 
 @media (max-width: 480px) {
   .login-right {
-    padding: 20px;
+    padding: 24px;
   }
   
-  .login-form-container {
-    padding: 0 10px;
+  .brand-header {
+    margin-bottom: 40px;
+    
+    .brand-name {
+      font-size: 28px;
+    }
   }
 }

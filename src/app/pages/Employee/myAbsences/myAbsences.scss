@@ -1,0 +1,158 @@
+.absences-page {
+  padding: 32px;
+  background: var(--color-bg);
+  height: 100%;
+  width: 100%;
+  box-sizing: border-box;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+
+  .absences-grid {
+    background: var(--color-bg-white);
+    border-radius: 12px;
+    box-shadow: 0 2px 12px rgba(26, 58, 92, 0.08);
+    overflow: hidden;
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-height: 0;
+  }
+
+  // Card template 
+  .card-body-template {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    padding: 16px;
+
+    .card-top {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+
+      .card-avatar {
+        width: 44px;
+        height: 44px;
+        border-radius: 50%;
+        background: var(--color-secondary);
+        color: white;
+        font-size: 15px;
+        font-weight: 700;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+        text-transform: uppercase;
+      }
+
+      .card-info {
+        flex: 1;
+        min-width: 0;
+        .card-name { margin: 0 0 2px 0; font-size: 15px; font-weight: 700; color: var(--color-primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .card-role { font-size: 12px; color: var(--color-accent); }
+      }
+
+      .days-badge {
+        padding: 3px 10px;
+        border-radius: 20px;
+        font-size: 11px;
+        font-weight: 600;
+        flex-shrink: 0;
+        background: rgba(59, 138, 178, 0.1);
+        color: var(--color-secondary);
+      }
+    }
+
+    .card-divider { height: 1px; background: var(--color-bg-left); margin: 2px 0; }
+
+    .card-statuses {
+      display: flex;
+      gap: 16px;
+
+      .status-item {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+
+        .status-label { font-size: 11px; font-weight: 600; color: var(--color-accent); }
+      }
+    }
+  }
+
+  //  balance info popup
+  .balance-info {
+    display: flex;
+    gap: 16px;
+    padding: 10px 12px;
+    background: var(--color-bg);
+    border-radius: 8px;
+    border: 1px solid var(--color-bg-left);
+    margin-bottom: 12px;
+
+    .balance-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      flex: 1;
+
+      .balance-label { font-size: 11px; color: var(--color-accent); font-weight: 600; text-transform: uppercase; }
+
+      .balance-value {
+        font-size: 16px;
+        font-weight: 700;
+        color: var(--color-primary);
+        &.used { color: var(--color-secondary); }
+        &.low  { color: #EF4444; }
+      }
+    }
+  }
+
+  .days-info { font-size: 11px; color: var(--color-secondary); font-weight: 400; margin-left: 4px; }
+  .required  { color: #EF4444; margin-left: 2px; }
+
+  // Responsive
+  @media (max-width: 1024px) {
+    padding: 16px;
+    .absences-grid { flex: 1; min-height: 0; max-height: none; }
+  }
+
+  @media (max-width: 768px) { padding: 12px; }
+
+  @media (max-width: 600px) {
+    padding: 8px;
+  }
+} .balance-info {
+    display: flex;
+    gap: 16px;
+    padding: 10px 12px;
+    background: var(--color-bg);
+    border-radius: 8px;
+    border: 1px solid var(--color-bg-left);
+    margin-bottom: 12px;
+
+    .balance-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      flex: 1;
+
+      .balance-label { font-size: 11px; color: var(--color-accent); font-weight: 600; text-transform: uppercase; }
+
+      .balance-value {
+        font-size: 16px;
+        font-weight: 700;
+        color: var(--color-primary);
+        &.used { color: var(--color-secondary); }
+        &.low { color: #EF4444; }
+      }
+    }
+  }
+
+  .days-info { font-size: 11px; color: var(--color-secondary); font-weight: 400; margin-left: 4px; }
+  .required { color: #EF4444; margin-left: 2px; }
+// Hide validation error messages, keep only red borders + icons
+.form-field .dx-invalid-message {
+  display: none !important;
+}

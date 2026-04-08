@@ -1,0 +1,193 @@
+
+<div class="public-holidays-page">
+  <div class="public-holidays-grid" style="position: relative;">
+
+    <dx-load-panel
+      [visible]="isLoading"
+      [position]="{ of: '.public-holidays-grid' }"
+      [showIndicator]="true"
+      [showPane]="true"
+      [shading]="true"
+      [shadingColor]="'rgba(255,255,255,0.6)'"
+      message="Loading...">
+    </dx-load-panel>
+
+    <div class="app-page-header">
+      <h2 class="page-title">Public Holidays Management</h2>
+      <div class="header-actions">
+        <div class="year-selector">
+          <dx-select-box
+            [items]="years"
+            [(value)]="selectedYear"
+            (onValueChanged)="onYearChanged()"
+            [width]="100">
+          </dx-select-box>
+        </div>
+        <button class="seed-btn" (click)="seedHolidays()" [disabled]="isSeeding">
+          {{ isSeeding ? 'Seeding...' : '🇹🇳 Seed Tunisia ' + selectedYear }}
+        </button>
+        <button class="add-btn" (click)="openAdd()">+ Add Holiday</button>
+      </div>
+    </div>
+
+    <!-- TABLE desktop -->
+    <div class="table-view">
+      <dx-data-grid
+        [dataSource]="sharedDataSource"
+        [columns]="columns"
+        [showBorders]="false"
+        [showRowLines]="true"
+        [showColumnLines]="false"
+        [hoverStateEnabled]="true"
+        keyExpr="id"
+        [remoteOperations]="false">
+
+        <dxo-load-panel [enabled]="false"></dxo-load-panel>
+        <dxo-search-panel [visible]="true" placeholder="Search holidays..."></dxo-search-panel>
+        <dxo-selection mode="none"></dxo-selection>
+        <dxo-editing [allowUpdating]="false" [allowDeleting]="false" [allowAdding]="false"></dxo-editing>
+        <dxo-paging [enabled]="true" [pageSize]="pageSize"></dxo-paging>
+        <dxo-pager
+          [visible]="true"
+          [showNavigationButtons]="true"
+          [showInfo]="true"
+          infoText="{0}-{1} of {2} holidays">
+        </dxo-pager>
+
+      </dx-data-grid>
+    </div>
+
+    <!-- CARDS mobile -->
+    <div class="cards-view" [class.is-loading]="isLoading">
+      <dx-card-view
+        [dataSource]="sharedDataSource"
+        keyExpr="id"
+        [cardMinWidth]="280"
+        cardsPerRow="auto">
+
+        <dxo-card-view-search-panel [visible]="true" placeholder="Search..."></dxo-card-view-search-panel>
+        <dxo-card-view-paging [enabled]="true" [pageSize]="pageSize"></dxo-card-view-paging>
+        <dxo-card-view-pager
+          [visible]="true"
+          [showNavigationButtons]="true"
+          [showInfo]="true"
+          infoText="{0}-{1} of {2} holidays">
+        </dxo-card-view-pager>
+
+        <dxi-card-view-column dataField="name" [visible]="false" [allowSearch]="true"></dxi-card-view-column>
+        <dxi-card-view-column dataField="nameAr" [visible]="false" [allowSearch]="true"></dxi-card-view-column>
+
+        <dxi-card-view-column
+          caption=""
+          [calculateFieldValue]="getCardData"
+          fieldValueTemplate="cardBodyTemplate"
+          [allowSorting]="false"
+          [allowSearch]="false"
+          [allowFiltering]="false">
+        </dxi-card-view-column>
+
+        <div *dxTemplate="let params of 'cardBodyTemplate'" class="card-body-template">
+          <div class="card-top">
+            <div class="card-avatar" [class.weekend]="params.field.value?.isWeekend">
+              {{ params.field.value?.date | date:'dd' }}
+            </div>
+            <div class="card-info">
+              <h4 class="card-name">{{ params.field.value?.name }}</h4>
+              <span class="card-role">{{ params.field.value?.date | date:'EEEE, MMM d, yyyy' }}</span>
+              <span class="card-role-ar" *ngIf="params.field.value?.nameAr">{{ params.field.value?.nameAr }}</span>
+            </div>
+            <span class="badge" [class.badge-recurring]="params.field.value?.isRecurring"
+                  [class.badge-once]="!params.field.value?.isRecurring">
+              {{ params.field.value?.isRecurring ? 'Yearly' : 'Once' }}
+            </span>
+          </div>
+          <div class="card-divider"></div>
+          <div class="card-actions">
+            <button class="action-btn edit-btn" (click)="openEdit(params.field.value); $event.stopPropagation()">
+              <i class="dx-icon dx-icon-edit"></i> Edit
+            </button>
+            <button class="action-btn delete-btn" (click)="delete(params.field.value); $event.stopPropagation()">
+              <i class="dx-icon dx-icon-trash"></i> Delete
+            </button>
+          </div>
+        </div>
+
+      </dx-card-view>
+    </div>
+
+  </div>
+
+  <!-- Popup Add/Edit -->
+ <dx-popup [(visible)]="showPopup" [width]="500" [height]="'auto'"
+  [title]="isEditMode ? 'Edit Holiday' : 'Add Holiday'"
+  [showCloseButton]="!isSaving">
+  <div *dxTemplate="let data of 'content'" class="profile-form">
+    <dx-validation-group #validationGroup>
+      <div class="form-section">
+        <div class="form-field">
+          <label>Name (English)</label>
+          <dx-text-box [(value)]="form.name" placeholder="Ex: Independence Day" [disabled]="isSaving">
+            <dx-validator>
+              <dxi-validation-rule type="required" message="Name is required"></dxi-validation-rule>
+            </dx-validator>
+          </dx-text-box>
+        </div>
+        <div class="form-field">
+          <label>Name (Arabic)</label>
+<dx-text-box [(value)]="form.nameAr!" placeholder="Ex: عيد الاستقلال" [rtlEnabled]="true" [disabled]="isSaving">
+</dx-text-box>
+        </div>
+        <div class="form-field">
+          <label>Date</label>
+          <dx-date-box
+            [(value)]="form.date"
+            displayFormat="dd/MM/yyyy"
+            type="date"
+            [disabled]="isSaving">
+            <dx-validator>
+              <dxi-validation-rule type="required" message="Date is required"></dxi-validation-rule>
+            </dx-validator>
+          </dx-date-box>
+        </div>
+        <div class="form-field switch-field">
+          <label>Recurring every year</label>
+          <dx-switch [(value)]="form.isRecurring" [disabled]="isSaving"></dx-switch>
+        </div>
+      </div>
+      <div class="form-actions">
+        <dx-button text="Cancel" [disabled]="isSaving" (onClick)="showPopup = false"></dx-button>
+        <dx-button [disabled]="isSaving" type="default" (onClick)="save(validationGroup)">
+          <div *dxTemplate="let data of 'content'" style="display:flex;align-items:center;gap:8px;">
+            <dx-load-indicator [visible]="isSaving" height="16" width="16"></dx-load-indicator>
+@if (!isSaving) {
+  <span>Save</span>
+}          </div>
+        </dx-button>
+      </div>
+    </dx-validation-group>
+  </div>
+</dx-popup>
+  <!-- Popup confirmation delete -->
+  <dx-popup [(visible)]="showDeletePopup" [width]="400" [height]="'auto'"
+    title="Confirm Delete" [showCloseButton]="!isDeleting">
+    <div *dxTemplate="let data of 'content'" class="profile-form">
+      <div class="form-section">
+        <p class="delete-message">
+          Are you sure you want to delete
+          <strong>{{ holidayToDelete?.name }}</strong> ({{ holidayToDelete?.date | date:'dd/MM/yyyy' }}) ?
+        </p>
+      </div>
+      <div class="form-actions">
+        <dx-button text="Cancel" [disabled]="isDeleting" (onClick)="showDeletePopup = false"></dx-button>
+        <dx-button [disabled]="isDeleting" type="danger" (onClick)="confirmDelete()">
+          <div *dxTemplate="let data of 'content'" style="display:flex;align-items:center;gap:8px;">
+            <dx-load-indicator [visible]="isDeleting" height="16" width="16"></dx-load-indicator>
+@if (!isDeleting) {
+  <span>Delete</span>
+}          </div>
+        </dx-button>
+      </div>
+    </div>
+  </dx-popup>
+
+</div>

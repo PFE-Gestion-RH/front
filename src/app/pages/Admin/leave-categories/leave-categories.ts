@@ -1,0 +1,237 @@
+import { Component, OnInit, NgZone, ChangeDetectorRef, ViewEncapsulation, ViewChild } from '@angular/core';
+import { HttpClient } from '@angular/common/http';
+import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
+import { firstValueFrom } from 'rxjs';
+import { SharedService } from '../../../services/shared.service';
+import { ToastType } from '../../../components/toast/toast';
+import { ApiResponse } from '../../../models/auth/api-response.model';
+import { LeaveCategory, CreateLeaveCategoryForm } from '../../../models/leave-category.model';
+import {
+  DxDataGridModule, DxTemplateModule, DxPopupComponent, DxButtonComponent,
+  DxLoadIndicatorModule, DxLoadPanelModule, DxTextBoxModule, DxNumberBoxModule,
+  DxValidatorModule, DxValidationGroupComponent
+} from 'devextreme-angular';
+import { DxCardViewComponent } from 'devextreme-angular';
+import {
+  DxiCardViewColumnComponent,
+  DxoCardViewPagingComponent,
+  DxoCardViewSearchPanelComponent,
+  DxoCardViewPagerComponent
+} from 'devextreme-angular/ui/card-view';
+import DataSource from 'devextreme/data/data_source';
+import CustomStore from 'devextreme/data/custom_store';
+import { environment } from '../../../environments/environment';
+
+@Component({
+  selector: 'app-leave-categories',
+  standalone: true,
+  imports: [
+    CommonModule,
+    FormsModule,
+    DxDataGridModule,
+    DxCardViewComponent,
+    DxiCardViewColumnComponent,
+    DxoCardViewPagingComponent,
+    DxoCardViewSearchPanelComponent,
+    DxoCardViewPagerComponent,
+    DxTemplateModule,
+    DxPopupComponent,
+    DxButtonComponent,
+    DxLoadIndicatorModule,
+    DxLoadPanelModule,
+    DxTextBoxModule,
+    DxNumberBoxModule,
+    DxValidatorModule,
+    DxValidationGroupComponent
+  ],
+  templateUrl: './leave-categories.html',
+  styleUrl: './leave-categories.scss',
+  encapsulation: ViewEncapsulation.None
+})
+export class LeaveCategories implements OnInit {
+
+  @ViewChild('validationGroup') validationGroupRef: any;
+
+  sharedDataSource!: DataSource;
+  pageSize = 10;
+
+  isLoading = false;
+  isSaving = false;
+  isDeleting = false;
+
+  showPopup = false;
+  isEditMode = false;
+  showDeletePopup = false;
+  categoryToDelete: LeaveCategory | null = null;
+  form: CreateLeaveCategoryForm = { name: '', maxDays: null as any };
+
+  columns = [
+    { dataField: 'name', caption: 'Leave Category Name' },
+    { dataField: 'maxDays', caption: 'Max Days' },
+    {
+      caption: 'Actions',
+      minWidth: 100,
+      cellTemplate: (container: any, options: any) => {
+        const data = options.data;
+
+        const editBtn = document.createElement('button');
+        editBtn.className = 'action-btn edit-btn';
+        editBtn.innerHTML = '<i class="dx-icon dx-icon-edit"></i> Edit';
+        editBtn.onclick = () => setTimeout(() => this.ngZone.run(() => {
+          this.openEdit(data);
+          this.cdr.detectChanges();
+        }), 0);
+
+        const deleteBtn = document.createElement('button');
+        deleteBtn.className = 'action-btn delete-btn';
+        deleteBtn.innerHTML = '<i class="dx-icon dx-icon-trash"></i> Delete';
+        deleteBtn.onclick = () => this.ngZone.run(() => this.delete(data));
+
+        container.append(editBtn, deleteBtn);
+      }
+    }
+  ];
+
+  getCardData = (rowData: any) => rowData;
+
+  constructor(
+    private http: HttpClient,
+    private sharedService: SharedService,
+    private ngZone: NgZone,
+    private cdr: ChangeDetectorRef
+  ) {}
+
+  ngOnInit(): void {
+    this.initSharedDataSource();
+  }
+
+  initSharedDataSource(): void {
+    this.sharedDataSource = new DataSource({
+      onLoadingChanged: (isLoading) => {
+        this.isLoading = isLoading;
+        this.cdr.detectChanges();
+      },
+      store: new CustomStore({
+        key: 'id',
+        load: (loadOptions) => {
+          const skip = loadOptions.skip ?? 0;
+          const take = loadOptions.take ?? this.pageSize;
+          const page = Math.floor(skip / take) + 1;
+          return firstValueFrom(
+            this.http.get<ApiResponse<any>>(
+              `${environment.apiUrl}/leave-categories?page=${page}&pageSize=${take}`
+            )
+          ).then(res => {
+            if (res.isSuccess) {
+              const data = res.data;
+              return {
+                data: Array.isArray(data) ? data : data.items ?? [],
+                totalCount: Array.isArray(data) ? data.length : data.totalCount ?? 0
+              };
+            }
+            return { data: [], totalCount: 0 };
+          });
+        }
+      }),
+      pageSize: this.pageSize,
+      paginate: true,
+      requireTotalCount: true
+    });
+  }
+
+  openAdd(): void {
+    this.isEditMode = false;
+    this.form = { name: '', maxDays: null as any };
+    this.showPopup = true;
+    this.cdr.detectChanges();
+    setTimeout(() => {
+      this.validationGroupRef?.instance?.reset();
+    }, 0);
+  }
+
+  openEdit(lc: LeaveCategory): void {
+    this.isEditMode = true;
+    this.form = { id: lc.id, name: lc.name, maxDays: lc.maxDays };
+    this.showPopup = true;
+    this.cdr.detectChanges();
+  }
+
+  save(validationGroup: any): void {
+    const result = validationGroup.instance.validate();
+    if (!result.isValid) {
+      this.sharedService.showToastMessage(ToastType.Error, 'Please fill all required fields');
+      return;
+    }
+
+    if (this.isSaving) return;
+    this.isSaving = true;
+    this.cdr.detectChanges();
+
+    if (this.isEditMode && this.form.id) {
+      this.http.put<ApiResponse<string>>(
+        `${environment.apiUrl}/leave-categories/${this.form.id}`, this.form
+      ).subscribe({
+        next: (res) => {
+          if (res.isSuccess) {
+            this.sharedService.showToastMessage(ToastType.Success, 'Leave category updated');
+            this.showPopup = false;
+            this.sharedDataSource.reload();
+          } else {
+            this.sharedService.showToastMessage(ToastType.Error, res.error || 'Update failed');
+          }
+          this.isSaving = false;
+          this.cdr.detectChanges();
+        },
+        error: () => { this.isSaving = false; this.cdr.detectChanges(); }
+      });
+    } else {
+      this.http.post<ApiResponse<string>>(
+        `${environment.apiUrl}/leave-categories`, this.form
+      ).subscribe({
+        next: (res) => {
+          if (res.isSuccess) {
+            this.sharedService.showToastMessage(ToastType.Success, 'Leave category created');
+            this.showPopup = false;
+            this.sharedDataSource.reload();
+          } else {
+            this.sharedService.showToastMessage(ToastType.Error, res.error || 'Create failed');
+          }
+          this.isSaving = false;
+          this.cdr.detectChanges();
+        },
+        error: () => { this.isSaving = false; this.cdr.detectChanges(); }
+      });
+    }
+  }
+
+  delete(lc: LeaveCategory): void {
+    this.categoryToDelete = lc;
+    this.showDeletePopup = true;
+    this.cdr.detectChanges();
+  }
+
+  confirmDelete(): void {
+    if (!this.categoryToDelete || this.isDeleting) return;
+    this.isDeleting = true;
+    this.cdr.detectChanges();
+
+    this.http.delete<ApiResponse<string>>(
+      `${environment.apiUrl}/leave-categories/${this.categoryToDelete.id}`
+    ).subscribe({
+      next: (res) => {
+        if (res.isSuccess) {
+          this.sharedService.showToastMessage(ToastType.Success, 'Leave category deleted');
+          this.sharedDataSource.reload();
+        } else {
+          this.sharedService.showToastMessage(ToastType.Error, res.error || 'Delete failed');
+        }
+        this.showDeletePopup = false;
+        this.categoryToDelete = null;
+        this.isDeleting = false;
+        this.cdr.detectChanges();
+      },
+      error: () => { this.isDeleting = false; this.cdr.detectChanges(); }
+    });
+  }
+}

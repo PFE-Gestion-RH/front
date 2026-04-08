@@ -1,60 +1,94 @@
-<div class="login-wrapper">
-
 <div class="login-page">
-  <div class="login-left">
-  </div>
+
+  <div class="login-left"></div>
 
   <div class="login-right">
     <div class="login-form-container">
-      
-      <div class="login-header">
+
+      <div class="brand-header">
         <h1 class="brand-name">BARTHAUER</h1>
-        <div class="brand-underline"></div>
-        <h3 class="brand-subtitle">SOFTWARE TUNISIA</h3>
+        <div class="brand-line"></div>
+        <span class="brand-subtitle">SOFTWARE</span>
       </div>
 
-      <form (ngSubmit)="login()" class="dx-login-form">
-        
-        <div class="form-group">
-          <label class="dx-field-label">Email Address</label>
+      <div class="form-group floating-group">
+        <div class="input-wrapper"
+             [class.focused]="emailFocused || email">
+
+          <div class="left-bar"
+               [class.visible]="emailFocused"></div>
+
+          <label class="floating-label"
+                 [class.active]="emailFocused || email">
+            Email
+          </label>
+
           <dx-text-box
             [(value)]="email"
-            placeholder="name@gmail.com"
-            mode="email"
-            class="dx-custom-textbox">
+            (onFocusIn)="emailFocused = true"
+            (onFocusOut)="emailFocused = false">
           </dx-text-box>
-        </div>
 
-        <div class="form-group">
-          <label class="dx-field-label">Password</label>
-          <dx-text-box
-            [(value)]="password"
-            placeholder="Enter your password"
-            mode="password"
-            class="dx-custom-textbox">
-           
-          </dx-text-box>
         </div>
+      </div>
 
-        <div class="form-options">
-          <a routerLink="/forget-password" 
-          class="forgot-link">Forgot password?</a>
+      <div class="form-group floating-group">
+        <div class="input-wrapper"
+             [class.focused]="passwordFocused || password">
+
+          <div class="left-bar"
+               [class.visible]="passwordFocused"></div>
+
+          <label class="floating-label"
+                 [class.active]="passwordFocused || password">
+            Password
+          </label>
+
+        <dx-text-box
+  [(value)]="password"
+  [mode]="passwordMode"
+  (onFocusIn)="passwordFocused = true"
+  (onFocusOut)="passwordFocused = false">
+
+  <dxi-button
+    name="togglePassword"
+    location="after"
+    [options]="{
+      icon: passwordMode === 'password' ? 'eyeclose' : 'eyeopen',
+      stylingMode: 'text',
+      type: 'normal',
+      onClick: togglePassword.bind(this)
+    }">
+  </dxi-button>
+
+</dx-text-box>
+
         </div>
+      </div>
 
-       <dx-button
-  text="Login"
-  type="default"
-  stylingMode="contained"
-  class="dx-login-button"
-  (onClick)="login()">
-</dx-button>
-        <div class="register-section">
-          <span class="register-text">Don't have an account?</span>
-          <a routerLink="/register" class="register-link">Register now</a>
-        </div>
+ 
 
-      </form>
+      <dx-button
+        text="Login"
+        type="default"
+        stylingMode="contained"
+        [width]="'100%'"
+        class="login-btn"
+        (onClick)="onLogin()">
+      </dx-button>
+
+      <div class="forgot-row">
+        <a (click)="goToForgot()">Forgot password?</a>
+      </div>
+
+      <div class="register-row">
+        <span>Don't have an account yet? </span>
+        <a (click)="goToRegister()" class="register-link">
+          Create an account
+        </a>
+      </div>
+
     </div>
   </div>
-</div>
+
 </div>

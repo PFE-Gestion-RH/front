@@ -1,0 +1,132 @@
+.permissions-page {
+  padding: 32px;
+  background: var(--color-bg);
+  height: 100%;
+  width: 100%;
+  box-sizing: border-box;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+
+  .permissions-grid {
+    background: var(--color-bg-white);
+    border-radius: 12px;
+    box-shadow: 0 2px 12px rgba(26, 58, 92, 0.08);
+    overflow: hidden;
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-height: 0;
+  }
+
+  // Card template 
+  .card-body-template {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    padding: 16px;
+
+    .card-top {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+
+      .card-avatar {
+        width: 44px;
+        height: 44px;
+        border-radius: 50%;
+        background: var(--color-secondary);
+        color: white;
+        font-size: 20px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+      }
+
+      .card-info {
+        flex: 1;
+        min-width: 0;
+        .card-name { margin: 0 0 2px 0; font-size: 15px; font-weight: 700; color: var(--color-primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .card-role { font-size: 12px; color: var(--color-accent); }
+      }
+    }
+
+    .card-divider { height: 1px; background: var(--color-bg-left); margin: 2px 0; }
+
+    .card-statuses {
+      display: flex;
+      gap: 16px;
+
+      .status-item {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+
+        .status-label { font-size: 11px; font-weight: 600; color: var(--color-accent); }
+      }
+    }
+  }
+
+  .form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-bottom: 10px;
+  }
+
+  // Responsive
+  @media (max-width: 1024px) {
+    padding: 16px;
+    .permissions-grid { flex: 1; min-height: 0; max-height: none; }
+  }
+
+  @media (max-width: 768px) { padding: 12px; }
+
+  @media (max-width: 600px) {
+    padding: 8px;
+  }
+}
+// Fix validation icon position inside form fields
+.form-field {
+  .dx-invalid .dx-texteditor-input-container {
+    .dx-invalid-message {
+      display: none !important;
+    }
+  }
+
+  .dx-invalid.dx-validator {
+    .dx-texteditor {
+      border-color: #EF4444 !important;
+    }
+  }
+
+  // Fix icon overlap with calendar/clock icons
+  .dx-show-invalid-badge .dx-texteditor-input-container::after {
+    right: 36px !important;
+  }
+}
+// Fix validation icon position inside form fields
+.form-field {
+  .dx-invalid .dx-texteditor-input-container {
+    .dx-invalid-message {
+      display: none !important;
+    }
+  }
+
+  .dx-invalid.dx-validator {
+    .dx-texteditor {
+      border-color: #EF4444 !important;
+    }
+  }
+
+  // Fix icon overlap with calendar/clock icons
+  .dx-show-invalid-badge .dx-texteditor-input-container::after {
+    right: 36px !important;
+  }
+}
+// Hide validation error messages, keep only red borders + icons
+.form-field .dx-invalid-message {
+  display: none !important;
+}

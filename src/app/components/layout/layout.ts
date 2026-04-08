@@ -9,4 +9,4 @@ import { Sidenav } from '../sidenav/sidenav';
   templateUrl: './layout.html',
   styleUrl: './layout.scss',
 })
-export class Layout {}
+export class Layout { }

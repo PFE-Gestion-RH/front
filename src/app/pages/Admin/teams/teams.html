@@ -1,0 +1,234 @@
+<div class="teams-page">
+  <div class="teams-grid" style="position: relative;">
+
+    <dx-load-panel
+      [visible]="isLoading"
+      [position]="{ of: '.teams-grid' }"
+      [showIndicator]="true"
+      [showPane]="true"
+      [shading]="true"
+      [shadingColor]="'rgba(255,255,255,0.6)'"
+      message="Loading...">
+    </dx-load-panel>
+
+    <div class="app-page-header">
+      <h2 class="page-title">Team Management</h2>
+      <button class="add-btn" (click)="openAdd()">+ Add Team</button>
+    </div>
+
+    <!-- TABLE desktop -->
+    <div class="table-view">
+      <dx-data-grid
+        [dataSource]="sharedDataSource"
+        [columns]="columns"
+        [showBorders]="false"
+        [showRowLines]="true"
+        [showColumnLines]="false"
+        [hoverStateEnabled]="true"
+        [columnHidingEnabled]="false"
+        [focusedRowEnabled]="false"
+        keyExpr="id"
+        [remoteOperations]="true">
+
+        <dxo-load-panel [enabled]="false"></dxo-load-panel>
+        <dxo-search-panel [visible]="true" placeholder="Search..."></dxo-search-panel>
+        <dxo-selection mode="none"></dxo-selection>
+        <dxo-editing [allowUpdating]="false" [allowDeleting]="false" [allowAdding]="false"></dxo-editing>
+        <dxo-paging [enabled]="true" [pageSize]="pageSize"></dxo-paging>
+        <dxo-pager
+          [visible]="true"
+          [showNavigationButtons]="true"
+          [showInfo]="true"
+          infoText="{0}-{1} of {2} teams">
+        </dxo-pager>
+
+      </dx-data-grid>
+    </div>
+
+    <!-- CARDS mobile/tablette -->
+    <div class="cards-view" [class.is-loading]="isLoading">
+      <dx-card-view
+        [dataSource]="sharedDataSource"
+        keyExpr="id"
+        [cardMinWidth]="280"
+        cardsPerRow="auto"
+        >
+
+        <dxo-card-view-search-panel [visible]="true" placeholder="Search..."></dxo-card-view-search-panel>
+        <dxo-card-view-paging [enabled]="true" [pageSize]="pageSize"></dxo-card-view-paging>
+        <dxo-card-view-pager
+          [visible]="true"
+          [showNavigationButtons]="true"
+          [showInfo]="true"
+          infoText="{0}-{1} of {2} teams">
+        </dxo-card-view-pager>
+
+        <dxi-card-view-column dataField="name" [visible]="false"[allowSearch]="true"></dxi-card-view-column>
+        <dxi-card-view-column dataField="teamLeadName" [visible]="false"[allowSearch]="true"></dxi-card-view-column>
+
+        <dxi-card-view-column
+          caption=""
+          [calculateFieldValue]="getCardData"
+          fieldValueTemplate="cardBodyTemplate"
+          [allowSorting]="false"
+          [allowSearch]="false"
+          [allowFiltering]="false">
+        </dxi-card-view-column>
+
+        <div *dxTemplate="let params of 'cardBodyTemplate'" class="card-body-template">
+          <div class="card-top">
+            <div class="card-avatar">
+              {{ params.field.value?.name?.[0] | uppercase }}
+            </div>
+            <div class="card-info">
+              <h4 class="card-name">{{ params.field.value?.name }}</h4>
+              <span class="card-role">{{ params.field.value?.teamLeadName }}</span>
+            </div>
+            <span class="badge members-count">
+              {{ params.field.value?.members?.length ?? 0 }} members
+            </span>
+          </div>
+
+          <div class="card-email-row">
+            @if (params.field.value?.members?.length > 0) {
+              <div class="members-badges-small">
+                @for (member of params.field.value?.members?.slice(0, 3); track member.id) {
+                  <span class="member-badge-small">{{ member.firstName }} {{ member.lastName }}</span>
+                }
+                @if (params.field.value?.members?.length > 3) {
+                  <span class="member-badge-small more">+{{ params.field.value?.members?.length - 3 }}</span>
+                }
+              </div>
+            } @else {
+              <span class="card-email">No members</span>
+            }
+          </div>
+
+          <div class="card-divider"></div>
+
+          <div class="card-actions">
+            <button class="action-btn edit-btn"
+              (click)="openEdit(params.field.value); $event.stopPropagation()">
+              <i class="dx-icon dx-icon-edit"></i> Edit
+            </button>
+            <button class="action-btn delete-btn"
+              (click)="deleteTeam(params.field.value); $event.stopPropagation()">
+              <i class="dx-icon dx-icon-trash"></i> Delete
+            </button>
+          </div>
+        </div>
+
+      </dx-card-view>
+    </div>
+
+  </div>
+
+  <!-- Popup ADD/EDIT TEAM -->
+@if (showPopup) {
+<dx-popup [(visible)]="showPopup" [width]="500" [height]="'auto'"
+  [title]="isEditMode ? 'Edit Team' : 'Add Team'"
+  [showCloseButton]="!isSaving">
+  <div *dxTemplate="let data of 'content'" class="profile-form">
+    <dx-validation-group #validationGroup>
+      <div class="form-section">
+        <div class="form-field">
+          <label>Team Name</label>
+          <dx-text-box [(value)]="teamForm.name" placeholder="Enter team name" [disabled]="isSaving">
+            <dx-validator>
+              <dxi-validation-rule type="required" message="Team name is required"></dxi-validation-rule>
+            </dx-validator>
+          </dx-text-box>
+        </div>
+        <div class="form-field">
+          <label>Team Lead</label>
+          <dx-select-box
+            [dataSource]="teamLeads"
+            displayExpr="fullName"
+            valueExpr="id"
+            [(value)]="teamForm.teamLeadId"
+            placeholder="Select a Team Lead"
+            [disabled]="isSaving">
+            <dx-validator>
+              <dxi-validation-rule type="required" message="Team Lead is required"></dxi-validation-rule>
+            </dx-validator>
+          </dx-select-box>
+        </div>
+        <div class="form-field">
+          <label>Members</label>
+          <div class="selected-badges">
+            @for (id of teamForm.memberIds; track id) {
+              <span class="member-badge selected">
+                {{ getMemberNameById(id) }}
+                <button class="badge-remove" (click)="toggleMember(id)" [disabled]="isSaving">&#x2715;</button>
+              </span>
+            }
+            <button class="add-member-badge" (click)="showMembersPopup = true; $event.stopPropagation()" [disabled]="isSaving">
+              <i class="dx-icon dx-icon-plus"></i> Add Member
+            </button>
+          </div>
+        </div>
+      </div>
+      <div class="form-actions">
+        <dx-button text="Cancel" [disabled]="isSaving" (onClick)="showPopup = false"></dx-button>
+        <dx-button [disabled]="isSaving" type="default" (onClick)="save(validationGroup)">
+          <div *dxTemplate="let data of 'content'" style="display:flex;align-items:center;gap:8px;">
+            <dx-load-indicator [visible]="isSaving" height="16" width="16"></dx-load-indicator>
+@if (!isSaving) {
+  <span>Save</span>
+}          </div>
+        </dx-button>
+      </div>
+    </dx-validation-group>
+  </div>
+</dx-popup>
+}
+  @if (showMembersPopup) {
+  <dx-popup [(visible)]="showMembersPopup" [width]="460" [height]="'auto'"
+    title="Add Members" [showCloseButton]="true">
+    <div *dxTemplate="let data of 'content'" class="profile-form">
+      <div class="form-section members-list-section">
+        @if (employees.length === 0) {
+          <span class="no-members">No employees available</span>
+        }
+        @for (emp of employees; track emp.id) {
+          <div class="member-list-row" (click)="toggleMember(emp.id)">
+            <dx-check-box
+              [value]="teamForm.memberIds.includes(emp.id)"
+              (onValueChanged)="toggleMember(emp.id)"
+              (click)="$event.stopPropagation()">
+            </dx-check-box>
+            <span class="member-list-name">{{ emp.firstName }} {{ emp.lastName }}</span>
+          </div>
+        }
+      </div>
+      <div class="form-actions">
+        <dx-button text="Done" type="default" (onClick)="showMembersPopup = false"></dx-button>
+      </div>
+    </div>
+  </dx-popup>
+  }
+
+  <!-- Popup confirmation delete -->
+  <dx-popup [(visible)]="showDeletePopup" [width]="400" [height]="'auto'"
+    title="Confirm Delete" [showCloseButton]="!isDeleting">
+    <div *dxTemplate="let data of 'content'" class="profile-form">
+      <div class="form-section">
+        <p class="delete-message">
+          Are you sure you want to delete team
+          <strong>{{ teamToDelete?.name }}</strong> ?
+        </p>
+      </div>
+      <div class="form-actions">
+        <dx-button text="Cancel" [disabled]="isDeleting" (onClick)="showDeletePopup = false"></dx-button>
+        <dx-button [disabled]="isDeleting" type="danger" (onClick)="confirmDelete()">
+          <div *dxTemplate="let data of 'content'" style="display:flex;align-items:center;gap:8px;">
+            <dx-load-indicator [visible]="isDeleting" height="16" width="16"></dx-load-indicator>
+@if (!isDeleting) {
+  <span>Delete</span>
+}          </div>
+        </dx-button>
+      </div>
+    </div>
+  </dx-popup>
+
+</div>

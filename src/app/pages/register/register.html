@@ -1,44 +1,97 @@
-<div class="login-container">
-  <mat-card class="login-card">
-    <div class="login-header">
-      <h1>BARTHAUER</h1>
-      <h3 class="subtitle">SOFTWARE TUNISIA</h3>
+<div class="register-page">
+  
+  <div class="page-header">
+    <div class="header-logo">
+      <h1 class="brand-name">BARTHAUER</h1>
+      <div class="brand-line"></div>
+      <span class="brand-subtitle">SOFTWARE </span>
     </div>
+  </div>
+  
 
-    <h2 class="login-title">Créer un compte</h2>
+  <div class="main-content">
+ 
+    <div class="register-card">
+      <h2 class="register-title">Create your account</h2>
+      <p class="register-subtitle">Register with your institutional email to access the absence portal.</p>
 
-    <form (ngSubmit)="register()" #registerForm="ngForm" class="login-form">
-      <mat-form-field appearance="outline" class="form-field">
-        <mat-label>Nom complet</mat-label>
-        <input matInput required [(ngModel)]="fullName" name="fullName" placeholder="Votre nom complet">
-      </mat-form-field>
+      <div class="register-form">
+        
+        <div class="form-group floating-group">
+          <div class="input-wrapper" [class.focused]="FirstNameFocused || FirstName">
+            <div class="left-bar" [class.visible]="FirstNameFocused"></div>
+            <label class="floating-label" [class.active]="FirstNameFocused || FirstName">FirstName</label>
+            <dx-text-box
+              [(value)]="FirstName"
+              (onFocusIn)="FirstNameFocused = true"
+              (onFocusOut)="FirstNameFocused = false">
+            </dx-text-box>
+          </div>
+        </div>
+        <div class="form-group floating-group">
+          <div class="input-wrapper" [class.focused]="LastNameFocused || LastName">
+            <div class="left-bar" [class.visible]="LastNameFocused"></div>
+            <label class="floating-label" [class.active]="LastNameFocused || LastName">LastName</label>
+            <dx-text-box
+              [(value)]="LastName"
+              (onFocusIn)="LastNameFocused = true"
+              (onFocusOut)="LastNameFocused = false">
+            </dx-text-box>
+          </div>
+        </div>
 
-      <mat-form-field appearance="outline" class="form-field">
-        <mat-label>Email</mat-label>
-        <input matInput type="email" required [(ngModel)]="email" name="email" placeholder="votre@email.com">
-      </mat-form-field>
+        <div class="form-group floating-group">
+          <div class="input-wrapper" [class.focused]="emailFocused || email">
+            <div class="left-bar" [class.visible]="emailFocused"></div>
+            <label class="floating-label" [class.active]="emailFocused || email">Email</label>
+            <dx-text-box
+              [(value)]="email"
+              (onFocusIn)="emailFocused = true"
+              (onFocusOut)="emailFocused = false">
+            </dx-text-box>
+          </div>
+        </div>
 
-      <mat-form-field appearance="outline" class="form-field">
-        <mat-label>Mot de passe</mat-label>
-        <input matInput type="password" required [(ngModel)]="password" name="password" placeholder="••••••••">
-      </mat-form-field>
+      <div class="form-group floating-group">
+  <div class="input-wrapper" [class.focused]="passwordFocused || password">
+    <div class="left-bar" [class.visible]="passwordFocused"></div>
+    <label class="floating-label" [class.active]="passwordFocused || password">Password</label>
+    <dx-text-box
+      [(value)]="password"
+      [mode]="passwordMode"
+      (onFocusIn)="passwordFocused = true"
+      (onFocusOut)="passwordFocused = false">
+    </dx-text-box>
+  </div>
+</div>
 
-      <mat-form-field appearance="outline" class="form-field">
-        <mat-label>Confirmer mot de passe</mat-label>
-        <input matInput type="password" required [(ngModel)]="confirmPassword" name="confirmPassword" placeholder="••••••••">
-      </mat-form-field>
+<div class="form-group floating-group">
+  <div class="input-wrapper" [class.focused]="ConfirmpasswordFocused || confirmPassword">
+    <div class="left-bar" [class.visible]="ConfirmpasswordFocused"></div>
+    <label class="floating-label" [class.active]="ConfirmpasswordFocused || confirmPassword">Confirm Password</label>
+    <dx-text-box
+      [(value)]="confirmPassword"
+      [mode]="confirmPasswordMode"
+      (onFocusIn)="ConfirmpasswordFocused = true"
+      (onFocusOut)="ConfirmpasswordFocused = false">
+    </dx-text-box>
+  </div>
+</div>
+        <dx-button
+          text="Create Account"
+          type="default"
+          stylingMode="contained"
+          [width]="'100%'"
+          class="login-btn"
+          [disabled]="isLoading"
+          (onClick)="register()">
+        </dx-button>
 
-      <div class="form-options">
-        <mat-checkbox [(ngModel)]="rememberMe" name="rememberMe">Se souvenir de moi</mat-checkbox>
+        <div class="signin-row">
+          <span>Already have an account?</span>
+          <a (click)="goToSignIn()">Sign in</a>
+        </div>
       </div>
-
-      <button mat-raised-button color="primary" type="submit" [disabled]="registerForm.invalid" class="login-button">
-        S'inscrire
-      </button>
-    </form>
-
-    <div class="register-link">
-      <p>Déjà un compte ? <a routerLink="/login">Se connecter</a></p>
     </div>
-  </mat-card>
+  </div>
 </div>

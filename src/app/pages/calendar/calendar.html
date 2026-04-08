@@ -1,0 +1,116 @@
+<div class="calendar-page">
+
+  <!-- Header -->
+  <div class="app-page-header">
+    <h2 class="page-title">{{ pageTitle }}</h2>
+  </div>
+
+  <!-- Card wrapper -->
+  <div class="calendar-grid">
+
+    <!-- Load Panel -->
+    <dx-load-panel
+      [visible]="loading"
+      [showIndicator]="true"
+      [showPane]="true"
+      message="Loading..."
+      [position]="{ of: '.calendar-grid' }">
+    </dx-load-panel>
+
+    <div class="calendar-legend">
+      @for (item of legendItems; track item.type) {
+        <span class="legend-item">
+          <span class="legend-dot" [style.background]="item.color"></span>
+          {{ item.type | titlecase }}
+        </span>
+      }
+    </div>
+
+    <!-- Scheduler -->
+    <dx-scheduler
+      [dataSource]="events"
+      [currentDate]="currentDate"
+      (onOptionChanged)="onOptionChanged($event)"
+      [(currentView)]="currentView"
+      [views]="views"
+      startDateExpr="startDate"
+      endDateExpr="endDate"
+      textExpr="text"
+      allDayExpr="allDay"
+      [showAllDayPanel]="true"
+      [firstDayOfWeek]="1"
+      [height]="600"
+      [editing]="editingConfig"
+      (onAppointmentRendered)="onAppointmentRendered($event)"
+      (onAppointmentClick)="onAppointmentClick($event)"
+      (onAppointmentDblClick)="onAppointmentDblClick($event)"
+      (onAppointmentFormOpening)="onAppointmentFormOpening($event)">
+    </dx-scheduler>
+
+  </div>
+
+  <!-- Popup detail demande -->
+  @if (showEventPopup) {
+    <dx-popup
+      [(visible)]="showEventPopup"
+      [width]="420"
+      [height]="'auto'"
+      [title]="popupTitle"
+      [showCloseButton]="true">
+      <div *dxTemplate="let data of 'content'" class="profile-form">
+        <div class="form-section">
+
+          <div class="form-field">
+            <label>Type</label>
+            <span class="badge" [class]="selectedEvent?.type">
+              {{ selectedEvent?.type | titlecase }}
+            </span>
+          </div>
+
+          @if (selectedEvent?.employeeName) {
+            <div class="form-field">
+              <label>Employee</label>
+              <span>{{ selectedEvent?.employeeName }}</span>
+            </div>
+          }
+
+          <div class="form-field">
+            <label>Start Date</label>
+            <span>{{ selectedEvent?.startDate | date:'dd MMM yyyy' }}</span>
+          </div>
+
+          <div class="form-field">
+            <label>End Date</label>
+            <span>{{ selectedEvent?.endDate | date:'dd MMM yyyy' }}</span>
+          </div>
+
+          @if (selectedEvent?.type === 'permission' && selectedEvent?.startTime) {
+            <div class="form-field">
+              <label>Start Time</label>
+              <span>{{ selectedEvent?.startTime }}</span>
+            </div>
+          }
+
+          @if (selectedEvent?.type === 'permission' && selectedEvent?.endTime) {
+            <div class="form-field">
+              <label>End Time</label>
+              <span>{{ selectedEvent?.endTime }}</span>
+            </div>
+          }
+
+          @if (selectedEvent?.description) {
+            <div class="form-field">
+              <label>Description</label>
+              <span>{{ selectedEvent?.description }}</span>
+            </div>
+          }
+
+        </div>
+        <div class="form-actions">
+          <dx-button text="Close" (onClick)="showEventPopup = false"></dx-button>
+        </div>
+      </div>
+    </dx-popup>
+  }
+
+</div>

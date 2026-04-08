@@ -1,0 +1,15 @@
+@if (shared.showToast()) {
+  <div class="toast" [class]="shared.toastType()">
+    <div class="toast-icon">
+      @switch (shared.toastType()) {
+        @case ('success') { ✓ }
+        @case ('error') { ✗ }
+        @case ('warning') { ⚠ }
+        @case ('info') { ℹ }
+
+      }
+    </div>
+    <span class="toast-message">{{ shared.toastMessage() }}</span>
+    <button class="toast-close" (click)="close()">✕</button>
+  </div>
+}
