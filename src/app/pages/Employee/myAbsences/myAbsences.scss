@@ -8,6 +8,32 @@
   display: flex;
   flex-direction: column;
 
+  .occupation-badge {
+    margin-top: 6px;
+    padding: 6px 10px;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 500;
+
+    &.badge-green {
+      background: #d4edda;
+      color: #155724;
+      border-left: 3px solid #28a745;
+    }
+
+    &.badge-orange {
+      background: #ffe5b4;
+      color: #7d4a00;
+      border-left: 3px solid #fd7e14;
+    }
+
+    &.badge-red {
+      background: #f8d7da;
+      color: #721c24;
+      border-left: 3px solid #dc3545;
+    }
+  }
+
   .absences-grid {
     background: var(--color-bg-white);
     border-radius: 12px;
@@ -50,8 +76,21 @@
       .card-info {
         flex: 1;
         min-width: 0;
-        .card-name { margin: 0 0 2px 0; font-size: 15px; font-weight: 700; color: var(--color-primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-        .card-role { font-size: 12px; color: var(--color-accent); }
+
+        .card-name {
+          margin: 0 0 2px 0;
+          font-size: 15px;
+          font-weight: 700;
+          color: var(--color-primary);
+          white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
+        }
+
+        .card-role {
+          font-size: 12px;
+          color: var(--color-accent);
+        }
       }
 
       .days-badge {
@@ -65,7 +104,11 @@
       }
     }
 
-    .card-divider { height: 1px; background: var(--color-bg-left); margin: 2px 0; }
+    .card-divider {
+      height: 1px;
+      background: var(--color-bg-left);
+      margin: 2px 0;
+    }
 
     .card-statuses {
       display: flex;
@@ -76,7 +119,11 @@
         align-items: center;
         gap: 6px;
 
-        .status-label { font-size: 11px; font-weight: 600; color: var(--color-accent); }
+        .status-label {
+          font-size: 11px;
+          font-weight: 600;
+          color: var(--color-accent);
+        }
       }
     }
   }
@@ -97,61 +144,111 @@
       align-items: center;
       flex: 1;
 
-      .balance-label { font-size: 11px; color: var(--color-accent); font-weight: 600; text-transform: uppercase; }
+      .balance-label {
+        font-size: 11px;
+        color: var(--color-accent);
+        font-weight: 600;
+        text-transform: uppercase;
+      }
 
       .balance-value {
         font-size: 16px;
         font-weight: 700;
         color: var(--color-primary);
-        &.used { color: var(--color-secondary); }
-        &.low  { color: #EF4444; }
+
+        &.used {
+          color: var(--color-secondary);
+        }
+
+        &.low {
+          color: #EF4444;
+        }
       }
     }
   }
 
-  .days-info { font-size: 11px; color: var(--color-secondary); font-weight: 400; margin-left: 4px; }
-  .required  { color: #EF4444; margin-left: 2px; }
+  .days-info {
+    font-size: 11px;
+    color: var(--color-secondary);
+    font-weight: 400;
+    margin-left: 4px;
+  }
+
+  .required {
+    color: #EF4444;
+    margin-left: 2px;
+  }
 
   // Responsive
   @media (max-width: 1024px) {
     padding: 16px;
-    .absences-grid { flex: 1; min-height: 0; max-height: none; }
+
+    .absences-grid {
+      flex: 1;
+      min-height: 0;
+      max-height: none;
+    }
   }
 
-  @media (max-width: 768px) { padding: 12px; }
+  @media (max-width: 768px) {
+    padding: 12px;
+  }
 
   @media (max-width: 600px) {
     padding: 8px;
   }
-} .balance-info {
+}
+
+.balance-info {
+  display: flex;
+  gap: 16px;
+  padding: 10px 12px;
+  background: var(--color-bg);
+  border-radius: 8px;
+  border: 1px solid var(--color-bg-left);
+  margin-bottom: 12px;
+
+  .balance-item {
     display: flex;
-    gap: 16px;
-    padding: 10px 12px;
-    background: var(--color-bg);
-    border-radius: 8px;
-    border: 1px solid var(--color-bg-left);
-    margin-bottom: 12px;
+    flex-direction: column;
+    align-items: center;
+    flex: 1;
 
-    .balance-item {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      flex: 1;
+    .balance-label {
+      font-size: 11px;
+      color: var(--color-accent);
+      font-weight: 600;
+      text-transform: uppercase;
+    }
 
-      .balance-label { font-size: 11px; color: var(--color-accent); font-weight: 600; text-transform: uppercase; }
+    .balance-value {
+      font-size: 16px;
+      font-weight: 700;
+      color: var(--color-primary);
 
-      .balance-value {
-        font-size: 16px;
-        font-weight: 700;
-        color: var(--color-primary);
-        &.used { color: var(--color-secondary); }
-        &.low { color: #EF4444; }
+      &.used {
+        color: var(--color-secondary);
+      }
+
+      &.low {
+        color: #EF4444;
       }
     }
   }
+}
 
-  .days-info { font-size: 11px; color: var(--color-secondary); font-weight: 400; margin-left: 4px; }
-  .required { color: #EF4444; margin-left: 2px; }
+.days-info {
+  font-size: 11px;
+  color: var(--color-secondary);
+  font-weight: 400;
+  margin-left: 4px;
+}
+
+.required {
+  color: #EF4444;
+  margin-left: 2px;
+}
+
 // Hide validation error messages, keep only red borders + icons
 .form-field .dx-invalid-message {
   display: none !important;

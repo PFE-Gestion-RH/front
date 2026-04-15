@@ -1,0 +1,160 @@
+<div class="admin-dashboard">
+    <div class="dashboard-wrapper">
+
+        <div *ngIf="loading" class="loading-center">
+            <dx-load-indicator [visible]="true" height="60" width="60"></dx-load-indicator>
+            <p>{{ 'ADMIN_DASHBOARD.LOADING' | translate }}</p>
+        </div>
+
+        <ng-container *ngIf="!loading && data">
+
+            <!-- KPI Cards -->
+            <div class="kpi-grid">
+                <div class="kpi-card">
+                    <span class="kpi-label">{{ 'ADMIN_DASHBOARD.TOTAL_EMPLOYEES' | translate }}</span>
+                    <span class="kpi-value">{{ data.kpi.totalEmployees }}</span>
+                    <span class="kpi-sub">{{ data.kpi.employeeBreakdown }}</span> <!-- ← ajouter -->
+
+                </div>
+                <div class="kpi-card">
+                    <span class="kpi-label">{{ 'ADMIN_DASHBOARD.ABSENT_TODAY' | translate }}</span>
+                    <span class="kpi-value">{{ data.kpi.absentToday }}</span>
+                    <span class="kpi-sub">{{ data.kpi.absentBreakdown }}</span> <!-- ← ajouter -->
+
+                </div>
+                <div class="kpi-card">
+                    <span class="kpi-label">{{ 'ADMIN_DASHBOARD.PRESENT_TODAY' | translate }}</span>
+                    <span class="kpi-value">{{ data.kpi.presentToday }}</span>
+                    <span class="kpi-sub">{{ data.kpi.presentBreakdown }}</span> <!-- ← ajouter -->
+
+                </div>
+                <div class="kpi-card">
+                    <span class="kpi-label">{{ 'ADMIN_DASHBOARD.PENDING_REQUESTS' | translate }}</span>
+                    <span class="kpi-value">{{ data.kpi.pendingRequests }}</span>
+                    <span class="kpi-sub">
+                        {{ data.kpi.pendingAbsences }} absences ·
+                        {{ data.kpi.pendingPermissions }} permissions
+                    </span>
+                </div>
+            </div>
+
+            <!-- Charts -->
+            <div class="charts-grid">
+
+                <!-- 1. Tendance absences -->
+                <div class="chart-card">
+                    <div class="chart-header">
+                        <h3 class="chart-title">{{ 'ADMIN_DASHBOARD.ABSENCE_TREND' | translate }}</h3>
+                        <div class="period-toggle">
+                            <button *ngFor="let period of periods" [class.active]="selectedPeriod === period.value"
+                                (click)="onPeriodChange(period.value)">
+                                {{ period.label }}
+                            </button>
+                        </div>
+                    </div>
+                    <dx-chart [dataSource]="filteredAbsenceTrend" [palette]="chartPalette" height="200">
+                        <dxi-series argumentField="month" valueField="count" type="spline" color="#378ADD"
+                            name="Absences">
+                            <dxo-point [visible]="true" [size]="6"></dxo-point>
+                        </dxi-series>
+                        <dxo-legend [visible]="false"></dxo-legend>
+                        <dxo-tooltip [enabled]="true"></dxo-tooltip>
+                    </dx-chart>
+                </div>
+
+                <!-- 2. Types d'absence -->
+                <div class="chart-card">
+                    <h3 class="chart-title">{{ 'ADMIN_DASHBOARD.ABSENCE_TYPES' | translate }}</h3>
+                    <dx-pie-chart [dataSource]="data.absenceTypes" [palette]="chartPalette" height="200">
+                        <dxi-series argumentField="type" valueField="count"
+                            [label]="{ visible: true, connector: { visible: true } }">
+                        </dxi-series>
+                        <dxo-legend [visible]="true" verticalAlignment="bottom"
+                            horizontalAlignment="center"></dxo-legend>
+                        <dxo-tooltip [enabled]="true"></dxo-tooltip>
+                    </dx-pie-chart>
+                </div>
+
+                <!-- 3. Comparaison par équipe — 2 barres : absences (bleu) + permissions (gris) -->
+                <div class="chart-card">
+                    <h3 class="chart-title">{{ 'ADMIN_DASHBOARD.BY_TEAM' | translate }}</h3>
+                    <dx-chart [dataSource]="data.departmentComparison" [palette]="chartPalette" height="200">
+                        <dxi-series argumentField="department" valueField="absenceCount" type="bar" color="#378ADD"
+                            name="Absences">
+                        </dxi-series>
+                        <dxi-series argumentField="department" valueField="permissionCount" type="bar" color="#94a3b8"
+                            name="Permissions">
+                        </dxi-series>
+                        <dxo-legend [visible]="true" verticalAlignment="bottom"
+                            horizontalAlignment="center"></dxo-legend>
+                        <dxo-tooltip [enabled]="true"></dxo-tooltip>
+                    </dx-chart>
+                </div>
+
+            </div>
+
+            <!-- Tableau -->
+            <div class="table-card">
+                <h3 class="table-title">{{ 'ADMIN_DASHBOARD.RECENT_REQUESTS' | translate }}</h3>
+
+                <dx-data-grid [dataSource]="data.recentRequests" [showBorders]="false" [showRowLines]="true"
+                    [showColumnLines]="false" [hoverStateEnabled]="true" [columnAutoWidth]="true">
+
+                    <dxi-column dataField="employeeName" [caption]="'ADMIN_DASHBOARD.EMPLOYEE' | translate"
+                        [minWidth]="60 "></dxi-column>
+                    <dxi-column dataField="type" [caption]="'ADMIN_DASHBOARD.TYPE' | translate"
+                        [minWidth]="60 "></dxi-column>
+                    <dxi-column [caption]="'ADMIN_DASHBOARD.DATES' | translate" [minWidth]="60 "
+                        cellTemplate="datesTpl"></dxi-column>
+                    <dxi-column [caption]="'ADMIN_DASHBOARD.STATUS' | translate" [minWidth]="60 "
+                        cellTemplate="statusTpl"></dxi-column>
+                    <dxi-column [caption]="'ADMIN_DASHBOARD.ACTIONS' | translate" [minWidth]="60 "
+                        cellTemplate="actionsTpl" alignment="center"></dxi-column>
+
+                    <div *dxTemplate="let cell of 'datesTpl'">
+                        {{ cell.data.startDate }} → {{ cell.data.endDate }}
+                    </div>
+
+                    <div *dxTemplate="let cell of 'statusTpl'">
+                        <span class="badge"
+                            [class.badge-warn]="getStatusConfig(cell.data.status).cssClass === 'badge-warn'"
+                            [class.badge-ok]="getStatusConfig(cell.data.status).cssClass === 'badge-ok'"
+                            [class.badge-danger]="getStatusConfig(cell.data.status).cssClass === 'badge-danger'"
+                            [class.badge-info]="getStatusConfig(cell.data.status).cssClass === 'badge-info'">
+                            {{ getStatusConfig(cell.data.status).label }}
+                        </span>
+                    </div>
+                    <div *dxTemplate="let cell of 'actionsTpl'">
+
+                        <ng-container
+                            *ngIf="cell.data.status === 'PendingTeamLead' || cell.data.status === 'PendingAdministration'; else noActions">
+
+                            <div class="card-actions">
+                                <button class="action-btn approve-btn" (click)="onApprove(cell.data)">
+                                    <i class="dx-icon dx-icon-check"></i>
+                                    {{ 'ADMIN_DASHBOARD.APPROVE' | translate }}
+                                </button>
+
+                                <button class="action-btn reject-btn" (click)="onReject(cell.data)">
+                                    <i class="dx-icon dx-icon-close"></i>
+                                    {{ 'ADMIN_DASHBOARD.REJECT' | translate }}
+                                </button>
+                            </div>
+
+                        </ng-container>
+
+                        <ng-template #noActions>
+                            <span class="na-value">N/A</span>
+                        </ng-template>
+
+                    </div>
+                    <dxo-pager [showPageSizeSelector]="false" [showInfo]="true"></dxo-pager>
+                </dx-data-grid>
+            </div>
+
+        </ng-container>
+
+        <dx-toast [(visible)]="toastVisible" [message]="toastMessage" type="info" [displayTime]="3000"></dx-toast>
+
+    </div>
+</div>

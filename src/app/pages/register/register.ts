@@ -23,6 +23,7 @@ export class Register {
   email = '';
   password = '';
   confirmPassword = '';
+  employeeNumber = '';
 
   passwordMode: 'password' | 'text' = 'password';
   confirmPasswordMode: 'password' | 'text' = 'password';
@@ -33,6 +34,7 @@ export class Register {
   ConfirmpasswordFocused = false;
   FirstNameFocused = false;
   LastNameFocused = false;
+  employeeNumberFocused = false;
 
   passwordButtonOptions: any;
   confirmPasswordButtonOptions: any;
@@ -41,7 +43,7 @@ export class Register {
   constructor(
     private http: HttpClient,
     private router: Router,
-    private sharedService: SharedService 
+    private sharedService: SharedService
   ) {
     this.initPasswordButtons();
   }
@@ -78,7 +80,8 @@ export class Register {
   register() {
     if (this.isLoading) return;
 
-    if (!this.LastName || !this.FirstName || !this.email || !this.password || !this.confirmPassword) {
+    // 👇 employeeNumber ajouté à la validation
+    if (!this.LastName || !this.FirstName || !this.employeeNumber || !this.email || !this.password || !this.confirmPassword) {
       this.sharedService.showToastMessage(ToastType.Warning, 'Please fill in all fields');
       return;
     }
@@ -90,7 +93,14 @@ export class Register {
 
     this.isLoading = true;
 
-    const body = { LastName: this.LastName, FirstName: this.FirstName, email: this.email, password: this.password };
+    // 👇 employeeNumber ajouté au body
+    const body = {
+      employeeNumber: this.employeeNumber.trim(),
+      LastName: this.LastName,
+      FirstName: this.FirstName,
+      email: this.email,
+      password: this.password
+    };
 
     this.http.post<ApiResponse<RegisterData>>(`${environment.apiUrl}/account/register`, body)
       .subscribe({
@@ -99,16 +109,17 @@ export class Register {
             this.sharedService.showToastMessage(ToastType.Success, res.message || 'Registration successful! Check your email.');
             setTimeout(() => this.router.navigate(['/login']), 2000);
           } else {
-            this.sharedService.showToastMessage(ToastType.Error, res.message || 'Registration failed');
+            this.sharedService.showToastMessage(ToastType.Error, res.error || res.message || 'Registration failed');
           }
           this.isLoading = false;
         },
         error: (err) => {
-          this.sharedService.showToastMessage(ToastType.Error, err?.error?.message || 'Registration failed');
+          this.sharedService.showToastMessage(ToastType.Error, err?.error?.error || err?.error?.message || 'Registration failed');
           this.isLoading = false;
         }
       });
   }
+
 
   goToSignIn() {
     this.router.navigate(['/login']);

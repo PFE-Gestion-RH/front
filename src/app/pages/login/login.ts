@@ -4,6 +4,7 @@ import { Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
 import { DxButtonModule, DxTextBoxModule } from 'devextreme-angular';
+import { TranslateService } from '@ngx-translate/core';
 
 import { LoginResponse } from '../../models/auth/LoginResponse';
 import { ApiResponse } from '../../models/auth/api-response.model';
@@ -30,15 +31,16 @@ export class Login {
   passwordButtonOptions: any = {
     icon: 'eyeclose',
     stylingMode: 'contained',
-    type:'normal',
+    type: 'normal',
     onClick: () => this.togglePassword(),
   };
 
   constructor(
     private http: HttpClient,
     private router: Router,
-    private sharedService: SharedService
-  ) {}
+    private sharedService: SharedService,
+    private translate: TranslateService
+  ) { }
 
   togglePassword() {
     this.passwordMode = this.passwordMode === 'password' ? 'text' : 'password';
@@ -67,18 +69,20 @@ export class Login {
           if (res.isSuccess && res.data) {
             this.sharedService.setUser(res.data.user, res.data.token);
 
+            // Charger la langue de cet utilisateur
+            const userId = res.data.user.id || res.data.user.email || 'default';
+            const savedLanguage = localStorage.getItem(`language_${userId}`) || 'en';
+            this.translate.use(savedLanguage);
+
             const role = res.data.user.role?.toUpperCase();
 
-          if (role === 'ADMIN') {
-    this.sharedService.showToastMessage(ToastType.Success, 'Login successful!');
-    this.router.navigate(['/admin']); 
-} else if (role === 'EMPLOYEE') {
-    this.sharedService.showToastMessage(ToastType.Success, 'Login successful!');
-    this.router.navigate(['/employee']); 
-} else if (role === 'TEAMLEAD') {
-    this.sharedService.showToastMessage(ToastType.Success, 'Login successful!');
-    this.router.navigate(['/teamlead']); 
-} else {
+            if (role === 'ADMIN') {
+              this.router.navigate(['/admin']);
+            } else if (role === 'EMPLOYEE') {
+              this.router.navigate(['/employee']);
+            } else if (role === 'TEAMLEAD') {
+              this.router.navigate(['/teamlead']);
+            } else {
               this.sharedService.showToastMessage(ToastType.Warning, 'Role not recognized');
             }
           } else {

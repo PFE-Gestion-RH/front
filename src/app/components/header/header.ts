@@ -1,7 +1,8 @@
-import { ChangeDetectorRef, Component, HostListener, inject, OnDestroy, OnInit } from '@angular/core';
+import { ChangeDetectorRef, Component, effect, HostListener, inject, OnDestroy, OnInit } from '@angular/core';
 import { Router, RouterModule } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { TranslateModule } from '@ngx-translate/core';
 import {
   DxButtonModule, DxDropDownButtonModule, DxPopoverModule, DxPopupModule,
   DxTextBoxModule, DxFileUploaderModule, DxLoadIndicatorModule
@@ -19,8 +20,8 @@ export interface AppNotification {
   type: 'success' | 'error' | 'info';
   read: boolean;
   createdAt: Date;
-  rejectionReason?: string;  
-   showDetails?: boolean;
+  rejectionReason?: string;
+  showDetails?: boolean;
 }
 
 @Component({
@@ -29,7 +30,8 @@ export interface AppNotification {
   imports: [
     CommonModule, RouterModule, FormsModule, DxButtonModule, DxPopoverModule,
     DxDropDownButtonModule, DxPopupModule, DxTextBoxModule, DxFileUploaderModule,
-    DxLoadIndicatorModule
+    DxLoadIndicatorModule, TranslateModule
+
   ],
   templateUrl: './header.html',
   styleUrl: './header.scss',
@@ -60,11 +62,25 @@ export class Header implements OnInit, OnDestroy {
     confirmPassword: '',
     profilePictureBase64: null as string | null
   };
-toggleDetails(notif: AppNotification, event: MouseEvent): void {
-  event.stopPropagation();
-  notif.showDetails = !notif.showDetails;
-  this.cdr.detectChanges();
-}
+
+  constructor() {
+
+    effect(() => {
+      if (this.sharedService.refreshHeaderProfilePicture()) {
+        this.cdr.detectChanges()
+      }
+    })
+  }
+
+  goToSettings(): void {
+    this.router.navigate(['/admin/settings']);
+  }
+
+  toggleDetails(notif: AppNotification, event: MouseEvent): void {
+    event.stopPropagation();
+    notif.showDetails = !notif.showDetails;
+    this.cdr.detectChanges();
+  }
   ngOnInit(): void {
     const token = this.sharedService.getToken();
     if (token) {

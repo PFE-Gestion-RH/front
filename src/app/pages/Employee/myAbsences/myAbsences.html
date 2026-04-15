@@ -2,66 +2,49 @@
   <div class="absences-grid" style="position: relative;">
 
     <dx-load-panel [visible]="isLoading" [position]="{ of: '.absences-grid' }" [showIndicator]="true" [showPane]="true"
-      [shading]="true" [shadingColor]="'rgba(255,255,255,0.6)'" message="Loading...">
+      [shading]="true" [shadingColor]="'rgba(255,255,255,0.6)'" [message]="'MY_ABSENCES.LOADING' | translate">
     </dx-load-panel>
 
     <div class="app-page-header">
-      <h2 class="page-title">My Absences</h2>
-      <button class="add-btn" (click)="openAdd()">+ New Absence</button>
+      <h2 class="page-title">{{ 'MY_ABSENCES.TITLE' | translate }}</h2>
+      <button class="add-btn" (click)="openAdd()">{{ 'MY_ABSENCES.ADD' | translate }}</button>
     </div>
 
-    <!-- TABLE -->
     <div class="table-view">
-      <dx-data-grid
-       [dataSource]="sharedDataSource" 
-       [columns]="columns" [showBorders]="false"
-        [showRowLines]="true"
-        [showColumnLines]="false"
-         [hoverStateEnabled]="true"
-  [remoteOperations]="{ paging: true, filtering: false, sorting: false }">
-
+      <dx-data-grid [dataSource]="sharedDataSource" [columns]="columns" [showBorders]="false" [showRowLines]="true"
+        [showColumnLines]="false" [hoverStateEnabled]="true"
+        [remoteOperations]="{ paging: true, filtering: false, sorting: false }">
         <dxo-load-panel [enabled]="false"></dxo-load-panel>
-        <dxo-search-panel [visible]="true" placeholder="Search..."></dxo-search-panel>
+        <dxo-search-panel [visible]="true" [placeholder]="'MY_ABSENCES.SEARCH' | translate"></dxo-search-panel>
         <dxo-selection mode="none"></dxo-selection>
         <dxo-editing [allowUpdating]="false" [allowDeleting]="false" [allowAdding]="false"></dxo-editing>
         <dxo-paging [enabled]="true" [pageSize]="pageSize"></dxo-paging>
-        <dxo-pager [visible]="true" [showNavigationButtons]="true" [showInfo]="true" infoText="{0}-{1} of {2} absences">
+        <dxo-pager [visible]="true" [showNavigationButtons]="true" [showInfo]="true"
+          [infoText]="'MY_ABSENCES.INFO' | translate">
         </dxo-pager>
-
       </dx-data-grid>
     </div>
 
-    <!-- CARDS -->
     <div class="cards-view" [class.is-loading]="isLoading">
-       <dx-card-view
-  [dataSource]="cardDataSource"
-  keyExpr="id"
-  [cardMinWidth]="280"
-  cardsPerRow="auto"
-  [remoteOperations]="{ paging: true }">
-
-
-        <dxo-card-view-search-panel [visible]="true" placeholder="Search..."></dxo-card-view-search-panel>
+      <dx-card-view [dataSource]="cardDataSource" keyExpr="id" [cardMinWidth]="280" cardsPerRow="auto"
+        [remoteOperations]="{ paging: true }">
+        <dxo-card-view-search-panel [visible]="true"
+          [placeholder]="'MY_ABSENCES.SEARCH' | translate"></dxo-card-view-search-panel>
         <dxo-card-view-paging [enabled]="true" [pageSize]="pageSize"></dxo-card-view-paging>
         <dxo-card-view-pager [visible]="true" [showNavigationButtons]="true" [showInfo]="true"
-          infoText="{0}-{1} of {2} absences">
+          [infoText]="'MY_ABSENCES.INFO' | translate">
         </dxo-card-view-pager>
-
         <dxi-card-view-column dataField="leaveCategoryName" [visible]="false"
           [allowSearch]="true"></dxi-card-view-column>
         <dxi-card-view-column dataField="startDate" [visible]="false" [allowSearch]="true"></dxi-card-view-column>
         <dxi-card-view-column dataField="endDate" [visible]="false" [allowSearch]="true"></dxi-card-view-column>
         <dxi-card-view-column dataField="numberOfDays" [visible]="false" [allowSearch]="true"></dxi-card-view-column>
-
         <dxi-card-view-column caption="" [calculateFieldValue]="getCardData" fieldValueTemplate="cardBodyTemplate"
           [allowSorting]="false" [allowSearch]="false" [allowFiltering]="false">
         </dxi-card-view-column>
-
         <div *dxTemplate="let params of 'cardBodyTemplate'" class="card-body-template">
           <div class="card-top">
-            <div class="card-avatar">
-              {{ params.field.value?.leaveCategoryName?.[0] | uppercase }}
-            </div>
+            <div class="card-avatar">{{ params.field.value?.leaveCategoryName?.[0] | uppercase }}</div>
             <div class="card-info">
               <h4 class="card-name">{{ params.field.value?.leaveCategoryName || 'N/A' }}</h4>
               <span class="card-role">
@@ -78,123 +61,104 @@
             </span>
           </div>
         </div>
-
       </dx-card-view>
     </div>
-
   </div>
 
-<!-- Popup ajout Absence -->
-<dx-popup [(visible)]="showPopup" [width]="500" [height]="'auto'" title="New Absence" [showCloseButton]="!isSaving">
-  <div *dxTemplate="let data of 'content'" class="profile-form">
-    <dx-validation-group #validationGroup>
-      <div class="form-section">
+  <dx-popup [(visible)]="showPopup" [width]="500" [height]="'auto'" [title]="'MY_ABSENCES.NEW_TITLE' | translate"
+    [showCloseButton]="!isSaving">
+    <div *dxTemplate="let data of 'content'" class="profile-form">
+      <dx-validation-group #validationGroup>
+        <div class="form-section">
 
-        <div class="form-field">
-          <label>Leave Type</label>
-          <dx-select-box
-            [dataSource]="leaveCategories"
-            displayExpr="name"
-            valueExpr="id"
-            [(value)]="newAbsence.leaveCategoryId"
-            placeholder="Select a leave type"
-            [disabled]="isSaving"
-            (onValueChanged)="onCategoryChange()">
-            <dx-validator>
-              <dxi-validation-rule type="required" message="Leave type is required"></dxi-validation-rule>
-            </dx-validator>
-          </dx-select-box>
-        </div>
-
-        @if (newAbsence.leaveCategoryId) {
-          @for (b of balances; track b.leaveCategoryId) {
-            @if (b.leaveCategoryId == newAbsence.leaveCategoryId && b.maxDays > 0) {
-              <div class="balance-info">
-                <span class="balance-item">
-                  <span class="balance-label">Used</span>
-                  <span class="balance-value used">{{ b.usedDays }} days</span>
-                </span>
-                <span class="balance-item">
-                  <span class="balance-label">Remaining</span>
-                  <span class="balance-value" [class.low]="b.remainingDays <= 2">{{ b.remainingDays }} days</span>
-                </span>
-                <span class="balance-item">
-                  <span class="balance-label">Total</span>
-                  <span class="balance-value">{{ b.maxDays }} days</span>
-                </span>
-              </div>
-            }
-            @if (b.leaveCategoryId == newAbsence.leaveCategoryId && b.maxDays == 0) {
-            
-            }
-          }
-        }
-
-        <div class="form-field">
-          <label>Date Range</label>
-          <dx-date-range-box
-            [(startDate)]="absenceDateRange.startDate"
-            [(endDate)]="absenceDateRange.endDate"
-            displayFormat="dd/MM/yyyy"
-            [disabled]="isSaving"
-            (onValueChanged)="onDateRangeChanged($event)">
-            <dx-validator>
-              <dxi-validation-rule type="required" message="Date range is required"></dxi-validation-rule>
-            </dx-validator>
-          </dx-date-range-box>
-        </div>
-
-        <div class="form-field">
-          <label>Number of Days
-            <span class="days-info">{{ maxDaysAllowed > 0 ? '(max ' + maxDaysAllowed + ')' : '' }}</span>
-          </label>
-          <dx-number-box
-            [(value)]="newAbsence.numberOfDays"
-            [min]="1"
-            [max]="maxDaysAllowed > 0 ? maxDaysAllowed : 9999"
-            [disabled]="isSaving"
-            (onValueChanged)="onDaysChange()">
-            <dx-validator>
-              <dxi-validation-rule type="required" message="Number of days is required"></dxi-validation-rule>
-            </dx-validator>
-          </dx-number-box>
-        </div>
-<div class="form-field">
-  <label>Notes</label>
-  <textarea
-    [(ngModel)]="newAbsence.notes"
-    placeholder="Optional notes..."
-    [disabled]="isSaving"
-    rows="3"
-    class="notes-textarea">
-  </textarea>
-</div>
-        @if (requiresDocument) {
           <div class="form-field">
-            <label>Medical Certificate</label>
-            <dx-file-uploader
-              accept="image/*,.pdf"
-              [multiple]="false"
-              [uploadMode]="'useForm'"
-              [disabled]="isSaving"
+            <label>{{ 'MY_ABSENCES.LEAVE_TYPE' | translate }}</label>
+            <dx-select-box [dataSource]="leaveCategories" displayExpr="name" valueExpr="id"
+              [(value)]="newAbsence.leaveCategoryId" [placeholder]="'MY_ABSENCES.SELECT_LEAVE' | translate"
+              [disabled]="isSaving" (onValueChanged)="onCategoryChange()">
+              <dx-validator>
+                <dxi-validation-rule type="required" message="Leave type is required"></dxi-validation-rule>
+              </dx-validator>
+            </dx-select-box>
+          </div>
+
+          @if (newAbsence.leaveCategoryId) {
+          @for (b of balances; track b.leaveCategoryId) {
+          @if (b.leaveCategoryId == newAbsence.leaveCategoryId && b.maxDays > 0) {
+          <div class="balance-info">
+            <span class="balance-item">
+              <span class="balance-label">{{ 'MY_ABSENCES.USED' | translate }}</span>
+              <span class="balance-value used">{{ b.usedDays }} days</span>
+            </span>
+            <span class="balance-item">
+              <span class="balance-label">{{ 'MY_ABSENCES.REMAINING' | translate }}</span>
+              <span class="balance-value" [class.low]="b.remainingDays <= 2">{{ b.remainingDays }} days</span>
+            </span>
+            <span class="balance-item">
+              <span class="balance-label">{{ 'MY_ABSENCES.TOTAL' | translate }}</span>
+              <span class="balance-value">{{ b.maxDays }} days</span>
+            </span>
+          </div>
+          }
+          }
+          }
+          <div class="form-field">
+            <label>{{ 'MY_ABSENCES.DATE_RANGE' | translate }}</label>
+            <dx-date-range-box [(startDate)]="absenceDateRange.startDate" [(endDate)]="absenceDateRange.endDate"
+              displayFormat="dd/MM/yyyy" [disabled]="isSaving" (onValueChanged)="onDateRangeChanged($event)">
+              <dx-validator>
+                <dxi-validation-rule type="required" message="Date range is required"></dxi-validation-rule>
+              </dx-validator>
+            </dx-date-range-box>
+
+            <!-- Badge coloré -->
+            <div class="occupation-badge" *ngIf="occupationBadge" [ngClass]="occupationBadge.color">
+              {{ occupationBadge.message }}
+            </div>
+          </div>
+          <div class="form-field">
+            <label>{{ 'MY_ABSENCES.NUMBER_OF_DAYS' | translate }}
+              <span class="days-info">{{ maxDaysAllowed > 0 ? '(' + ('MY_ABSENCES.MAX' | translate) + ' ' +
+                maxDaysAllowed + ')' : '' }}</span>
+            </label>
+            <dx-number-box [(value)]="newAbsence.numberOfDays" [min]="1"
+              [max]="maxDaysAllowed > 0 ? maxDaysAllowed : 9999" [disabled]="isSaving"
+              (onValueChanged)="onDaysChange()">
+              <dx-validator>
+                <dxi-validation-rule type="required" message="Number of days is required"></dxi-validation-rule>
+              </dx-validator>
+            </dx-number-box>
+          </div>
+
+          <div class="form-field">
+            <label>{{ 'MY_ABSENCES.NOTES' | translate }}</label>
+            <textarea [(ngModel)]="newAbsence.notes" [placeholder]="'MY_ABSENCES.NOTES_PLACEHOLDER' | translate"
+              [disabled]="isSaving" rows="3" class="notes-textarea">
+            </textarea>
+          </div>
+
+          @if (requiresDocument) {
+          <div class="form-field">
+            <label>{{ 'MY_ABSENCES.MEDICAL' | translate }}</label>
+            <dx-file-uploader accept="image/*,.pdf" [multiple]="false" [uploadMode]="'useForm'" [disabled]="isSaving"
               (onValueChanged)="onFileSelected($event)">
             </dx-file-uploader>
           </div>
-        }
+          }
 
-      </div>
-      <div class="form-actions">
-        <dx-button text="Cancel" [disabled]="isSaving" (onClick)="showPopup = false"></dx-button>
-     <dx-button [disabled]="isSaving" type="default" (onClick)="save(validationGroup)">
-  <div *dxTemplate="let data of 'content'" style="display:flex;align-items:center;justify-content:center;gap:8px;">
-    <dx-load-indicator [visible]="isSaving" height="16" width="16"></dx-load-indicator>
-    @if (!isSaving) {
-      <span>Submit</span>
-    }
-  </div>
-</dx-button>
-      </div>
-    </dx-validation-group>
-  </div>
-</dx-popup>
+        </div>
+        <div class="form-actions">
+          <dx-button [text]="'MY_ABSENCES.CANCEL' | translate" [disabled]="isSaving"
+            (onClick)="showPopup = false"></dx-button>
+          <dx-button [disabled]="isSaving" type="default" (onClick)="save(validationGroup)">
+            <div *dxTemplate="let data of 'content'"
+              style="display:flex;align-items:center;justify-content:center;gap:8px;">
+              <dx-load-indicator [visible]="isSaving" height="16" width="16"></dx-load-indicator>
+              @if (!isSaving) { <span>{{ 'MY_ABSENCES.SUBMIT' | translate }}</span> }
+            </div>
+          </dx-button>
+        </div>
+      </dx-validation-group>
+    </div>
+  </dx-popup>
 </div>

@@ -1,0 +1,105 @@
+<div class="settings-page">
+  <div class="app-page-header">
+    <h1 class="page-title">{{ 'SETTINGS.TITLE' | translate }}</h1>
+  </div>
+
+  <div class="settings-content">
+    <div class="settings-card">
+
+      <div class="section-title">{{ 'SETTINGS.PERSONAL_INFO' | translate }}</div>
+
+      <div class="avatar-section">
+        <div class="avatar-wrapper">
+          @if (userProfilePicture) {
+          <img [src]="userProfilePicture" alt="Profile" class="avatar-img" />
+          } @else {
+          <div class="avatar-initials">{{ userInitials }}</div>
+          }
+        </div>
+        <label class="upload-btn">
+          <i class="dx-icon-upload"></i> {{ 'SETTINGS.CHANGE_PHOTO' | translate }}
+          <input type="file" accept="image/*" (change)="onFileSelected($event)" hidden />
+        </label>
+      </div>
+
+      <div class="form-row">
+        <div class="form-field">
+          <label>{{ 'SETTINGS.FIRST_NAME' | translate }}</label>
+          <input [(ngModel)]="profile.firstName" class="form-input" [placeholder]="'SETTINGS.FIRST_NAME' | translate"
+            disabled />
+        </div>
+        <div class="form-field">
+          <label>{{ 'SETTINGS.LAST_NAME' | translate }}</label>
+          <input [(ngModel)]="profile.lastName" class="form-input" [placeholder]="'SETTINGS.LAST_NAME' | translate"
+            disabled />
+        </div>
+      </div>
+
+      <div class="form-field">
+        <label>{{ 'SETTINGS.EMAIL' | translate }}</label>
+        <input [(ngModel)]="profile.email" class="form-input" type="email" [placeholder]="'SETTINGS.EMAIL' | translate"
+          disabled />
+      </div>
+
+      <div class="section-title">{{ 'SETTINGS.CHANGE_PASSWORD' | translate }}</div>
+
+     
+
+      <div class="form-field">
+        <label>{{ 'SETTINGS.NEW_PASSWORD' | translate }}</label>
+        <input [(ngModel)]="profile.newPassword" class="form-input" type="password"
+          [placeholder]="'SETTINGS.NEW_PASSWORD' | translate" />
+      </div>
+
+      <div class="form-field">
+        <label>{{ 'SETTINGS.CONFIRM_PASSWORD' | translate }}</label>
+        <input [(ngModel)]="profile.confirmPassword" class="form-input" type="password"
+          [placeholder]="'SETTINGS.CONFIRM_PASSWORD' | translate" />
+      </div>
+
+      <div class="form-actions">
+        <button class="add-btn" (click)="saveProfile()" [disabled]="isSaving">
+          {{ isSaving ? ('SETTINGS.SAVING' | translate) : ('SETTINGS.SAVE_PROFILE' | translate) }}
+        </button>
+      </div>
+
+      <hr class="section-divider" />
+
+      <div class="section-title">{{ 'SETTINGS.DEFAULT_VIEW' | translate }}</div>
+
+      <div class="view-toggle">
+        <button class="view-btn" [class.active]="viewMode === 'grid'" (click)="viewMode = 'grid'">
+          <i class="dx-icon-columnchooser"></i> {{ 'SETTINGS.GRID' | translate }}
+        </button>
+        <button class="view-btn" [class.active]="viewMode === 'card'" (click)="viewMode = 'card'">
+          <i class="dx-icon-smalliconslayout"></i> {{ 'SETTINGS.CARDS' | translate }}
+        </button>
+      </div>
+
+      <div class="form-actions">
+        <button class="add-btn" (click)="saveUISettings()">{{ 'SETTINGS.SAVE_UI' | translate }}</button>
+      </div>
+
+      <hr class="section-divider" />
+
+      <div class="section-title">{{ 'SETTINGS.LANGUAGE' | translate }}</div>
+
+      <div class="language-list">
+        @for (lang of languages; track lang.value) {
+        <div class="language-item" [class.selected]="language === lang.value" (click)="language = lang.value">
+          <span class="lang-flag">{{ lang.value === 'fr' ? '🇫🇷' : '🇬🇧' }}</span>
+          <span class="lang-label">{{ lang.label }}</span>
+          @if (language === lang.value) {
+          <i class="dx-icon-check lang-check"></i>
+          }
+        </div>
+        }
+      </div>
+
+      <div class="form-actions">
+        <button class="add-btn" (click)="saveLanguage()">{{ 'SETTINGS.SAVE_LANGUAGE' | translate }}</button>
+      </div>
+
+    </div>
+  </div>
+</div>

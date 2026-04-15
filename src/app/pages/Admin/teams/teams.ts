@@ -3,6 +3,7 @@ import { HttpClient } from '@angular/common/http';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { firstValueFrom } from 'rxjs';
+import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { SharedService } from '../../../services/shared.service';
 import { ToastType } from '../../../components/toast/toast';
 import { ApiResponse } from '../../../models/auth/api-response.model';
@@ -28,24 +29,11 @@ import { environment } from '../../../environments/environment';
   selector: 'app-teams',
   standalone: true,
   imports: [
-    CommonModule,
-    FormsModule,
-    DxDataGridModule,
-    DxCardViewComponent,
-    DxiCardViewColumnComponent,
-    DxoCardViewPagingComponent,
-    DxoCardViewSearchPanelComponent,
-    DxoCardViewPagerComponent,
-    DxTemplateModule,
-    DxPopupComponent,
-    DxButtonComponent,
-    DxCheckBoxComponent,
-    DxLoadIndicatorModule,
-    DxLoadPanelModule,
-    DxTextBoxModule,
-    DxSelectBoxModule,
-    DxValidatorModule,
-    DxValidationGroupComponent
+    CommonModule, FormsModule, DxDataGridModule, DxCardViewComponent,
+    DxiCardViewColumnComponent, DxoCardViewPagingComponent, DxoCardViewSearchPanelComponent,
+    DxoCardViewPagerComponent, DxTemplateModule, DxPopupComponent, DxButtonComponent,
+    DxCheckBoxComponent, DxLoadIndicatorModule, DxLoadPanelModule, DxTextBoxModule,
+    DxSelectBoxModule, DxValidatorModule, DxValidationGroupComponent, TranslateModule
   ],
   templateUrl: './teams.html',
   styleUrl: './teams.scss',
@@ -58,6 +46,7 @@ export class Teams implements OnInit {
   sharedDataSource!: DataSource;
   allUsers = signal<User[]>([]);
   pageSize = 10;
+  columns: any[] = [];
 
   isLoading = false;
   isSaving = false;
@@ -70,46 +59,7 @@ export class Teams implements OnInit {
   teamToDelete: Team | null = null;
   editingTeamId: number | null = null;
 
-  columns: (string | dxDataGridColumn<any, any>)[] = [
-    { dataField: 'name', caption: 'Team Name' },
-    { dataField: 'teamLeadName', caption: 'Team Lead' },
-    {
-      caption: 'Members',
-      calculateCellValue: (row: Team) =>
-        row.members.length > 0
-          ? row.members.map(m => `${m.firstName} ${m.lastName}`).join(', ')
-          : 'No members'
-    },
-    {
-      caption: 'Actions',
-      minWidth: 200,
-      cellTemplate: (container: any, options: any) => {
-        const data = options.data;
-
-        const editBtn = document.createElement('button');
-        editBtn.className = 'action-btn edit-btn';
-        editBtn.innerHTML = '<i class="dx-icon dx-icon-edit"></i> Edit';
-        editBtn.onclick = () => {
-          setTimeout(() => {
-            this.ngZone.run(() => {
-              this.openEdit(data);
-              this.cdr.detectChanges();
-            });
-          }, 0);
-        };
-
-        const deleteBtn = document.createElement('button');
-        deleteBtn.className = 'action-btn delete-btn';
-        deleteBtn.innerHTML = '<i class="dx-icon dx-icon-trash"></i> Delete';
-        deleteBtn.onclick = () => this.ngZone.run(() => this.deleteTeam(data));
-
-        container.append(editBtn, deleteBtn);
-      }
-    }
-  ];
-
   teamForm: CreateTeamForm = { name: '', teamLeadId: null, memberIds: [] };
-
   getCardData = (rowData: any) => rowData;
 
   get teamLeads(): any[] {
@@ -131,12 +81,58 @@ export class Teams implements OnInit {
     private http: HttpClient,
     private sharedService: SharedService,
     private ngZone: NgZone,
-    private cdr: ChangeDetectorRef
+    private cdr: ChangeDetectorRef,
+    private translate: TranslateService
   ) {}
 
   ngOnInit(): void {
+    this.buildColumns();
     this.initSharedDataSource();
     this.loadUsers();
+    this.translate.onLangChange.subscribe(() => {
+      this.buildColumns();
+      this.cdr.detectChanges();
+    });
+  }
+
+  buildColumns(): void {
+    this.columns = [
+      { dataField: 'name', caption: this.translate.instant('TEAMS.TEAM_NAME') },
+      { dataField: 'teamLeadName', caption: this.translate.instant('TEAMS.TEAM_LEAD') },
+      {
+        caption: this.translate.instant('TEAMS.MEMBERS'),
+        calculateCellValue: (row: Team) =>
+          row.members.length > 0
+            ? row.members.map(m => `${m.firstName} ${m.lastName}`).join(', ')
+            : this.translate.instant('TEAMS.NO_MEMBERS')
+      },
+      {
+        caption: this.translate.instant('TEAMS.ACTIONS'),
+        minWidth: 200,
+        cellTemplate: (container: any, options: any) => {
+          const data = options.data;
+
+          const editBtn = document.createElement('button');
+          editBtn.className = 'action-btn edit-btn';
+          editBtn.innerHTML = `<i class="dx-icon dx-icon-edit"></i> ${this.translate.instant('TEAMS.EDIT')}`;
+          editBtn.onclick = () => {
+            setTimeout(() => {
+              this.ngZone.run(() => {
+                this.openEdit(data);
+                this.cdr.detectChanges();
+              });
+            }, 0);
+          };
+
+          const deleteBtn = document.createElement('button');
+          deleteBtn.className = 'action-btn delete-btn';
+          deleteBtn.innerHTML = `<i class="dx-icon dx-icon-trash"></i> ${this.translate.instant('TEAMS.DELETE')}`;
+          deleteBtn.onclick = () => this.ngZone.run(() => this.deleteTeam(data));
+
+          container.append(editBtn, deleteBtn);
+        }
+      }
+    ];
   }
 
   initSharedDataSource(): void {
@@ -151,7 +147,6 @@ export class Teams implements OnInit {
           const skip = loadOptions.skip ?? 0;
           const take = loadOptions.take ?? this.pageSize;
           const page = Math.floor(skip / take) + 1;
-
           return firstValueFrom(
             this.http.get<ApiResponse<any>>(
               `${environment.apiUrl}/teams?page=${page}&pageSize=${take}`
@@ -194,9 +189,7 @@ export class Teams implements OnInit {
     this.teamForm = { name: '', teamLeadId: null, memberIds: [] };
     this.showPopup = true;
     this.cdr.detectChanges();
-    setTimeout(() => {
-      this.validationGroupRef?.instance?.reset();
-    }, 0);
+    setTimeout(() => { this.validationGroupRef?.instance?.reset(); }, 0);
   }
 
   openEdit(team: Team): void {
@@ -229,7 +222,6 @@ export class Teams implements OnInit {
       this.sharedService.showToastMessage(ToastType.Error, 'Please fill all required fields');
       return;
     }
-
     if (this.isSaving) return;
     this.isSaving = true;
     this.cdr.detectChanges();
@@ -279,7 +271,6 @@ export class Teams implements OnInit {
     if (!this.teamToDelete || this.isDeleting) return;
     this.isDeleting = true;
     this.cdr.detectChanges();
-
     this.http.delete<ApiResponse<string>>(`${environment.apiUrl}/teams/${this.teamToDelete.id}`)
       .subscribe({
         next: (res) => {

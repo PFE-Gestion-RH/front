@@ -1,1 +1,144 @@
-<p>dashboard works!</p>
+<div class="teamlead-dashboard">
+    <div class="dashboard-wrapper">
+
+        <div *ngIf="loading" class="loading-center">
+            <dx-load-indicator [visible]="true" height="60" width="60"></dx-load-indicator>
+            <p>{{ 'TEAMLEAD_DASHBOARD.LOADING' | translate }}</p>
+        </div>
+
+        <ng-container *ngIf="!loading">
+
+            <div class="view-switcher">
+                <button class="switch-btn" [class.active]="currentView === 'me'" (click)="switchView('me')">
+                    {{ 'TEAMLEAD_DASHBOARD.MY_VIEW' | translate }}
+                </button>
+                <button class="switch-btn" [class.active]="currentView === 'team'" (click)="switchView('team')">
+                    {{ 'TEAMLEAD_DASHBOARD.TEAM_VIEW' | translate }}
+                </button>
+            </div>
+
+            <app-employee-dashboard *ngIf="currentView === 'me'"></app-employee-dashboard>
+
+            <ng-container *ngIf="currentView === 'team' && data">
+
+                <div class="kpi-grid">
+                    <div class="kpi-card">
+                        <span class="kpi-label">{{ 'TEAMLEAD_DASHBOARD.TEAM_SIZE' | translate }}</span>
+                        <span class="kpi-value">{{ data.kpi.teamSize }}</span>
+                    </div>
+                    <div class="kpi-card">
+                        <span class="kpi-label">{{ 'TEAMLEAD_DASHBOARD.PRESENT_TODAY' | translate }}</span>
+                        <span class="kpi-value">{{ data.kpi.presentToday }}</span>
+                    </div>
+                    <div class="kpi-card">
+                        <span class="kpi-label">{{ 'TEAMLEAD_DASHBOARD.ABSENT_TODAY' | translate }}</span>
+                        <span class="kpi-value">{{ data.kpi.absentToday }}</span>
+                    </div>
+                    <div class="kpi-card">
+                        <span class="kpi-label">{{ 'TEAMLEAD_DASHBOARD.PENDING_REQUESTS' | translate }}</span>
+                        <span class="kpi-value">{{ data.kpi.pendingRequests }}</span>
+                        <span class="kpi-sub">
+                            {{ data.kpi.pendingAbsences }} absences · {{ data.kpi.pendingPermissions }} permissions
+                        </span>
+                    </div>
+                </div>
+
+                <div class="charts-grid">
+                    <div class="chart-card">
+                        <h3 class="chart-title">{{ 'TEAMLEAD_DASHBOARD.ABSENCE_TREND' | translate }}</h3>
+                        <dx-chart [dataSource]="data.absenceTrend" height="100%">
+                            <dxi-series argumentField="month" valueField="count" type="spline" color="#1D9E75"
+                                name="Absences">
+                                <dxo-point [visible]="true" [size]="6"></dxo-point>
+                            </dxi-series>
+                            <dxo-legend [visible]="false"></dxo-legend>
+                            <dxo-tooltip [enabled]="true"></dxo-tooltip>
+                        </dx-chart>
+                    </div>
+
+                    <div class="chart-card">
+                        <h3 class="chart-title">{{ 'TEAMLEAD_DASHBOARD.ABSENCE_BY_MEMBER' | translate }}</h3>
+                        <dx-chart [dataSource]="data.memberAbsences" [palette]="chartPalette" height="100%">
+                            <dxi-series argumentField="memberName" valueField="absenceCount" type="bar" color="#378ADD"
+                                name="Absences">
+                            </dxi-series>
+                            <dxo-legend [visible]="false"></dxo-legend>
+                            <dxo-tooltip [enabled]="true"></dxo-tooltip>
+                        </dx-chart>
+                    </div>
+
+                    <div class="chart-card member-list-card">
+                        <h3 class="chart-title">{{ 'TEAMLEAD_DASHBOARD.MEMBER_PRESENCE' | translate }}</h3>
+                        <div class="member-list">
+                            <div *ngFor="let m of data.teamMemberStatuses" class="member-row">
+                                <div class="member-avatar">{{ m.fullName[0] }}</div>
+                                <span class="member-name">{{ m.fullName }}</span>
+                                <span class="badge" [class.badge-ok]="m.isPresent" [class.badge-danger]="!m.isPresent">
+                                    {{ m.isPresent ? ('TEAMLEAD_DASHBOARD.PRESENT' | translate) :
+                                    ('TEAMLEAD_DASHBOARD.ABSENT' | translate) }}
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="table-card">
+                    <h3 class="table-title">{{ 'TEAMLEAD_DASHBOARD.RECENT_REQUESTS' | translate }}</h3>
+                    <dx-data-grid [dataSource]="data.recentRequests" [showBorders]="false" [showRowLines]="true"
+                        [showColumnLines]="false" [hoverStateEnabled]="true" [columnAutoWidth]="true">
+
+                        <dxi-column dataField="employeeName" [caption]="'TEAMLEAD_DASHBOARD.MEMBER' | translate"
+                            [minWidth]="70"></dxi-column>
+                        <dxi-column dataField="type" [caption]="'TEAMLEAD_DASHBOARD.TYPE' | translate"
+                            [minWidth]="70"></dxi-column>
+                        <dxi-column [caption]="'TEAMLEAD_DASHBOARD.DATES' | translate" [minWidth]="80"
+                            cellTemplate="datesTpl"></dxi-column>
+                        <dxi-column [caption]="'TEAMLEAD_DASHBOARD.STATUS' | translate" [minWidth]="80"
+                            cellTemplate="statusTpl"></dxi-column>
+                        <dxi-column [caption]="'TEAMLEAD_DASHBOARD.ACTIONS' | translate" [minWidth]="80"
+                            cellTemplate="actionsTpl" alignment="center"></dxi-column>
+
+                        <div *dxTemplate="let cell of 'datesTpl'">{{ cell.data.startDate }} → {{ cell.data.endDate }}
+                        </div>
+                        <div *dxTemplate="let cell of 'statusTpl'">
+                            <span class="badge"
+                                [class.badge-warn]="getStatusConfig(cell.data.status).cssClass === 'badge-warn'"
+                                [class.badge-ok]="getStatusConfig(cell.data.status).cssClass === 'badge-ok'"
+                                [class.badge-danger]="getStatusConfig(cell.data.status).cssClass === 'badge-danger'"
+                                [class.badge-info]="getStatusConfig(cell.data.status).cssClass === 'badge-info'">
+                                {{ getStatusConfig(cell.data.status).label }}
+                            </span>
+                        </div>
+                        <div *dxTemplate="let cell of 'actionsTpl'">
+
+                            <ng-container
+                                *ngIf="cell.data.status === 'PendingTeamLead' || cell.data.status === 'PendingAdministration'; else noActions">
+
+                                <div class="card-actions">
+                                    <button class="action-btn approve-btn" (click)="onApprove(cell.data)">
+                                        <i class="dx-icon dx-icon-check"></i>
+                                        {{ 'TEAMLEAD_DASHBOARD.APPROVE' | translate }}
+                                    </button>
+
+                                    <button class="action-btn reject-btn" (click)="onReject(cell.data)">
+                                        <i class="dx-icon dx-icon-close"></i>
+                                        {{ 'TEAMLEAD_DASHBOARD.REJECT' | translate }}
+                                    </button>
+                                </div>
+
+                            </ng-container>
+
+                            <ng-template #noActions>
+                                <span class="na-value">N/A</span>
+                            </ng-template>
+
+                        </div>
+                    </dx-data-grid>
+                </div>
+
+            </ng-container>
+        </ng-container>
+
+        <dx-toast [(visible)]="toastVisible" [message]="toastMessage" type="info" [displayTime]="3000"></dx-toast>
+    </div>
+</div>

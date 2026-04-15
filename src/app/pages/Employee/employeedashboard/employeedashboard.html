@@ -1,0 +1,106 @@
+<div class="dashboard-wrapper">
+
+    <div *ngIf="loading" class="loading-center">
+        <dx-load-indicator [visible]="true" height="40" width="40"></dx-load-indicator>
+    </div>
+
+    <ng-container *ngIf="!loading && data">
+
+        <div class="kpi-grid">
+            <div class="kpi-card">
+                <span class="kpi-label">{{ 'EMPLOYEE_DASHBOARD.REMAINING_LEAVES' | translate }}</span>
+                <span class="kpi-value">{{ data.kpi.remainingLeaves }}</span>
+            </div>
+            <div class="kpi-card">
+                <span class="kpi-label">{{ 'EMPLOYEE_DASHBOARD.USED_LEAVES' | translate }}</span>
+                <span class="kpi-value">{{ data.kpi.usedLeaveDays }}</span>
+                <span class="kpi-sub">
+                    {{ data.kpi.usedAbsences }} absence / {{ data.kpi.usedPermissions }} permission
+                </span>
+            </div>
+            <div class="kpi-card">
+                <span class="kpi-label">{{ 'EMPLOYEE_DASHBOARD.PENDING_REQUESTS' | translate }}</span>
+                <span class="kpi-value">{{ data.kpi.pendingRequests }}</span>
+                <span class="kpi-sub">{{ data.kpi.pendingAbsences }} abs · {{ data.kpi.pendingPermissions }} perm</span>
+            </div>
+            <div class="kpi-card kpi-card--date">
+                <span class="kpi-label">{{ 'EMPLOYEE_DASHBOARD.NEXT_LEAVE' | translate }}</span>
+                <span class="kpi-value-date">{{ data.kpi.nextLeaveDate || data.kpi.todayDate }}</span>
+                <span class="kpi-sub" *ngIf="data.kpi.nextLeaveDate">
+                    {{ 'EMPLOYEE_DASHBOARD.TYPE' | translate }}: {{ data.kpi.nextLeaveType }}<br>
+                    {{ 'EMPLOYEE_DASHBOARD.DAYS' | translate }}: {{ data.kpi.nextLeaveDays }}
+                </span>
+                <span class="kpi-sub" *ngIf="!data.kpi.nextLeaveDate">
+                    {{ 'EMPLOYEE_DASHBOARD.NO_UPCOMING_LEAVE' | translate }}
+                </span>
+            </div>
+        </div>
+
+        <div class="charts-grid-2">
+            <div class="chart-card">
+                <div class="chart-header">
+                    <h3 class="chart-title">{{ 'EMPLOYEE_DASHBOARD.ABSENCE_TREND' | translate }}</h3>
+                    <div class="period-toggle">
+                        <button *ngFor="let period of periods" [class.active]="selectedPeriod === period.value"
+                            (click)="onPeriodChange(period.value)">
+                            {{ period.label }}
+                        </button>
+                    </div>
+                </div>
+                <dx-chart [dataSource]="filteredAbsenceTrend" height="105">
+                    <dxi-series argumentField="month" valueField="count" type="spline" color="#7F77DD" name="Absences">
+                        <dxo-point [visible]="true" [size]="4"></dxo-point>
+                    </dxi-series>
+                    <dxo-legend [visible]="false"></dxo-legend>
+                    <dxo-tooltip [enabled]="true"></dxo-tooltip>
+                </dx-chart>
+            </div>
+
+            <div class="chart-card">
+                <h3 class="chart-title">{{ 'EMPLOYEE_DASHBOARD.ABSENCE_TYPES' | translate }}</h3>
+                <dx-pie-chart [dataSource]="data.personalAbsenceTypes" [palette]="chartPalette" height="105">
+                    <dxi-series argumentField="type" valueField="count" [label]="{ visible: false }">
+                    </dxi-series>
+                    <dxo-legend [visible]="true" verticalAlignment="bottom" horizontalAlignment="center"
+                        [margin]="{ top: 4 }">
+                    </dxo-legend>
+                    <dxo-tooltip [enabled]="true" [customizeTooltip]="customizePieTooltip"></dxo-tooltip>
+                </dx-pie-chart>
+            </div>
+        </div>
+
+        <div class="table-card">
+            <h3 class="table-title">{{ 'EMPLOYEE_DASHBOARD.RECENT_REQUESTS' | translate }}</h3>
+            <div *ngIf="data.myRequests.length === 0" class="empty-state">
+                {{ 'EMPLOYEE_DASHBOARD.NO_REQUESTS' | translate }}
+            </div>
+            <dx-data-grid *ngIf="data.myRequests.length > 0" [dataSource]="data.myRequests" [showBorders]="true"
+                [showRowLines]="true" [showColumnLines]="true" [hoverStateEnabled]="true" [columnAutoWidth]="true">
+
+                <dxi-column dataField="type" [caption]="'EMPLOYEE_DASHBOARD.TYPE_COL' | translate"
+                    [minWidth]="100"></dxi-column>
+                <dxi-column [caption]="'EMPLOYEE_DASHBOARD.DATES' | translate" [minWidth]="140"
+                    cellTemplate="datesTpl"></dxi-column>
+                <dxi-column [caption]="'EMPLOYEE_DASHBOARD.STATUS' | translate" [minWidth]="110"
+                    cellTemplate="statusTpl"></dxi-column>
+
+
+                <div *dxTemplate="let cell of 'datesTpl'">{{ cell.data.startDate }} → {{ cell.data.endDate }}</div>
+                <div *dxTemplate="let cell of 'statusTpl'">
+                    <span class="badge" [class.badge-warn]="getStatusConfig(cell.data.status).cssClass === 'badge-warn'"
+                        [class.badge-ok]="getStatusConfig(cell.data.status).cssClass === 'badge-ok'"
+                        [class.badge-danger]="getStatusConfig(cell.data.status).cssClass === 'badge-danger'"
+                        [class.badge-info]="getStatusConfig(cell.data.status).cssClass === 'badge-info'">
+                        {{ getStatusConfig(cell.data.status).label }}
+                    </span>
+                </div>
+
+
+                <dxo-pager [showPageSizeSelector]="false" [showInfo]="false"></dxo-pager>
+            </dx-data-grid>
+        </div>
+
+    </ng-container>
+
+    <dx-toast [(visible)]="toastVisible" [message]="toastMessage" type="info" [displayTime]="3000"></dx-toast>
+</div>

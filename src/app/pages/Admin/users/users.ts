@@ -8,12 +8,12 @@ import { ToastType } from '../../../components/toast/toast';
 import { ApiResponse } from '../../../models/auth/api-response.model';
 import { UserForm } from '../../../models/user-form.model';
 import { User } from '../../../models/auth/user.model';
+import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import {
   DxDataGridModule, DxTemplateModule, DxButtonComponent, DxPopupComponent,
   DxLoadIndicatorModule, DxLoadPanelModule, DxTextBoxModule, DxSelectBoxModule,
   DxValidatorModule, DxValidationGroupComponent
 } from 'devextreme-angular';
-import { dxDataGridColumn } from 'devextreme/ui/data_grid';
 import { DxCardViewComponent } from 'devextreme-angular';
 import {
   DxiCardViewColumnComponent,
@@ -29,23 +29,11 @@ import { environment } from '../../../environments/environment';
   selector: 'app-users',
   standalone: true,
   imports: [
-    CommonModule,
-    FormsModule,
-    DxDataGridModule,
-    DxCardViewComponent,
-    DxiCardViewColumnComponent,
-    DxoCardViewPagingComponent,
-    DxTemplateModule,
-    DxoCardViewSearchPanelComponent,
-    DxButtonComponent,
-    DxoCardViewPagerComponent,
-    DxPopupComponent,
-    DxLoadIndicatorModule,
-    DxLoadPanelModule,
-    DxTextBoxModule,
-    DxSelectBoxModule,
-    DxValidatorModule,
-    DxValidationGroupComponent
+    CommonModule, FormsModule, DxDataGridModule, DxCardViewComponent,
+    DxiCardViewColumnComponent, DxoCardViewPagingComponent, DxTemplateModule,
+    DxoCardViewSearchPanelComponent, DxButtonComponent, DxoCardViewPagerComponent,
+    DxPopupComponent, DxLoadIndicatorModule, DxLoadPanelModule, DxTextBoxModule,
+    DxSelectBoxModule, DxValidatorModule, DxValidationGroupComponent, TranslateModule
   ],
   templateUrl: './users.html',
   styleUrls: ['./users.scss'],
@@ -57,6 +45,7 @@ export class Users implements OnInit {
 
   sharedDataSource!: DataSource;
   pageSize = 10;
+  columns: any[] = [];
 
   isLoading = false;
   isSaving = false;
@@ -71,55 +60,8 @@ export class Users implements OnInit {
   userToToggle: User | null = null;
 
   selectedUser: UserForm = {
-    firstName: '',
-    lastName: '',
-    email: '',
-    role: 'Employee',
-    password: ''
+    firstName: '', lastName: '', employeeNumber: '', email: '', role: 'Employee', password: ''
   };
-
-  columns: (string | dxDataGridColumn<any, any>)[] = [
-    { dataField: 'firstName', caption: 'First Name' },
-    { dataField: 'lastName', caption: 'Last Name' },
-    { dataField: 'email', caption: 'Email' },
-    { dataField: 'role', caption: 'Role' },
-    {
-      caption: 'Status',
-      cellTemplate: (container: any, options: any) => {
-        const isActive = options.data.isActive;
-        const span = document.createElement('span');
-        span.textContent = isActive ? 'Active' : 'Inactive';
-        span.className = isActive ? 'badge active' : 'badge inactive';
-        container.append(span);
-      }
-    },
-    {
-      caption: 'Actions',
-      minWidth: 340,
-      cellTemplate: (container: any, options: any) => {
-        const data = options.data;
-
-        const editBtn = document.createElement('button');
-        editBtn.className = 'action-btn edit-btn';
-        editBtn.innerHTML = '<i class="dx-icon dx-icon-edit"></i> Edit';
-        editBtn.onclick = () => this.openEdit(data);
-
-        const toggleBtn = document.createElement('button');
-        toggleBtn.className = 'action-btn toggle-btn';
-        toggleBtn.innerHTML = data.isActive
-          ? '<i class="dx-icon dx-icon-minus"></i> Deactivate'
-          : '<i class="dx-icon dx-icon-check"></i> Activate';
-        toggleBtn.onclick = () => this.toggleActive(data);
-
-        const deleteBtn = document.createElement('button');
-        deleteBtn.className = 'action-btn delete-btn';
-        deleteBtn.innerHTML = '<i class="dx-icon dx-icon-trash"></i> Delete';
-        deleteBtn.onclick = () => this.deleteUser(data);
-
-        container.append(editBtn, toggleBtn, deleteBtn);
-      }
-    }
-  ];
 
   getCardData = (rowData: any) => rowData;
   roles = ['Employee', 'TeamLead', 'Admin'];
@@ -128,11 +70,66 @@ export class Users implements OnInit {
     private http: HttpClient,
     private sharedService: SharedService,
     private ngZone: NgZone,
-    private cdr: ChangeDetectorRef
-  ) {}
+    private cdr: ChangeDetectorRef,
+    private translate: TranslateService
+  ) { }
 
   ngOnInit(): void {
+    this.buildColumns();
     this.initSharedDataSource();
+    this.translate.onLangChange.subscribe(() => {
+      this.buildColumns();
+      this.cdr.detectChanges();
+    });
+  }
+
+  buildColumns(): void {
+    this.columns = [
+      { dataField: 'employeeNumber', caption: this.translate.instant('USERS.EMPLOYEE_NUMBER') }, // 👈 NOUVEAU
+
+      { dataField: 'firstName', caption: this.translate.instant('USERS.FIRST_NAME') },
+      { dataField: 'lastName', caption: this.translate.instant('USERS.LAST_NAME') },
+      { dataField: 'email', caption: this.translate.instant('USERS.EMAIL') },
+      { dataField: 'role', caption: this.translate.instant('USERS.ROLE') },
+      {
+        caption: this.translate.instant('USERS.STATUS'),
+        cellTemplate: (container: any, options: any) => {
+          const isActive = options.data.isActive;
+          const span = document.createElement('span');
+          span.textContent = isActive
+            ? this.translate.instant('USERS.ACTIVE')
+            : this.translate.instant('USERS.INACTIVE');
+          span.className = isActive ? 'badge active' : 'badge inactive';
+          container.append(span);
+        }
+      },
+      {
+        caption: this.translate.instant('USERS.ACTIONS'),
+        minWidth: 400,
+        cellTemplate: (container: any, options: any) => {
+          const data = options.data;
+
+          const editBtn = document.createElement('button');
+          editBtn.className = 'action-btn edit-btn';
+          editBtn.innerHTML = `<i class="dx-icon dx-icon-edit"></i> ${this.translate.instant('USERS.EDIT')}`;
+          editBtn.onclick = () => this.openEdit(data);
+
+          const toggleBtn = document.createElement('button');
+          toggleBtn.className = 'action-btn toggle-btn';
+          toggleBtn.innerHTML = data.isActive
+            ? `<i class="dx-icon dx-icon-minus"></i> ${this.translate.instant('USERS.DEACTIVATE')}`
+            : `<i class="dx-icon dx-icon-check"></i> ${this.translate.instant('USERS.ACTIVATE')}`;
+          toggleBtn.onclick = () => this.toggleActive(data);
+
+          const deleteBtn = document.createElement('button');
+          deleteBtn.className = 'action-btn delete-btn';
+          deleteBtn.innerHTML = `<i class="dx-icon dx-icon-trash"></i> ${this.translate.instant('USERS.DELETE')}`;
+          deleteBtn.onclick = () => this.deleteUser(data);
+
+          container.append(editBtn, toggleBtn, deleteBtn);
+        }
+      }
+    ];
   }
 
   initSharedDataSource(): void {
@@ -153,10 +150,7 @@ export class Users implements OnInit {
             )
           ).then(res => {
             if (res.isSuccess) {
-              return {
-                data: res.data.items,
-                totalCount: res.data.totalCount
-              };
+              return { data: res.data.items, totalCount: res.data.totalCount };
             }
             return { data: [], totalCount: 0 };
           });
@@ -170,20 +164,20 @@ export class Users implements OnInit {
 
   openAdd(): void {
     this.isEditMode = false;
-    this.selectedUser = { firstName: '', lastName: '', email: '', role: 'Employee', password: '' };
+    this.selectedUser = { firstName: '', lastName: '', employeeNumber: '', email: '', role: 'Employee', password: '' };
     this.showPopup = true;
     this.cdr.detectChanges();
-    setTimeout(() => {
-      this.validationGroupRef?.instance?.reset();
-    }, 0);
+    setTimeout(() => { this.validationGroupRef?.instance?.reset(); }, 0);
   }
 
   openEdit(user: User): void {
     this.isEditMode = true;
-    this.selectedUser = { ...user, password: '' };
-    this.showPopup = true;
+    this.selectedUser = {
+      ...user,
+      employeeNumber: user.employeeNumber ?? '', // 👈 fallback
+      password: ''
+    }; this.showPopup = true;
     this.cdr.detectChanges();
-
   }
 
   save(validationGroup: any): void {
@@ -194,7 +188,6 @@ export class Users implements OnInit {
         return;
       }
     }
-
     if (this.isSaving) return;
     this.isSaving = true;
     this.cdr.detectChanges();
@@ -244,7 +237,6 @@ export class Users implements OnInit {
     if (!this.userToDelete || this.isDeleting) return;
     this.isDeleting = true;
     this.cdr.detectChanges();
-
     this.http.delete<ApiResponse<string>>(`${environment.apiUrl}/users/${this.userToDelete.id}`)
       .subscribe({
         next: (res) => {
@@ -273,7 +265,6 @@ export class Users implements OnInit {
     if (!this.userToToggle || this.isToggling) return;
     this.isToggling = true;
     this.cdr.detectChanges();
-
     this.http.patch<ApiResponse<string>>(`${environment.apiUrl}/users/${this.userToToggle.id}/toggle`, {})
       .subscribe({
         next: (res) => {

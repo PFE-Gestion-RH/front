@@ -6,7 +6,8 @@ export interface User {
   role: UserRole;
   isActive: boolean;
   teamId?: number | null;
-profilePicture?: string;
+  profilePicture?: string;
+  employeeNumber: string;
 }
 export enum UserRole {
   Employee = 'Employee',

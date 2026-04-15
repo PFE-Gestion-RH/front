@@ -1,0 +1,355 @@
+$surface: #f8fafc;
+$white: #ffffff;
+$border: #e2e8f0;
+$text: #1e293b;
+$text-muted: #94a3b8;
+$text-dark: #334155;
+$shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+$radius: 8px;
+
+.teamlead-dashboard {
+    height: 100%; 
+    display: flex; 
+    flex-direction: column; 
+    overflow: hidden; 
+
+    .dashboard-wrapper {
+        flex: 1; 
+        min-height: 0;
+        padding: 10px 14px;
+        background-color: $surface;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        box-sizing: border-box;
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        overflow: hidden;
+    }
+
+    app-employee-dashboard {
+        flex: 1;
+        min-height: 0;
+        width: 100%;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+    }
+
+    .loading-center {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        flex: 1;
+        gap: 12px;
+        color: $text-muted;
+        font-size: 13px;
+    }
+
+    // ── View Switcher ───────────────────────────────────────
+    .view-switcher {
+        display: flex;
+        gap: 6px;
+        flex-shrink: 0;
+        background: $white;
+        border: 1px solid $border;
+        border-radius: $radius;
+        padding: 4px;
+        width: fit-content;
+        box-shadow: $shadow;
+
+        .switch-btn {
+            padding: 6px 14px;
+            border: none;
+            background: transparent;
+            color: $text-muted;
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            border-radius: 6px;
+            transition: all 0.2s;
+            font-family: inherit;
+
+            &:hover {
+                color: $text;
+            }
+
+            &.active {
+                background: #1a3a5c;
+                color: $white;
+            }
+        }
+    }
+
+    // ── KPI ─────────────────────────────────────────────────
+    .kpi-grid {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 8px;
+        flex-shrink: 0;
+    }
+
+    .kpi-card {
+        background: $white;
+        border: 1px solid $border;
+        border-radius: $radius;
+        padding: 15px 22px;
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+        box-shadow: $shadow;
+
+        .kpi-label {
+            font-size: 9px;
+            font-weight: 600;
+            color: $text-muted;
+            text-transform: uppercase;
+            letter-spacing: 0.4px;
+        }
+
+        .kpi-value {
+            font-size: 26px;
+            font-weight: 800;
+            color: $text;
+            line-height: 1;
+        }
+
+        .kpi-sub {
+            font-size: 9px;
+            color: $text-muted;
+            line-height: 1.3;
+        }
+    }
+
+    // ── Charts (3 cols) ─────────────────────────────────────
+    .charts-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 8px;
+        flex: 1;
+        min-height: 0;
+    }
+
+    .chart-card {
+        background: $white;
+        border: 1px solid $border;
+        border-radius: $radius;
+        padding: 8px 12px;
+        box-shadow: $shadow;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+        min-height: 0;
+
+        .chart-title {
+            font-size: 10px;
+            font-weight: 600;
+            color: $text-dark;
+            margin: 0 0 4px 0;
+            white-space: nowrap;
+            flex-shrink: 0;
+        }
+
+        dx-chart,
+        dx-pie-chart {
+            flex: 1;
+            min-height: 0;
+        }
+    }
+
+    // ── Member list ─────────────────────────────────────────
+    .member-list-card {
+        .member-list {
+            flex: 1;
+            min-height: 0;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            padding-right: 4px;
+
+            &::-webkit-scrollbar {
+                width: 5px;
+            }
+
+            &::-webkit-scrollbar-thumb {
+                background: $border;
+                border-radius: 3px;
+            }
+        }
+
+        .member-row {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 6px 8px;
+            border-radius: 6px;
+            background: $surface;
+
+            .member-avatar {
+                width: 28px;
+                height: 28px;
+                border-radius: 50%;
+                background: #7F77DD;
+                color: $white;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-size: 11px;
+                font-weight: 700;
+                text-transform: uppercase;
+                flex-shrink: 0;
+            }
+
+            .member-name {
+                flex: 1;
+                font-size: 12px;
+                color: $text;
+                white-space: nowrap;
+                overflow: hidden;
+                text-overflow: ellipsis;
+            }
+        }
+    }
+
+    // ── Table ───────────────────────────────────────────────
+    .table-card {
+        background: $white;
+        border: 1px solid $border;
+        border-radius: $radius;
+        box-shadow: $shadow;
+        flex: 1;
+        min-height: 0;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+
+        .table-title {
+            font-size: 10px;
+            font-weight: 600;
+            color: $text-dark;
+            padding: 8px 12px;
+            margin: 0;
+            flex-shrink: 0;
+            border-bottom: 1px solid $border;
+        }
+
+        dx-data-grid {
+            flex: 1;
+            min-height: 0;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+    }
+
+    // ── Badges ──────────────────────────────────────────────
+    .badge {
+        display: inline-block;
+        padding: 2px 7px;
+        border-radius: 20px;
+        font-size: 10px;
+        font-weight: 600;
+        white-space: nowrap;
+
+        &.badge-warn {
+            background: #fef9c3;
+            color: #92400e;
+        }
+
+        &.badge-ok {
+            background: #dcfce7;
+            color: #15803d;
+        }
+
+        &.badge-danger {
+            background: #fee2e2;
+            color: #b91c1c;
+        }
+
+        &.badge-info {
+            background: #dbeafe;
+            color: #1e40af;
+        }
+    }
+
+    .empty-state {
+        text-align: center;
+        padding: 16px;
+        color: $text-muted;
+        font-size: 12px;
+    }
+}
+
+// ── Responsive (en dehors du scope pour que les media queries fonctionnent) ──
+@media (max-width: 1200px) {
+    .teamlead-dashboard .charts-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .teamlead-dashboard .member-list-card {
+        grid-column: span 2;
+    }
+}
+
+@media (max-width: 1024px) {
+    .teamlead-dashboard .dashboard-wrapper {
+        padding: 8px 10px;
+        overflow-y: auto;
+    }
+
+    .teamlead-dashboard .kpi-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .teamlead-dashboard .charts-grid {
+        grid-template-columns: 1fr;
+        flex: none;
+        min-height: auto;
+    }
+
+    .teamlead-dashboard .member-list-card {
+        grid-column: auto;
+    }
+
+    .teamlead-dashboard .chart-card {
+        min-height: 200px;
+    }
+
+    .teamlead-dashboard .table-card {
+        flex: none;
+        min-height: 250px;
+    }
+}
+
+@media (max-width: 600px) {
+    .teamlead-dashboard .dashboard-wrapper {
+        padding: 6px 8px;
+        gap: 6px;
+    }
+
+    .teamlead-dashboard .kpi-grid {
+        grid-template-columns: 1fr 1fr;
+        gap: 6px;
+    }
+
+    .teamlead-dashboard .kpi-card {
+        padding: 10px 14px;
+
+        .kpi-value {
+            font-size: 20px;
+        }
+
+        .kpi-label {
+            font-size: 8px;
+        }
+    }
+
+    .teamlead-dashboard .chart-card {
+        min-height: 170px;
+
+        .chart-title {
+            font-size: 9px;
+        }
+    }
+}

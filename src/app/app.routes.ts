@@ -1,6 +1,5 @@
 import { Routes } from '@angular/router';
 import { AuthGuard } from './guard/auth-guard';
-import { Dashboard } from './pages/Admin/dashboard/dashboard';
 import { ForgetPassword } from './pages/forget-password/forget-password';
 import { Login } from './pages/login/login';
 import { Register } from './pages/register/register';
@@ -20,9 +19,15 @@ import { AdminAbsences } from './pages/Admin/admin-absences/admin-absences';
 import { AdminPermissions } from './pages/Admin/admin-permissions/admin-permissions';
 import { TeamAbsences } from './pages/TeamLead/team-absences/team-absences';
 import { PublicHolidays } from './pages/Admin/publicholidays/publicholidays';
+import { Settings } from './pages/settings/settings';
+// ── AJOUT : import du dashboard TeamLead ─────────────────────────────────────
+import { TeamleadDashboardComponent } from './pages/TeamLead/dashboard/dashboard';
+import { AdminDahboard } from './pages/Admin/admin-dahboard/admin-dahboard';
+
 export { MyAbsences as myabsences } from './pages/Employee/myAbsences/myAbsences';
 export { MyPermissions as mypermissions } from './pages/Employee/myPermissions/myPermissions';
- export const routes: Routes = [
+
+export const routes: Routes = [
   { path: '', redirectTo: 'login', pathMatch: 'full' },
   { path: 'login', component: Login, canActivate: [NoAuthGuard] },
   { path: 'register', component: Register, canActivate: [NoAuthGuard] },
@@ -34,30 +39,35 @@ export { MyPermissions as mypermissions } from './pages/Employee/myPermissions/m
     component: Layout,
     canActivate: [AuthGuard],
     children: [
-      // Admin
-      { path: 'admin', component: Dashboard, data: { role: 'Admin' } },
+
+      // ── Admin ─────────────────────────────────────────────────────────────
+      { path: 'admin', component: AdminDahboard, data: { role: 'Admin' } },
       { path: 'admin/users', component: Users, data: { role: 'Admin' } },
       { path: 'admin/teams', component: Teams, data: { role: 'Admin' } },
       { path: 'admin/leave-categories', component: LeaveCategories, data: { role: 'Admin' } },
       { path: 'admin/calendar', component: CalendarComponent, data: { role: 'Admin' } },
       { path: 'admin/absences', component: AdminAbsences, data: { role: 'Admin' } },
-{ path: 'admin/permissions', component: AdminPermissions, data: { role: 'Admin' } },
-{ path: 'admin/publicholidays', component: PublicHolidays, data: { role: 'Admin' } },
+      { path: 'admin/permissions', component: AdminPermissions, data: { role: 'Admin' } },
+      { path: 'admin/publicholidays', component: PublicHolidays, data: { role: 'Admin' } },
+      { path: 'admin/settings', component: Settings },
 
-      // Teamlead
-      { path: 'teamlead', component: CalendarComponent, data: { role: 'Teamlead' } },
-      { path: 'teamlead/calendar', component: CalendarComponent, data: { role: 'Teamlead' } },
-      { path: 'teamlead/permissions', component: TeamPermissions, data: { role: 'Teamlead' } },
-      { path: 'teamlead/absences', component: TeamAbsences, data: { role: 'Teamlead' } },
-            { path: 'teamlead/myabsences', component: MyAbsences, data: { role: 'Teamlead' } },
-      { path: 'teamlead/mypermissions', component: MyPermissions, data: { role: 'Teamlead' } },
+      // ── TeamLead ──────────────────────────────────────────────────────────
+      // CORRIGÉ : pointe vers TeamleadDashboardComponent au lieu de CalendarComponent
+      { path: 'teamlead', component: TeamleadDashboardComponent, data: { role: 'TeamLead' } },
+      { path: 'teamlead/calendar', component: CalendarComponent, data: { role: 'TeamLead' } },
+      { path: 'teamlead/permissions', component: TeamPermissions, data: { role: 'TeamLead' } },
+      { path: 'teamlead/absences', component: TeamAbsences, data: { role: 'TeamLead' } },
+      { path: 'teamlead/myabsences', component: MyAbsences, data: { role: 'TeamLead' } },
+      { path: 'teamlead/mypermissions', component: MyPermissions, data: { role: 'TeamLead' } },
+      { path: 'teamlead/settings', component: Settings },
 
-
-      // Employee
+      // ── Employee ──────────────────────────────────────────────────────────
       { path: 'employee', component: Employeedashboard, data: { role: 'Employee' } },
       { path: 'employee/absences', component: MyAbsences, data: { role: 'Employee' } },
       { path: 'employee/permissions', component: MyPermissions, data: { role: 'Employee' } },
       { path: 'employee/calendar', component: CalendarComponent, data: { role: 'Employee' } },
+      { path: 'employee/settings', component: Settings },
+
     ]
   },
 ];

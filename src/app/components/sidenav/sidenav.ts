@@ -3,6 +3,7 @@ import { RouterModule } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { DxListModule, DxButtonModule } from 'devextreme-angular';
 import { SharedService } from '../../services/shared.service';
+import { TranslateModule } from '@ngx-translate/core';
 
 interface NavItem {
   label: string;
@@ -13,7 +14,7 @@ interface NavItem {
 @Component({
   selector: 'app-sidenav',
   standalone: true,
-  imports: [CommonModule, RouterModule, DxListModule, DxButtonModule],
+  imports: [CommonModule, RouterModule, DxListModule, DxButtonModule, TranslateModule],
   templateUrl: './sidenav.html',
   styleUrl: './sidenav.scss',
 })
@@ -39,33 +40,35 @@ export class Sidenav {
   get mainLinks(): NavItem[] {
     if (this.role === 'ADMIN') {
       return [
-        { label: 'Dashboard',        icon: 'home',        route: '/admin' },
-        { label: 'Users',            icon: 'group',       route: '/admin/users' },
-        { label: 'Teams',            icon: 'group',       route: '/admin/teams' },
-        { label: 'Leave Categories', icon: 'columnfield', route: '/admin/leave-categories' },
-          { label: 'Absences',         icon: 'event',       route: '/admin/absences' },
-    { label: 'Permissions',      icon: 'clock',       route: '/admin/permissions' },
-        { label: 'Calendar',         icon: 'event',       route: '/admin/calendar' },
-{ label: 'Jours férier', icon: 'globe', route: '/admin/publicholidays' },
-
+        { label: 'SIDEBAR.DASHBOARD', icon: 'home', route: '/admin' },
+        { label: 'SIDEBAR.USERS', icon: 'group', route: '/admin/users' },
+        { label: 'SIDEBAR.TEAMS', icon: 'group', route: '/admin/teams' },
+        { label: 'SIDEBAR.LEAVE_CATEGORIES', icon: 'columnfield', route: '/admin/leave-categories' },
+        { label: 'SIDEBAR.ABSENCES', icon: 'event', route: '/admin/absences' },
+        { label: 'SIDEBAR.PERMISSIONS', icon: 'clock', route: '/admin/permissions' },
+        { label: 'SIDEBAR.CALENDAR', icon: 'event', route: '/admin/calendar' },
+        { label: 'SIDEBAR.PUBLIC_HOLIDAYS', icon: 'globe', route: '/admin/publicholidays' },
       ];
     }
-  if (this.role === 'TEAMLEAD') {
-  return [
-    { label: 'Dashboard',        icon: 'home',      route: '/teamlead' },
-     { label: 'My Absences',    icon: 'event', route: '/employee/absences' },
-      { label: 'My Permissions', icon: 'clock', route: '/employee/permissions' },
-    { label: 'Team Absences',    icon: 'event',     route: '/teamlead/absences' },
-    { label: 'Team Permissions', icon: 'clock',     route: '/teamlead/permissions' },
-    { label: 'Calendar',         icon: 'event',     route: '/teamlead/calendar' },
-   
-  ];
-}
+
+    if (this.role === 'TEAMLEAD') {
+      return [
+        { label: 'SIDEBAR.DASHBOARD', icon: 'home', route: '/teamlead' },
+        // CORRIGÉ : pointaient vers /employee/absences et /employee/permissions
+        { label: 'SIDEBAR.MY_ABSENCES', icon: 'event', route: '/teamlead/myabsences' },
+        { label: 'SIDEBAR.MY_PERMISSIONS', icon: 'clock', route: '/teamlead/mypermissions' },
+        { label: 'SIDEBAR.TEAM_ABSENCES', icon: 'event', route: '/teamlead/absences' },
+        { label: 'SIDEBAR.TEAM_PERMISSIONS', icon: 'clock', route: '/teamlead/permissions' },
+        { label: 'SIDEBAR.CALENDAR', icon: 'event', route: '/teamlead/calendar' },
+      ];
+    }
+
+    // Employee
     return [
-      { label: 'Dashboard',      icon: 'home',  route: '/employee' },
-      { label: 'My Absences',    icon: 'event', route: '/employee/absences' },
-      { label: 'My Permissions', icon: 'clock', route: '/employee/permissions' },
-      { label: 'Calendar',       icon: 'event', route: '/employee/calendar' },
+      { label: 'SIDEBAR.DASHBOARD', icon: 'home', route: '/employee' },
+      { label: 'SIDEBAR.MY_ABSENCES', icon: 'event', route: '/employee/absences' },
+      { label: 'SIDEBAR.MY_PERMISSIONS', icon: 'clock', route: '/employee/permissions' },
+      { label: 'SIDEBAR.CALENDAR', icon: 'event', route: '/employee/calendar' },
     ];
   }
 

@@ -9,6 +9,7 @@ export class SharedService {
   public sideNavOpen = signal(false)
   public toastType = signal<ToastType>(ToastType.Success)
   public toastMessage = signal('')
+  public   refreshHeaderProfilePicture = signal(0)
 
   private toastTimeOut: number;
 

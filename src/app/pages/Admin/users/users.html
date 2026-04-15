@@ -1,58 +1,40 @@
 <div class="users-page">
   <div class="users-grid" style="position: relative;">
- 
-  <dx-load-panel
-    [visible]="isLoading"
-    [position]="{ of: '.users-grid' }"
-    [showIndicator]="true"
-    [showPane]="true"
-    [shading]="true"
-    [shadingColor]="'rgba(255,255,255,0.6)'"
-    message="Loading...">
-  </dx-load-panel>
+
+    <dx-load-panel [visible]="isLoading" [position]="{ of: '.users-grid' }" [showIndicator]="true" [showPane]="true"
+      [shading]="true" [shadingColor]="'rgba(255,255,255,0.6)'" [message]="'USERS.LOADING' | translate">
+    </dx-load-panel>
+
     <div class="app-page-header">
-      <h2 class="page-title">User Management</h2>
-      <button class="add-btn" (click)="openAdd()">+ Add User</button>
+      <h2 class="page-title">{{ 'USERS.TITLE' | translate }}</h2>
+      <button class="add-btn" (click)="openAdd()">{{ 'USERS.ADD' | translate }}</button>
     </div>
 
     <!-- TABLE desktop -->
     <div class="table-view">
-      <dx-data-grid
-        [dataSource]="sharedDataSource"
-        [columns]="columns"
-        [showBorders]="false"
-        [showRowLines]="true"
-        [showColumnLines]="false"
-        [hoverStateEnabled]="true"
-        keyExpr="id"
-        [remoteOperations]="true">
+      <dx-data-grid [dataSource]="sharedDataSource" [columns]="columns" [showBorders]="false" [showRowLines]="true"
+        [showColumnLines]="false" [hoverStateEnabled]="true" keyExpr="id" [remoteOperations]="true">
 
         <dxo-load-panel [enabled]="false"></dxo-load-panel>
-        <dxo-search-panel [visible]="true" placeholder="Search..."></dxo-search-panel>
+        <dxo-search-panel [visible]="true" [placeholder]="'USERS.SEARCH' | translate"></dxo-search-panel>
         <dxo-selection mode="none"></dxo-selection>
         <dxo-editing [allowUpdating]="false" [allowDeleting]="false" [allowAdding]="false"></dxo-editing>
         <dxo-paging [enabled]="true" [pageSize]="pageSize"></dxo-paging>
         <dxo-pager [visible]="true" [showNavigationButtons]="true" [showInfo]="true"
-          infoText="{0}-{1} of {2} users">
+          [infoText]="'USERS.USERS_INFO' | translate">
         </dxo-pager>
-
       </dx-data-grid>
     </div>
 
     <!-- CARDS tablette/mobile -->
     <div class="cards-view" [class.is-loading]="isLoading">
+      <dx-card-view [dataSource]="sharedDataSource" keyExpr="id" [cardMinWidth]="280" cardsPerRow="auto">
 
-      <dx-card-view
-        [dataSource]="sharedDataSource"
-        keyExpr="id"
-        [cardMinWidth]="280"
-        cardsPerRow="auto"
-        >
-
-        <dxo-card-view-search-panel [visible]="true" placeholder="Search..."></dxo-card-view-search-panel>
+        <dxo-card-view-search-panel [visible]="true"
+          [placeholder]="'USERS.SEARCH' | translate"></dxo-card-view-search-panel>
         <dxo-card-view-paging [enabled]="true" [pageSize]="pageSize"></dxo-card-view-paging>
         <dxo-card-view-pager [visible]="true" [showNavigationButtons]="true" [showInfo]="true"
-          infoText="{0}-{1} of {2} users">
+          [infoText]="'USERS.USERS_INFO' | translate">
         </dxo-card-view-pager>
 
         <dxi-card-view-column dataField="firstName" [visible]="false" [allowSearch]="true"></dxi-card-view-column>
@@ -67,10 +49,11 @@
         <div *dxTemplate="let params of 'cardBodyTemplate'" class="card-body-template">
           <div class="card-top">
             <div class="card-avatar">
-              <img *ngIf="params.field.value?.profilePicture; else initials"
-                [src]="params.field.value?.profilePicture" alt="avatar" />
+              <img *ngIf="params.field.value?.profilePicture; else initials" [src]="params.field.value?.profilePicture"
+                alt="avatar" />
               <ng-template #initials>
-                {{ (params.field.value?.firstName?.[0] ?? '') | uppercase }}{{ (params.field.value?.lastName?.[0] ?? '') | uppercase }}
+                {{ (params.field.value?.firstName?.[0] ?? '') | uppercase }}{{ (params.field.value?.lastName?.[0] ?? '')
+                | uppercase }}
               </ng-template>
             </div>
             <div class="card-info">
@@ -79,7 +62,7 @@
             </div>
             <span class="badge" [class.active]="params.field.value?.isActive"
               [class.inactive]="!params.field.value?.isActive">
-              {{ params.field.value?.isActive ? 'Active' : 'Inactive' }}
+              {{ params.field.value?.isActive ? ('USERS.ACTIVE' | translate) : ('USERS.INACTIVE' | translate) }}
             </span>
           </div>
           <div class="card-email-row">
@@ -88,145 +71,166 @@
           <div class="card-divider"></div>
           <div class="card-actions">
             <button class="action-btn edit-btn" (click)="openEdit(params.field.value); $event.stopPropagation()">
-              <i class="dx-icon dx-icon-edit"></i> Edit
+              <i class="dx-icon dx-icon-edit"></i> {{ 'USERS.EDIT' | translate }}
             </button>
             <button class="action-btn toggle-btn" (click)="toggleActive(params.field.value); $event.stopPropagation()">
               @if (params.field.value?.isActive) {
-                <i class="dx-icon dx-icon-minus"></i> Deactivate
+              <i class="dx-icon dx-icon-minus"></i> {{ 'USERS.DEACTIVATE' | translate }}
               } @else {
-                <i class="dx-icon dx-icon-check"></i> Activate
+              <i class="dx-icon dx-icon-check"></i> {{ 'USERS.ACTIVATE' | translate }}
               }
             </button>
             <button class="action-btn delete-btn" (click)="deleteUser(params.field.value); $event.stopPropagation()">
-              <i class="dx-icon dx-icon-trash"></i> Delete
+              <i class="dx-icon dx-icon-trash"></i> {{ 'USERS.DELETE' | translate }}
             </button>
           </div>
         </div>
-
       </dx-card-view>
     </div>
-
   </div>
 
-<!-- Popup Add/Edit User -->
-<dx-popup [(visible)]="showPopup" [width]="500" [height]="'auto'"
-  [title]="isEditMode ? 'Edit User' : 'Add User'"
-  [showCloseButton]="!isSaving">
-  <div *dxTemplate="let data of 'content'" class="profile-form">
-    <dx-validation-group #validationGroup>
-      <div class="form-section">
-
-        <div class="form-field">
-          <label>First Name</label>
-          <dx-text-box [(value)]="selectedUser.firstName" placeholder="Enter first name" [disabled]="isSaving">
-            <dx-validator>
-              <dxi-validation-rule type="required" message="First name is required"></dxi-validation-rule>
-            </dx-validator>
-          </dx-text-box>
-        </div>
-
-        <div class="form-field">
-          <label>Last Name</label>
-          <dx-text-box [(value)]="selectedUser.lastName" placeholder="Enter last name" [disabled]="isSaving">
-            <dx-validator>
-              <dxi-validation-rule type="required" message="Last name is required"></dxi-validation-rule>
-            </dx-validator>
-          </dx-text-box>
-        </div>
-
-        <div class="form-field">
-          <label>Email</label>
-          <dx-text-box [(value)]="selectedUser.email" placeholder="Enter email" [disabled]="isSaving">
-            <dx-validator>
-              <dxi-validation-rule type="required" message="Email is required"></dxi-validation-rule>
-              <dxi-validation-rule type="email" message="Invalid email format"></dxi-validation-rule>
-            </dx-validator>
-          </dx-text-box>
-        </div>
-
-        @if (!isEditMode) {
+  <!-- Popup Add/Edit -->
+  <dx-popup [(visible)]="showPopup" [width]="500" [height]="'auto'"
+    [title]="(isEditMode ? 'USERS.EDIT_TITLE' : 'USERS.ADD_TITLE') | translate" [showCloseButton]="!isSaving">
+    <div *dxTemplate="let data of 'content'" class="profile-form">
+      <dx-validation-group #validationGroup>
+        <div class="form-section">
           <div class="form-field">
-            <label>Password</label>
-            <dx-text-box [(value)]="selectedUser.password" mode="password" placeholder="Enter password" [disabled]="isSaving">
+            <label>{{ 'USERS.FIRST_NAME' | translate }}</label>
+            <dx-text-box [(value)]="selectedUser.firstName" [placeholder]="'USERS.FIRST_NAME' | translate"
+              [disabled]="isSaving">
+              <dx-validator>
+                <dxi-validation-rule type="required" message="First name is required"></dxi-validation-rule>
+              </dx-validator>
+            </dx-text-box>
+          </div>
+
+          <div class="form-field">
+            <label>{{ 'USERS.LAST_NAME' | translate }}</label>
+            <dx-text-box [(value)]="selectedUser.lastName" [placeholder]="'USERS.LAST_NAME' | translate"
+              [disabled]="isSaving">
+              <dx-validator>
+                <dxi-validation-rule type="required" message="Last name is required"></dxi-validation-rule>
+              </dx-validator>
+            </dx-text-box>
+          </div>
+          @if (!isEditMode) {
+          <div class="form-field">
+            <label>{{ 'USERS.EMPLOYEE_NUMBER' | translate }}</label>
+            <dx-text-box [(value)]="selectedUser.employeeNumber" [placeholder]="'USERS.EMPLOYEE_NUMBER' | translate"
+              [disabled]="isSaving">
+              <dx-validator>
+                <dxi-validation-rule type="required" message="Employee number is required"></dxi-validation-rule>
+              </dx-validator>
+            </dx-text-box>
+          </div>
+          }
+          @if (isEditMode) {
+          <div class="form-field">
+            <label>{{ 'USERS.EMPLOYEE_NUMBER' | translate }}</label>
+            <dx-text-box [value]="selectedUser.employeeNumber" [readOnly]="true" [disabled]="true">
+            </dx-text-box>
+          </div>
+          }
+
+          <div class="form-field">
+            <label>{{ 'USERS.EMAIL' | translate }}</label>
+            <dx-text-box [(value)]="selectedUser.email" [placeholder]="'USERS.EMAIL' | translate" [disabled]="isSaving">
+              <dx-validator>
+                <dxi-validation-rule type="required" message="Email is required"></dxi-validation-rule>
+                <dxi-validation-rule type="email" message="Invalid email format"></dxi-validation-rule>
+              </dx-validator>
+            </dx-text-box>
+          </div>
+
+          @if (!isEditMode) {
+          <div class="form-field">
+            <label>{{ 'AUTH.PASSWORD' | translate }}</label>
+            <dx-text-box [(value)]="selectedUser.password" mode="password" [placeholder]="'AUTH.PASSWORD' | translate"
+              [disabled]="isSaving">
               <dx-validator>
                 <dxi-validation-rule type="required" message="Password is required"></dxi-validation-rule>
               </dx-validator>
             </dx-text-box>
           </div>
-        }
+          }
 
-        <div class="form-field">
-          <label>Role</label>
-          <dx-select-box
-            [(value)]="selectedUser.role"
-            [dataSource]="roles"
-            [disabled]="isSaving">
-            <dx-validator>
-              <dxi-validation-rule type="required" message="Role is required"></dxi-validation-rule>
-            </dx-validator>
-          </dx-select-box>
+          <div class="form-field">
+            <label>{{ 'USERS.ROLE' | translate }}</label>
+            <dx-select-box [(value)]="selectedUser.role" [dataSource]="roles" [disabled]="isSaving">
+              <dx-validator>
+                <dxi-validation-rule type="required" message="Role is required"></dxi-validation-rule>
+              </dx-validator>
+            </dx-select-box>
+          </div>
         </div>
 
-      </div>
-      <div class="form-actions">
-        <dx-button text="Cancel" [disabled]="isSaving" (onClick)="showPopup = false"></dx-button>
-        <dx-button [disabled]="isSaving" type="default" (onClick)="save(validationGroup)">
-          <div *dxTemplate="let data of 'content'" style="display:flex;align-items:center;gap:8px;">
-            <dx-load-indicator [visible]="isSaving" height="16" width="16"></dx-load-indicator>
-@if (!isSaving) {
-  <span>Save</span>
-}          </div>
-        </dx-button>
-      </div>
-    </dx-validation-group>
-  </div>
-</dx-popup>
-  <!-- Popup confirmation delete -->
-  <dx-popup [(visible)]="showDeletePopup" [width]="400" [height]="'auto'"
-    title="Confirm Delete" [showCloseButton]="!isDeleting">
+        <div class="form-actions">
+          <dx-button [text]="'USERS.CANCEL' | translate" [disabled]="isSaving"
+            (onClick)="showPopup = false"></dx-button>
+          <dx-button [disabled]="isSaving" type="default" (onClick)="save(validationGroup)">
+            <div *dxTemplate="let data of 'content'" style="display:flex;align-items:center;gap:8px;">
+              <dx-load-indicator [visible]="isSaving" height="16" width="16"></dx-load-indicator>
+              @if (!isSaving) {
+              <span>{{ 'USERS.SAVE' | translate }}</span>
+              }
+            </div>
+          </dx-button>
+        </div>
+      </dx-validation-group>
+    </div>
+  </dx-popup>
+
+  <!-- Popup delete -->
+  <dx-popup [(visible)]="showDeletePopup" [width]="400" [height]="'auto'" [title]="'COMMON.CONFIRM' | translate"
+    [showCloseButton]="!isDeleting">
     <div *dxTemplate="let data of 'content'" class="profile-form">
       <div class="form-section">
         <p class="delete-message">
-          Are you sure you want to delete
+          {{ 'USERS.DELETE_CONFIRM' | translate }}
           <strong>{{ userToDelete?.firstName }} {{ userToDelete?.lastName }}</strong> ?
-          This action cannot be undone.
+          {{ 'USERS.DELETE_WARNING' | translate }}
         </p>
       </div>
       <div class="form-actions">
-        <dx-button text="Cancel" [disabled]="isDeleting" (onClick)="showDeletePopup = false"></dx-button>
+        <dx-button [text]="'USERS.CANCEL' | translate" [disabled]="isDeleting"
+          (onClick)="showDeletePopup = false"></dx-button>
         <dx-button [disabled]="isDeleting" type="danger" (onClick)="confirmDelete()">
           <div *dxTemplate="let data of 'content'" style="display:flex;align-items:center;gap:8px;">
             <dx-load-indicator [visible]="isDeleting" height="16" width="16"></dx-load-indicator>
-@if (!isDeleting) {
-  <span>Delete</span>
-}          </div>
+            @if (!isDeleting) {
+            <span>{{ 'USERS.DELETE' | translate }}</span>
+            }
+          </div>
         </dx-button>
       </div>
     </div>
   </dx-popup>
 
-  <!-- Popup confirmation toggle -->
-  <dx-popup [(visible)]="showTogglePopup" [width]="400" [height]="'auto'"
-    title="Confirm Action" [showCloseButton]="!isToggling">
+  <!-- Popup toggle -->
+  <dx-popup [(visible)]="showTogglePopup" [width]="400" [height]="'auto'" [title]="'COMMON.CONFIRM' | translate"
+    [showCloseButton]="!isToggling">
     <div *dxTemplate="let data of 'content'" class="profile-form">
       <div class="form-section">
         <p class="delete-message">
-          Are you sure you want to
-          <strong>{{ userToToggle?.isActive ? 'deactivate' : 'activate' }}</strong>
+          {{ 'USERS.TOGGLE_CONFIRM' | translate }}
+          <strong>{{ userToToggle?.isActive ? ('USERS.DEACTIVATE' | translate) : ('USERS.ACTIVATE' | translate)
+            }}</strong>
           {{ userToToggle?.firstName }} {{ userToToggle?.lastName }} ?
         </p>
       </div>
       <div class="form-actions">
-        <dx-button text="Cancel" [disabled]="isToggling" (onClick)="showTogglePopup = false"></dx-button>
+        <dx-button [text]="'USERS.CANCEL' | translate" [disabled]="isToggling"
+          (onClick)="showTogglePopup = false"></dx-button>
         <dx-button [disabled]="isToggling" type="default" (onClick)="confirmToggle()">
           <div *dxTemplate="let data of 'content'" style="display:flex;align-items:center;gap:8px;">
             <dx-load-indicator [visible]="isToggling" height="16" width="16"></dx-load-indicator>
-@if (!isToggling) {
-  <span>Confirm</span>
-}          </div>
+            @if (!isToggling) {
+            <span>{{ 'USERS.CONFIRM' | translate }}</span>
+            }
+          </div>
         </dx-button>
       </div>
     </div>
   </dx-popup>
-
 </div>

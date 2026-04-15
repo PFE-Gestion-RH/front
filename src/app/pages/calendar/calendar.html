@@ -1,19 +1,16 @@
 <div class="calendar-page">
 
-  <!-- Header -->
   <div class="app-page-header">
     <h2 class="page-title">{{ pageTitle }}</h2>
   </div>
 
-  <!-- Card wrapper -->
   <div class="calendar-grid">
 
-    <!-- Load Panel -->
     <dx-load-panel
       [visible]="loading"
       [showIndicator]="true"
       [showPane]="true"
-      message="Loading..."
+      [message]="'CALENDAR.LOADING' | translate"
       [position]="{ of: '.calendar-grid' }">
     </dx-load-panel>
 
@@ -26,7 +23,6 @@
       }
     </div>
 
-    <!-- Scheduler -->
     <dx-scheduler
       [dataSource]="events"
       [currentDate]="currentDate"
@@ -49,7 +45,6 @@
 
   </div>
 
-  <!-- Popup detail demande -->
   @if (showEventPopup) {
     <dx-popup
       [(visible)]="showEventPopup"
@@ -61,7 +56,7 @@
         <div class="form-section">
 
           <div class="form-field">
-            <label>Type</label>
+            <label>{{ 'CALENDAR.TYPE' | translate }}</label>
             <span class="badge" [class]="selectedEvent?.type">
               {{ selectedEvent?.type | titlecase }}
             </span>
@@ -69,45 +64,45 @@
 
           @if (selectedEvent?.employeeName) {
             <div class="form-field">
-              <label>Employee</label>
+              <label>{{ 'CALENDAR.EMPLOYEE' | translate }}</label>
               <span>{{ selectedEvent?.employeeName }}</span>
             </div>
           }
 
           <div class="form-field">
-            <label>Start Date</label>
+            <label>{{ 'CALENDAR.START_DATE' | translate }}</label>
             <span>{{ selectedEvent?.startDate | date:'dd MMM yyyy' }}</span>
           </div>
 
           <div class="form-field">
-            <label>End Date</label>
+            <label>{{ 'CALENDAR.END_DATE' | translate }}</label>
             <span>{{ selectedEvent?.endDate | date:'dd MMM yyyy' }}</span>
           </div>
 
           @if (selectedEvent?.type === 'permission' && selectedEvent?.startTime) {
             <div class="form-field">
-              <label>Start Time</label>
+              <label>{{ 'CALENDAR.START_TIME' | translate }}</label>
               <span>{{ selectedEvent?.startTime }}</span>
             </div>
           }
 
           @if (selectedEvent?.type === 'permission' && selectedEvent?.endTime) {
             <div class="form-field">
-              <label>End Time</label>
+              <label>{{ 'CALENDAR.END_TIME' | translate }}</label>
               <span>{{ selectedEvent?.endTime }}</span>
             </div>
           }
 
           @if (selectedEvent?.description) {
             <div class="form-field">
-              <label>Description</label>
+              <label>{{ 'CALENDAR.DESCRIPTION' | translate }}</label>
               <span>{{ selectedEvent?.description }}</span>
             </div>
           }
 
         </div>
         <div class="form-actions">
-          <dx-button text="Close" (onClick)="showEventPopup = false"></dx-button>
+          <dx-button [text]="'CALENDAR.CLOSE' | translate" (onClick)="showEventPopup = false"></dx-button>
         </div>
       </div>
     </dx-popup>

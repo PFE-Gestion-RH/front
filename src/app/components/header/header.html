@@ -1,82 +1,66 @@
 <header class="app-header">
   <div class="header-left">
     <button class="hamburger-btn" (click)="sharedService.toggleSideNav()">
-      <span></span>
-      <span></span>
-      <span></span>
+      <span></span><span></span><span></span>
     </button>
     <div class="header-logo">
       <h1 class="brand-name">BARTHAUER</h1>
       <div class="brand-line"></div>
-      <span class="brand-subtitle">SOFTWARE </span>
+      <span class="brand-subtitle">SOFTWARE</span>
     </div>
   </div>
 
   <div class="header-right">
 
-    <!-- CLOCHE NOTIFICATION -->
     <div class="notif-bell" (click)="toggleNotifications($event)">
       <i class="dx-icon dx-icon-bell"></i>
       @if (unreadCount > 0) {
-        <span class="notif-badge">{{ unreadCount }}</span>
+      <span class="notif-badge">{{ unreadCount }}</span>
       }
-
       @if (showNotifications) {
-        <div class="notif-dropdown" (click)="$event.stopPropagation()">
-          <div class="notif-header">
-            <span>Notifications</span>
-            @if (unreadCount > 0) {
-              <button class="mark-all-btn" (click)="markAllAsRead()">
-                Mark all as read
-              </button>
-            }
-          </div>
-
-          <div class="notif-list">
-            @if (notifications.length === 0) {
-              <div class="notif-empty">
-                <i class="dx-icon dx-icon-bell"></i>
-                <p>No notifications</p>
-              </div>
-            }
-
-@for (notif of notifications; track notif.id) {
-  <div class="notif-item" [class.unread]="!notif.read" (click)="markAsRead(notif)">
-    <div class="notif-icon" [class]="'notif-icon-' + notif.type">
-      <i class="dx-icon" [class]="getNotifIcon(notif.type)"></i>
-    </div>
-    <div class="notif-content">
-      <p class="notif-message">{{ notif.message }}</p>
-
-      <!-- ✅ View Details cliquable uniquement si refus avec raison -->
-      @if (notif.rejectionReason) {
-        <span class="view-details-btn"
-              (click)="toggleDetails(notif, $event)">
-          {{ notif.showDetails ? 'Hide Details ▲' : 'View Details ▼' }}
-        </span>
-
-        @if (notif.showDetails) {
-          <p class="notif-rejection-reason">
-            {{ notif.rejectionReason }}
-          </p>
-        }
-      }
-
-      <span class="notif-time">
-        {{ notif.createdAt | date:'HH:mm' }}
-      </span>
-    </div>
-    @if (!notif.read) {
-      <span class="notif-dot"></span>
-    }
-  </div>
-}
-          </div>
+      <div class="notif-dropdown" (click)="$event.stopPropagation()">
+        <div class="notif-header">
+          <span>{{ 'HEADER.NOTIFICATIONS' | translate }}</span>
+          @if (unreadCount > 0) {
+          <button class="mark-all-btn" (click)="markAllAsRead()">
+            {{ 'HEADER.MARK_ALL' | translate }}
+          </button>
+          }
         </div>
+        <div class="notif-list">
+          @if (notifications.length === 0) {
+          <div class="notif-empty">
+            <i class="dx-icon dx-icon-bell"></i>
+            <p>{{ 'HEADER.NO_NOTIFICATIONS' | translate }}</p>
+          </div>
+          }
+          @for (notif of notifications; track notif.id) {
+          <div class="notif-item" [class.unread]="!notif.read" (click)="markAsRead(notif)">
+            <div class="notif-icon" [class]="'notif-icon-' + notif.type">
+              <i class="dx-icon" [class]="getNotifIcon(notif.type)"></i>
+            </div>
+            <div class="notif-content">
+              <p class="notif-message">{{ notif.message }}</p>
+              @if (notif.rejectionReason) {
+              <span class="view-details-btn" (click)="toggleDetails(notif, $event)">
+                {{ notif.showDetails ? ('HEADER.HIDE_DETAILS' | translate) : ('HEADER.VIEW_DETAILS' | translate) }}
+              </span>
+              @if (notif.showDetails) {
+              <p class="notif-rejection-reason">{{ notif.rejectionReason }}</p>
+              }
+              }
+              <span class="notif-time">{{ notif.createdAt | date:'HH:mm' }}</span>
+            </div>
+            @if (!notif.read) {
+            <span class="notif-dot"></span>
+            }
+          </div>
+          }
+        </div>
+      </div>
       }
     </div>
 
-    <!-- USER MENU -->
     <div class="user-menu" (click)="toggleUserMenu()">
       <div class="user-info">
         <span class="user-name">{{ userName }}</span>
@@ -84,92 +68,24 @@
       </div>
       <div class="user-avatar">
         @if (userProfilePicture) {
-          <img [src]="userProfilePicture" alt="avatar"
-            style="width:100%;height:100%;border-radius:50%;object-fit:cover;" />
+        <img [src]="userProfilePicture" alt="avatar"
+          style="width:100%;height:100%;border-radius:50%;object-fit:cover;" />
         } @else {
-          {{ userInitials }}
+        {{ userInitials }}
         }
       </div>
       @if (showUserMenu) {
-        <div class="user-dropdown" (click)="$event.stopPropagation()">
-          <div class="dropdown-item" (click)="openProfileModal()">
-            <i class="dx-icon dx-icon-user"></i>
-            <span>My Profile</span>
-          </div>
-          <div class="dropdown-item">
-            <i class="dx-icon dx-icon-preferences"></i>
-            <span>Settings</span>
-          </div>
-          <div class="dropdown-item" (click)="logout()">
-            <i class="dx-icon dx-icon-runner"></i>
-            <span>Logout</span>
-          </div>
+      <div class="user-dropdown" (click)="$event.stopPropagation()">
+        <div class="dropdown-item" (click)="goToSettings()">
+          <i class="dx-icon dx-icon-preferences"></i>
+          <span>{{ 'HEADER.SETTINGS' | translate }}</span>
         </div>
+        <div class="dropdown-item" (click)="logout()">
+          <i class="dx-icon dx-icon-runner"></i>
+          <span>{{ 'HEADER.LOGOUT' | translate }}</span>
+        </div>
+      </div>
       }
     </div>
   </div>
 </header>
-
-<!-- POPUP PROFILE -->
-<dx-popup [(visible)]="showProfileModal"
-  [width]="500" [height]="'auto'" [maxHeight]="'80vh'"
-  [wrapperAttr]="{ class: 'profile-popup' }"
-  [dragEnabled]="false" title="My Profile"
-  [showCloseButton]="!isSaving">
-  <div *dxTemplate="let data of 'content'" class="profile-form">
-    <div class="form-scrollable">
-      <div class="form-section">
-        <p class="section-title">Personal Info</p>
-        <div class="form-row">
-          <div class="form-field">
-            <label>First Name</label>
-            <dx-text-box [(value)]="profile.firstName" [disabled]="true"></dx-text-box>
-          </div>
-          <div class="form-field">
-            <label>Last Name</label>
-            <dx-text-box [(value)]="profile.lastName" [disabled]="true"></dx-text-box>
-          </div>
-        </div>
-        <div class="form-field">
-          <label>Email</label>
-          <dx-text-box [(value)]="profile.email" [disabled]="true"></dx-text-box>
-        </div>
-      </div>
-      <div class="form-section">
-        <p class="section-title">Change Password</p>
-        <div class="form-field">
-          <label>New Password</label>
-          <dx-text-box mode="password" [(value)]="profile.newPassword" [disabled]="isSaving"></dx-text-box>
-        </div>
-        <div class="form-field">
-          <label>Confirm Password</label>
-          <dx-text-box mode="password" [(value)]="profile.confirmPassword" [disabled]="isSaving"></dx-text-box>
-        </div>
-      </div>
-      <div class="form-section">
-        <p class="section-title">Profile Picture</p>
-        <div class="avatar-preview" (click)="!isSaving && hiddenInput.click()"
-             [style.pointer-events]="isSaving ? 'none' : 'auto'"
-             (dragover)="$event.preventDefault()"
-             (drop)="onFileDrop($event)">
-          @if (profile.profilePictureBase64 || userProfilePicture) {
-            <img class="avatar" [src]="profile.profilePictureBase64 || userProfilePicture" alt="preview" />
-          } @else {
-            <div class="avatar-placeholder">{{ userInitials }}</div>
-          }
-        </div>
-        <input #hiddenInput type="file" accept="image/*" style="display:none"
-          (change)="onNativeFileSelected($event)" />
-      </div>
-    </div>
-    <div class="form-actions">
-      <dx-button text="Cancel" [disabled]="isSaving" (onClick)="showProfileModal = false"></dx-button>
-      <dx-button [disabled]="isSaving" type="default" (onClick)="saveProfile()">
-        <div *dxTemplate="let data of 'content'" style="display:flex;align-items:center;gap:8px;">
-          <dx-load-indicator [visible]="isSaving" height="16" width="16"></dx-load-indicator>
-          <span>{{ isSaving ? 'Saving...' : 'Save' }}</span>
-        </div>
-      </dx-button>
-    </div>
-  </div>
-</dx-popup>

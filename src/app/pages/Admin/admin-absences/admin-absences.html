@@ -2,70 +2,72 @@
   <div class="admin-absences-grid" style="position: relative;">
 
     <dx-load-panel [visible]="isLoading" [position]="{ of: '.admin-absences-grid' }" [showIndicator]="true"
-      [showPane]="true" [shading]="true" [shadingColor]="'rgba(255,255,255,0.6)'" message="Loading...">
+      [showPane]="true" [shading]="true" [shadingColor]="'rgba(255,255,255,0.6)'"
+      [message]="'ADMIN_ABSENCES.LOADING' | translate">
     </dx-load-panel>
 
     <div class="app-page-header">
-      <h2 class="page-title">All Absences</h2>
-        <dx-check-box
-    [(value)]="pendingOnly"
-    text="For me"
-    (onValueChanged)="onFilterChange()">
-  </dx-check-box>
+      <h2 class="page-title">{{ 'ADMIN_ABSENCES.TITLE' | translate }}</h2>
+      <dx-check-box [(value)]="pendingOnly" [text]="'ADMIN_ABSENCES.FOR_ME' | translate"
+        (onValueChanged)="onFilterChange()">
+      </dx-check-box>
     </div>
 
-    <!-- TABLE desktop -->
     <div class="table-view">
       <dx-data-grid [dataSource]="sharedDataSource" [columns]="columns" [showBorders]="false" [showRowLines]="true"
         [showColumnLines]="false" [hoverStateEnabled]="true" keyExpr="id"
-  [remoteOperations]="{ paging: true, filtering: false, sorting: false }"
-        >
-
+        [remoteOperations]="{ paging: true, filtering: false, sorting: false }">
         <dxo-load-panel [enabled]="false"></dxo-load-panel>
-        <dxo-search-panel [visible]="true" placeholder="Search..."></dxo-search-panel>
+        <dxo-search-panel [visible]="true" [placeholder]="'ADMIN_ABSENCES.SEARCH' | translate"></dxo-search-panel>
         <dxo-selection mode="none"></dxo-selection>
         <dxo-editing [allowUpdating]="false" [allowDeleting]="false" [allowAdding]="false"></dxo-editing>
         <dxo-paging [enabled]="true" [pageSize]="pageSize"></dxo-paging>
-        <dxo-pager [visible]="true" [showNavigationButtons]="true" [showInfo]="true" infoText="{0}-{1} of {2} absences">
+        <dxo-pager [visible]="true" [showNavigationButtons]="true" [showInfo]="true"
+          [infoText]="'ADMIN_ABSENCES.INFO' | translate">
         </dxo-pager>
-
       </dx-data-grid>
     </div>
 
-    <!-- CARDS mobile -->
     <div class="cards-view" [class.is-loading]="isLoading">
-    <dx-card-view
-  [dataSource]="cardDataSource"
-  keyExpr="id"
-  [cardMinWidth]="280"
-  cardsPerRow="auto"
-  [remoteOperations]="{ paging: true }">
-        <dxo-card-view-search-panel [visible]="true" placeholder="Search..."></dxo-card-view-search-panel>
+      <dx-card-view [dataSource]="cardDataSource" keyExpr="id" [cardMinWidth]="280" cardsPerRow="auto"
+        [remoteOperations]="{ paging: true }">
+        <dxo-card-view-search-panel [visible]="true"
+          [placeholder]="'ADMIN_ABSENCES.SEARCH' | translate"></dxo-card-view-search-panel>
         <dxo-card-view-paging [enabled]="true" [pageSize]="pageSize"></dxo-card-view-paging>
         <dxo-card-view-pager [visible]="true" [showNavigationButtons]="true" [showInfo]="true"
-          infoText="{0}-{1} of {2} absences">
+          [infoText]="'ADMIN_ABSENCES.INFO' | translate">
         </dxo-card-view-pager>
-
         <dxi-card-view-column dataField="employeeName" [visible]="false" [allowSearch]="true"></dxi-card-view-column>
+        <dxi-card-view-column dataField="teamName" [visible]="false" [allowSearch]="true"></dxi-card-view-column>
+
         <dxi-card-view-column dataField="leaveCategoryName" [visible]="false"
           [allowSearch]="true"></dxi-card-view-column>
         <dxi-card-view-column dataField="startDate" [visible]="false" [allowSearch]="true"></dxi-card-view-column>
-
         <dxi-card-view-column caption="" [calculateFieldValue]="getCardData" fieldValueTemplate="cardBodyTemplate"
           [allowSorting]="false" [allowSearch]="false" [allowFiltering]="false">
         </dxi-card-view-column>
-
         <div *dxTemplate="let params of 'cardBodyTemplate'" class="card-body-template">
           <div class="card-top">
             <div class="card-avatar">
-              {{ params.field.value?.employeeName?.[0] | uppercase }}
+              <img *ngIf="params.field.value?.profilePicture; else initials" [src]="params.field.value?.profilePicture"
+                alt="avatar" />
+              <ng-template #initials>
+                {{ params.field.value?.employeeName?.[0] | uppercase }}
+              </ng-template>
+
             </div>
             <div class="card-info">
               <h4 class="card-name">{{ params.field.value?.employeeName }}</h4>
-           
-  <span class="card-role">
-    {{ params.field.value?.employeeRole === 'TeamLead' ? 'Team Lead' : params.field.value?.employeeRole }}
-  </span>            </div>
+              <span class="card-role">
+                <i class="dx-icon dx-icon-user"></i>
+                {{ params.field.value?.employeeRole === 'TeamLead' ? 'Team Lead' : params.field.value?.employeeRole }}
+              </span>
+
+              <span class="card-team">
+                <i class="dx-icon dx-icon-group"></i>
+                {{ params.field.value?.teamName }}
+              </span>
+            </div>
             <span class="badge" [class]="getStatusClass(params.field.value?.status)">
               {{ getStatusLabel(params.field.value?.status) }}
             </span>
@@ -82,86 +84,82 @@
             @if (params.field.value?.status === 'PendingAdministration') {
             <button class="action-btn approve-btn"
               (click)="approveRequest(params.field.value); $event.stopPropagation()">
-              <i class="dx-icon dx-icon-check"></i> Approve
+              <i class="dx-icon dx-icon-check"></i> {{ 'ADMIN_ABSENCES.APPROVE' | translate }}
             </button>
             <button class="action-btn reject-btn" (click)="rejectRequest(params.field.value); $event.stopPropagation()">
-              <i class="dx-icon dx-icon-close"></i> Reject
+              <i class="dx-icon dx-icon-close"></i> {{ 'ADMIN_ABSENCES.REJECT' | translate }}
             </button>
             }
           </div>
         </div>
-
       </dx-card-view>
     </div>
-
   </div>
 
   <!-- Popup Approve -->
-  <dx-popup [(visible)]="showApprovePopup" [width]="400" [height]="'auto'" [maxHeight]="'80vh'" title="Confirm Approval"
-    [showCloseButton]="!isProcessing">
+  <dx-popup [(visible)]="showApprovePopup" [width]="400" [height]="'auto'" [maxHeight]="'80vh'"
+    [title]="'ADMIN_ABSENCES.APPROVE_TITLE' | translate" [showCloseButton]="!isProcessing">
     <div *dxTemplate="let data of 'content'" class="profile-form">
       <div class="form-section">
         <p class="delete-message">
-          Approve absence request from
+          {{ 'ADMIN_ABSENCES.APPROVE_MSG' | translate }}
           <strong>{{ selectedRequest?.employeeName }}</strong> ?
         </p>
       </div>
       <div class="form-actions">
-        <dx-button text="Cancel" [disabled]="isProcessing" (onClick)="showApprovePopup = false"></dx-button>
+        <dx-button [text]="'ADMIN_ABSENCES.CANCEL' | translate" [disabled]="isProcessing"
+          (onClick)="showApprovePopup = false"></dx-button>
         <dx-button [disabled]="isProcessing" type="default" (onClick)="confirmApprove()">
           <div *dxTemplate="let data of 'content'" style="display:flex;align-items:center;gap:8px;">
             <dx-load-indicator [visible]="isProcessing" height="16" width="16"></dx-load-indicator>
-            <span>{{ isProcessing ? 'Approving...' : 'Approve' }}</span>
+            <span>{{ isProcessing ? ('ADMIN_ABSENCES.APPROVING' | translate) : ('ADMIN_ABSENCES.APPROVE' | translate)
+              }}</span>
           </div>
         </dx-button>
       </div>
     </div>
   </dx-popup>
 
-<!-- Popup 1 — Confirm Rejection (ancien) -->
-<dx-popup [(visible)]="showRejectPopup" [width]="400" [height]="'auto'" 
-  [maxHeight]="'80vh'" title="Confirm Rejection" [showCloseButton]="!isProcessing">
-  <div *dxTemplate="let data of 'content'" class="profile-form">
-    <div class="form-section">
-      <p class="delete-message">
-        Reject absence request from
-        <strong>{{ selectedRequest?.employeeName }}</strong> ?
-      </p>
+  <!-- Popup Reject -->
+  <dx-popup [(visible)]="showRejectPopup" [width]="400" [height]="'auto'" [maxHeight]="'80vh'"
+    [title]="'ADMIN_ABSENCES.REJECT_TITLE' | translate" [showCloseButton]="!isProcessing">
+    <div *dxTemplate="let data of 'content'" class="profile-form">
+      <div class="form-section">
+        <p class="delete-message">
+          {{ 'ADMIN_ABSENCES.REJECT_MSG' | translate }}
+          <strong>{{ selectedRequest?.employeeName }}</strong> ?
+        </p>
+      </div>
+      <div class="form-actions">
+        <dx-button [text]="'ADMIN_ABSENCES.CANCEL' | translate" [disabled]="isProcessing"
+          (onClick)="showRejectPopup = false"></dx-button>
+        <dx-button [text]="'ADMIN_ABSENCES.CONFIRM' | translate" type="danger" [disabled]="isProcessing"
+          (onClick)="openReasonPopup()  "></dx-button>
+      </div>
     </div>
-    <div class="form-actions">
-      <dx-button text="Cancel" [disabled]="isProcessing" 
-        (onClick)="showRejectPopup = false">
-      </dx-button>
-      <dx-button text="Confirmer" type="danger" [disabled]="isProcessing" 
-        (onClick)="openReasonPopup()">  
-      </dx-button>
-    </div>
-  </div>
-</dx-popup>
+  </dx-popup>
 
-<!-- Popup 2 — Reason of Rejection (nouveau) -->
-<dx-popup [(visible)]="showReasonPopup" [width]="400" [height]="'auto'" 
-  [maxHeight]="'80vh'" title="Reason of Rejection" [showCloseButton]="!isProcessing">
-  <div *dxTemplate="let data of 'content'" class="profile-form">
-    <div class="form-section">
-      <label>Notes</label>
-      <textarea
-        [(ngModel)]="rejectionReason"
-        placeholder="Enter rejection reason..."
-        rows="4"
-        style="width:100%; border:2px solid #e5e7eb; border-radius:8px; padding:10px; 
-               font-size:14px; resize:vertical; font-family:inherit; 
-               box-sizing:border-box; margin-top:8px;">
-      </textarea>
+  <!-- Popup Reason -->
+  <dx-popup [(visible)]="showReasonPopup" [width]="400" [height]="'auto'" [maxHeight]="'80vh'"
+    [title]="'ADMIN_ABSENCES.REASON_TITLE' | translate" [showCloseButton]="!isProcessing">
+    <div *dxTemplate="let data of 'content'" class="profile-form">
+      <div class="form-section">
+        <label>{{ 'ADMIN_ABSENCES.NOTES' | translate }}</label>
+        <textarea [(ngModel)]="rejectionReason" [placeholder]="'ADMIN_ABSENCES.REASON_PLACEHOLDER' | translate" rows="4"
+          style="width:100%; border:2px solid #e5e7eb; border-radius:8px; padding:10px;
+                 font-size:14px; resize:vertical; font-family:inherit;
+                 box-sizing:border-box; margin-top:8px;">
+        </textarea>
+      </div>
+      <div class="form-actions">
+        <dx-button [disabled]="isProcessing" type="danger" (onClick)="confirmReject()">
+          <div *dxTemplate="let data of 'content'" style="display:flex;align-items:center;gap:8px;">
+            <dx-load-indicator [visible]="isProcessing" height="16" width="16"></dx-load-indicator>
+            <span>{{ isProcessing ? ('ADMIN_ABSENCES.REJECTING' | translate) : ('ADMIN_ABSENCES.CONFIRM' | translate)
+              }}</span>
+          </div>
+        </dx-button>
+      </div>
     </div>
-    <div class="form-actions">
-      <dx-button [disabled]="isProcessing" type="danger" (onClick)="confirmReject()">
-        <div *dxTemplate="let data of 'content'" style="display:flex;align-items:center;gap:8px;">
-          <dx-load-indicator [visible]="isProcessing" height="16" width="16"></dx-load-indicator>
-          <span>{{ isProcessing ? 'Rejecting...' : 'Confirmer' }}</span>
-        </div>
-      </dx-button>
-    </div>
-  </div>
-</dx-popup>
+  </dx-popup>
 </div>

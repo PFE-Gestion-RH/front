@@ -1,6 +1,7 @@
 import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { DxSchedulerModule, DxPopupModule, DxButtonModule, DxTemplateModule, DxLoadPanelComponent } from 'devextreme-angular';
+import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { CalendarService } from './calendar.service';
 import { SharedService } from '../../services/shared.service';
 import { UserRole } from '../../models/auth/user.model';
@@ -9,7 +10,7 @@ import { CalendarEvent } from '../../models/Calendar';
 @Component({
   selector: 'app-calendar',
   standalone: true,
-  imports: [CommonModule, DxSchedulerModule, DxPopupModule, DxButtonModule, DxTemplateModule, DxLoadPanelComponent],
+  imports: [CommonModule, DxSchedulerModule, DxPopupModule, DxButtonModule, DxTemplateModule, DxLoadPanelComponent, TranslateModule],
   templateUrl: './calendar.html',
   styleUrls: ['./calendar.scss'],
 })
@@ -26,12 +27,12 @@ export class CalendarComponent implements OnInit {
   selectedEvent: CalendarEvent | null = null;
 
   eventTypeColors: Record<string, string> = {
-    absence:    '#EF4444',
+    absence: '#EF4444',
     permission: '#F59E0B',
   };
 
   editingConfig = {
-    allowAdding:   false,
+    allowAdding: false,
     allowDeleting: false,
     allowUpdating: false,
     allowResizing: false,
@@ -41,36 +42,35 @@ export class CalendarComponent implements OnInit {
   constructor(
     private calendarService: CalendarService,
     private sharedService: SharedService,
-    private cdr: ChangeDetectorRef
+    private cdr: ChangeDetectorRef,
+    private translate: TranslateService
   ) {}
 
   ngOnInit(): void {
     this.role = this.sharedService.getConnectedRole();
-    // ← un seul appel au démarrage, pas de filtre par mois
     this.loadEvents();
   }
 
-loadEvents(): void {
-  this.loading = true;
-  this.calendarService.getEvents(this.role).subscribe({
-    next: (events: CalendarEvent[]) => {
-      this.events = [];              // ← vider d'abord
-      this.cdr.detectChanges();     // ← forcer render vide
-      setTimeout(() => {            // ← attendre un tick
-        this.events = [...events];  // ← puis injecter les données
+  loadEvents(): void {
+    this.loading = true;
+    this.calendarService.getEvents(this.role).subscribe({
+      next: (events: CalendarEvent[]) => {
+        this.events = [];
+        this.cdr.detectChanges();
+        setTimeout(() => {
+          this.events = [...events];
+          this.loading = false;
+          this.cdr.detectChanges();
+        }, 0);
+      },
+      error: (err: any) => {
+        console.error(err);
         this.loading = false;
-        this.cdr.detectChanges();   // ← forcer render avec données
-      }, 0);
-    },
-    error: (err: any) => {
-      console.error(err);
-      this.loading = false;
-      this.cdr.detectChanges();
-    }
-  });
-}
+        this.cdr.detectChanges();
+      }
+    });
+  }
 
-  // ← vide, le scheduler gère l'affichage par mois tout seul
   onOptionChanged(e: any): void {}
 
   onAppointmentRendered(e: any): void {
@@ -106,9 +106,9 @@ loadEvents(): void {
 
   get pageTitle(): string {
     const r = this.role?.toUpperCase();
-    if (r === 'ADMIN')    return 'All Employees — Absences & Permissions';
-    if (r === 'TEAMLEAD') return 'My Team — Absences & Permissions';
-    return 'My Absences & Permissions';
+    if (r === 'ADMIN') return this.translate.instant('CALENDAR.TITLE_ADMIN');
+    if (r === 'TEAMLEAD') return this.translate.instant('CALENDAR.TITLE_TEAMLEAD');
+    return this.translate.instant('CALENDAR.TITLE_EMPLOYEE');
   }
 
   get legendItems() {

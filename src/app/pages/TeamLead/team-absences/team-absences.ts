@@ -7,17 +7,15 @@ import { SharedService } from '../../../services/shared.service';
 import { ToastType } from '../../../components/toast/toast';
 import { ApiResponse } from '../../../models/auth/api-response.model';
 import { SignalRService } from '../../../services/signalr.service';
-import { DxDataGridModule, DxTemplateModule, DxPopupComponent, DxButtonComponent, DxLoadIndicatorModule, DxLoadPanelModule, DxCheckBoxComponent } from 'devextreme-angular';
+import { TranslateModule, TranslateService } from '@ngx-translate/core';
+import { DxDataGridModule, DxTemplateModule, DxPopupComponent, DxButtonComponent, DxLoadIndicatorModule, DxLoadPanelModule, DxCheckBoxComponent, DxTooltipComponent } from 'devextreme-angular';
 import { DxCardViewComponent } from 'devextreme-angular';
 import {
-  DxiCardViewColumnComponent,
-  DxoCardViewPagingComponent,
-  DxoCardViewSearchPanelComponent,
-  DxoCardViewPagerComponent
+  DxiCardViewColumnComponent, DxoCardViewPagingComponent,
+  DxoCardViewSearchPanelComponent, DxoCardViewPagerComponent
 } from 'devextreme-angular/ui/card-view';
 import DataSource from 'devextreme/data/data_source';
 import CustomStore from 'devextreme/data/custom_store';
-import { dxDataGridColumn } from 'devextreme/ui/data_grid';
 import { environment } from '../../../environments/environment';
 
 @Component({
@@ -28,7 +26,9 @@ import { environment } from '../../../environments/environment';
     DxiCardViewColumnComponent, DxoCardViewPagingComponent,
     DxoCardViewSearchPanelComponent, DxoCardViewPagerComponent,
     DxTemplateModule, DxPopupComponent, DxButtonComponent,
-    DxLoadIndicatorModule, DxLoadPanelModule, DxCheckBoxComponent
+    DxLoadIndicatorModule, DxLoadPanelModule, DxCheckBoxComponent,
+    TranslateModule,
+    DxTooltipComponent
   ],
   templateUrl: './team-absences.html',
   styleUrls: ['./team-absences.scss'],
@@ -39,69 +39,53 @@ export class TeamAbsences implements OnInit, OnDestroy {
   sharedDataSource!: DataSource;
   cardDataSource!: DataSource;
   pageSize = 10;
+  columns: any[] = [];
 
   isLoading = false;
   isProcessing = false;
 
   showApprovePopup = false;
   showRejectPopup = false;
-  showReasonPopup = false;  // ✅ Nouveau
+  showReasonPopup = false;
   selectedRequest: any = null;
-  rejectionReason = '';     // ✅ Nouveau
+  rejectionReason = '';
   pendingOnly = false;
 
   private newRequestSub!: Subscription;
-
-  columns: (string | dxDataGridColumn<any, any>)[] = [
-    { dataField: 'employeeName', caption: 'Employee' },
-    { dataField: 'leaveCategoryName', caption: 'Leave Type' },
-    { dataField: 'startDate', caption: 'Start Date', dataType: 'date' as any, format: 'dd/MM/yyyy' },
-    { dataField: 'endDate', caption: 'End Date', dataType: 'date' as any, format: 'dd/MM/yyyy' },
-    { dataField: 'numberOfDays', caption: 'Days' },
-    {
-      caption: 'Status',
-      cellTemplate: (container: any, options: any) => {
-        const span = document.createElement('span');
-        const status = options.data.status;
-        span.textContent = this.getStatusLabel(status);
-        span.className = `badge ${this.getStatusClass(status)}`;
-        container.append(span);
-      }
-    },
-    {
-      caption: 'Actions',
-      minWidth: 220,
-      cellTemplate: (container: any, options: any) => {
-        const data = options.data;
-        if (data.status !== 'PendingTeamLead') return;
-
-        const approveBtn = document.createElement('button');
-        approveBtn.className = 'action-btn approve-btn';
-        approveBtn.innerHTML = '<i class="dx-icon dx-icon-check"></i> Approve';
-        approveBtn.onclick = () => this.approveRequest(data);
-
-        const rejectBtn = document.createElement('button');
-        rejectBtn.className = 'action-btn reject-btn';
-        rejectBtn.innerHTML = '<i class="dx-icon dx-icon-close"></i> Reject';
-        rejectBtn.onclick = () => this.rejectRequest(data);
-
-        container.append(approveBtn, rejectBtn);
-      }
-    }
-  ];
-
   getCardData = (rowData: any) => rowData;
 
   constructor(
     private http: HttpClient,
     private sharedService: SharedService,
     private cdr: ChangeDetectorRef,
-    private signalRService: SignalRService
-  ) {}
+    private signalRService: SignalRService,
+    private translate: TranslateService
+  ) { }
+  tooltipVisible = false;
+  tooltipX = 0;
+  tooltipY = 0;
+  tooltipData: any = null;
 
+  showTooltip(event: MouseEvent, data: any): void {
+    const rect = (event.target as HTMLElement).getBoundingClientRect();
+    this.tooltipData = data;
+    this.tooltipX = rect.left + rect.width / 2 - 90;
+    this.tooltipY = rect.top - 70;
+    this.tooltipVisible = true;
+    this.cdr.detectChanges();
+  }
+
+  hideTooltip(): void {
+    this.tooltipVisible = false;
+    this.cdr.detectChanges();
+  }
   ngOnInit(): void {
+    this.buildColumns();
     this.initSharedDataSource();
-
+    this.translate.onLangChange.subscribe(() => {
+      this.buildColumns();
+      this.cdr.detectChanges();
+    });
     this.newRequestSub = this.signalRService.newRequestReceived$.subscribe(() => {
       this.sharedDataSource.reload();
       this.cardDataSource.reload();
@@ -114,9 +98,59 @@ export class TeamAbsences implements OnInit, OnDestroy {
   }
 
   getHeaders() {
-    return new HttpHeaders({
-      Authorization: `Bearer ${this.sharedService.getToken()}`
-    });
+    return new HttpHeaders({ Authorization: `Bearer ${this.sharedService.getToken()}` });
+  }
+
+  buildColumns(): void {
+    this.columns = [
+      {
+        caption: this.translate.instant('TEAM_ABSENCES.EMPLOYEE'),
+        dataField: 'employeeName',
+        cellTemplate: 'employeeTooltipTemplate'
+      },
+      { dataField: 'leaveCategoryName', caption: this.translate.instant('TEAM_ABSENCES.LEAVE_TYPE') },
+      { dataField: 'startDate', caption: this.translate.instant('TEAM_ABSENCES.START_DATE'), dataType: 'date' as any, format: 'dd/MM/yyyy' },
+      { dataField: 'endDate', caption: this.translate.instant('TEAM_ABSENCES.END_DATE'), dataType: 'date' as any, format: 'dd/MM/yyyy' },
+      { dataField: 'numberOfDays', caption: this.translate.instant('TEAM_ABSENCES.DAYS') },
+      {
+        caption: this.translate.instant('TEAM_ABSENCES.STATUS'),
+        cellTemplate: (container: any, options: any) => {
+          const span = document.createElement('span');
+          const status = options.data.status;
+          span.textContent = this.getStatusLabel(status);
+          span.className = `badge ${this.getStatusClass(status)}`;
+          container.append(span);
+        }
+      },
+      {
+        caption: this.translate.instant('TEAM_ABSENCES.ACTIONS'),
+        minWidth: 220,
+        cellTemplate: (container: any, options: any) => {
+          const data = options.data;
+
+       
+          if (data.status !== 'PendingTeamLead') {
+            const span = document.createElement('span');
+            span.textContent = 'N/A';
+            span.className = 'na-value';
+            container.append(span);
+            return;
+          }
+
+          const approveBtn = document.createElement('button');
+          approveBtn.className = 'action-btn approve-btn';
+          approveBtn.innerHTML = `<i class="dx-icon dx-icon-check"></i> ${this.translate.instant('TEAM_ABSENCES.APPROVE')}`;
+          approveBtn.onclick = () => this.approveRequest(data);
+
+          const rejectBtn = document.createElement('button');
+          rejectBtn.className = 'action-btn reject-btn';
+          rejectBtn.innerHTML = `<i class="dx-icon dx-icon-close"></i> ${this.translate.instant('TEAM_ABSENCES.REJECT')}`;
+          rejectBtn.onclick = () => this.rejectRequest(data);
+
+          container.append(approveBtn, rejectBtn);
+        }
+      }
+    ];
   }
 
   onFilterChange(): void {
@@ -125,22 +159,19 @@ export class TeamAbsences implements OnInit, OnDestroy {
 
   getStatusLabel(status: string): string {
     const labels: Record<string, string> = {
-      'PendingTeamLead': 'Pending',
-      'PendingAdministration': 'Pending Admin',
-      'Accepted': 'Accepted',
-      'RejectedTeamLead': 'Rejected',
-      'RejectedAdministration': 'Rejected by Admin',
+      'PendingTeamLead': this.translate.instant('STATUS.PENDING_TEAMLEAD'),
+      'PendingAdministration': this.translate.instant('STATUS.PENDING_ADMIN'),
+      'Accepted': this.translate.instant('STATUS.ACCEPTED'),
+      'RejectedTeamLead': this.translate.instant('STATUS.REJECTED_TEAMLEAD'),
+      'RejectedAdministration': this.translate.instant('STATUS.REJECTED_ADMIN'),
     };
     return labels[status] ?? status ?? '';
   }
 
   getStatusClass(status: string): string {
     const classes: Record<string, string> = {
-      'PendingTeamLead': 'pending',
-      'PendingAdministration': 'pending',
-      'Accepted': 'approved',
-      'RejectedTeamLead': 'rejected',
-      'RejectedAdministration': 'rejected',
+      'PendingTeamLead': 'pending', 'PendingAdministration': 'pending',
+      'Accepted': 'approved', 'RejectedTeamLead': 'rejected', 'RejectedAdministration': 'rejected',
     };
     return classes[status] ?? '';
   }
@@ -149,24 +180,17 @@ export class TeamAbsences implements OnInit, OnDestroy {
     const storeConfig = {
       key: 'id',
       load: (loadOptions: any) => {
-        const take = (loadOptions.take && loadOptions.take > 0)
-          ? loadOptions.take
-          : this.pageSize;
+        const take = (loadOptions.take && loadOptions.take > 0) ? loadOptions.take : this.pageSize;
         const skip = loadOptions.skip ?? 0;
         const page = Math.floor(skip / take) + 1;
-
         let url = `${environment.apiUrl}/demande/team/absences?page=${page}&pageSize=${take}`;
         if (this.pendingOnly) url += '&status=PendingTeamLead';
-
         return firstValueFrom(
           this.http.get<ApiResponse<any>>(url, { headers: this.getHeaders() })
         ).then(res => {
           if (res.isSuccess) {
             const data = res.data;
-            return {
-              data: Array.isArray(data) ? data : data.items ?? [],
-              totalCount: Array.isArray(data) ? data.length : data.totalCount ?? 0
-            };
+            return { data: Array.isArray(data) ? data : data.items ?? [], totalCount: Array.isArray(data) ? data.length : data.totalCount ?? 0 };
           }
           return { data: [], totalCount: 0 };
         });
@@ -174,21 +198,14 @@ export class TeamAbsences implements OnInit, OnDestroy {
     };
 
     this.sharedDataSource = new DataSource({
-      onLoadingChanged: (isLoading) => {
-        this.isLoading = isLoading;
-        this.cdr.detectChanges();
-      },
+      onLoadingChanged: (isLoading) => { this.isLoading = isLoading; this.cdr.detectChanges(); },
       store: new CustomStore(storeConfig),
-      pageSize: this.pageSize,
-      paginate: true,
-      requireTotalCount: true
+      pageSize: this.pageSize, paginate: true, requireTotalCount: true
     });
 
     this.cardDataSource = new DataSource({
       store: new CustomStore(storeConfig),
-      pageSize: this.pageSize,
-      paginate: true,
-      requireTotalCount: true
+      pageSize: this.pageSize, paginate: true, requireTotalCount: true
     });
   }
 
@@ -201,11 +218,10 @@ export class TeamAbsences implements OnInit, OnDestroy {
   rejectRequest(request: any): void {
     this.selectedRequest = request;
     this.rejectionReason = '';
-    this.showRejectPopup = true;  // ✅ Ouvre popup 1
+    this.showRejectPopup = true;
     this.cdr.detectChanges();
   }
 
-  // ✅ Popup 1 → ferme et ouvre popup 2
   openReasonPopup(): void {
     this.showRejectPopup = false;
     this.showReasonPopup = true;
@@ -216,10 +232,8 @@ export class TeamAbsences implements OnInit, OnDestroy {
     if (!this.selectedRequest || this.isProcessing) return;
     this.isProcessing = true;
     this.cdr.detectChanges();
-
     this.http.patch<ApiResponse<string>>(
-      `${environment.apiUrl}/demande/${this.selectedRequest.id}/approve`,
-      {},
+      `${environment.apiUrl}/demande/${this.selectedRequest.id}/approve`, {},
       { headers: this.getHeaders() }
     ).subscribe({
       next: (res) => {
@@ -239,12 +253,10 @@ export class TeamAbsences implements OnInit, OnDestroy {
     });
   }
 
-  // ✅ Popup 2 → envoie la requête
   confirmReject(): void {
     if (!this.selectedRequest || this.isProcessing) return;
     this.isProcessing = true;
     this.cdr.detectChanges();
-
     this.http.patch<ApiResponse<string>>(
       `${environment.apiUrl}/demande/${this.selectedRequest.id}/reject`,
       { rejectionReason: this.rejectionReason },

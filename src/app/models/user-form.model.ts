@@ -5,4 +5,5 @@ export interface UserForm {
   email: string;
   role: string;
   password: string;
+  employeeNumber: string;
 }
