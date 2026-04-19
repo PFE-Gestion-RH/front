@@ -9,20 +9,21 @@
       [message]="'PUBLIC_HOLIDAYS.LOADING' | translate">
     </dx-load-panel>
 
-    <div class="app-page-header">
-      <h2 class="page-title">{{ 'PUBLIC_HOLIDAYS.TITLE' | translate }}</h2>
-      <div class="header-actions">
-        <div class="year-selector">
-          <dx-select-box [items]="years" [(value)]="selectedYear" (onValueChanged)="onYearChanged()" [width]="100">
-          </dx-select-box>
-        </div>
-        <button class="seed-btn" (click)="seedHolidays()" [disabled]="isSeeding">
-          {{ isSeeding ? ('PUBLIC_HOLIDAYS.SEEDING' | translate) : ('PUBLIC_HOLIDAYS.SEED_BTN' | translate) + ' ' + selectedYear }}
-        </button>
-        <button class="add-btn" (click)="openAdd()">{{ 'PUBLIC_HOLIDAYS.ADD' | translate }}</button>
-      </div>
+ <div class="app-page-header">
+  <h2 class="page-title">{{ 'PUBLIC_HOLIDAYS.TITLE' | translate }}</h2>
+  <div class="header-actions">
+    <div class="year-selector">
+      <dx-select-box [items]="years" [(value)]="selectedYear" (onValueChanged)="onYearChanged()" [width]="100">
+      </dx-select-box>
     </div>
-
+    <button class="seed-btn" (click)="seedHolidays()" [disabled]="isSeeding">
+      {{ isSeeding ? ('PUBLIC_HOLIDAYS.SEEDING' | translate) : ('PUBLIC_HOLIDAYS.SEED_BTN' | translate) + ' ' + selectedYear }}
+    </button>
+    <button class="add-btn icon-only" (click)="openAdd()" [title]="'PUBLIC_HOLIDAYS.ADD' | translate">
+      <i class="dx-icon dx-icon-plus"></i>
+    </button>
+  </div>
+</div>
     <div class="table-view">
       <dx-data-grid [dataSource]="sharedDataSource" [columns]="columns"
         [showBorders]="false" [showRowLines]="true" [showColumnLines]="false"

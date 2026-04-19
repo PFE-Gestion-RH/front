@@ -40,9 +40,9 @@
             <div class="left-bar" [class.visible]="employeeNumberFocused"></div>
             <label class="floating-label" [class.active]="employeeNumberFocused || employeeNumber">Employee
               Number</label>
-            <dx-text-box [(value)]="employeeNumber" (onFocusIn)="employeeNumberFocused = true"
-              (onFocusOut)="employeeNumberFocused = false">
-            </dx-text-box>
+            <dx-number-box [(value)]="employeeNumber" [format]="'#'" [min]="0"
+              (onFocusIn)="employeeNumberFocused = true" (onFocusOut)="employeeNumberFocused = false">
+            </dx-number-box>
           </div>
         </div>
 
@@ -50,29 +50,41 @@
           <div class="input-wrapper" [class.focused]="emailFocused || email">
             <div class="left-bar" [class.visible]="emailFocused"></div>
             <label class="floating-label" [class.active]="emailFocused || email">Email</label>
-            <dx-text-box [(value)]="email" (onFocusIn)="emailFocused = true" (onFocusOut)="emailFocused = false">
+            <dx-text-box [(value)]="email" mode="email" (onFocusIn)="emailFocused = true"
+              (onFocusOut)="emailFocused = false">
+              <dx-validator>
+                <dxi-validation-rule type="email" message="Invalid email address"></dxi-validation-rule>
+              </dx-validator>
             </dx-text-box>
           </div>
         </div>
 
+        <!-- Password -->
         <div class="form-group floating-group">
-          <div class="input-wrapper" [class.focused]="passwordFocused || password">
+          <div class="input-wrapper password-wrapper" [class.focused]="passwordFocused || password">
             <div class="left-bar" [class.visible]="passwordFocused"></div>
             <label class="floating-label" [class.active]="passwordFocused || password">Password</label>
             <dx-text-box [(value)]="password" [mode]="passwordMode" (onFocusIn)="passwordFocused = true"
               (onFocusOut)="passwordFocused = false">
             </dx-text-box>
+            <span class="eye-toggle" (mousedown)="$event.preventDefault(); togglePassword()">
+              <i [class]="passwordMode === 'password' ? 'dx-icon-eyeclose' : 'dx-icon-eyeopen'"></i>
+            </span>
           </div>
         </div>
 
+        <!-- Confirm Password -->
         <div class="form-group floating-group">
-          <div class="input-wrapper" [class.focused]="ConfirmpasswordFocused || confirmPassword">
+          <div class="input-wrapper password-wrapper" [class.focused]="ConfirmpasswordFocused || confirmPassword">
             <div class="left-bar" [class.visible]="ConfirmpasswordFocused"></div>
             <label class="floating-label" [class.active]="ConfirmpasswordFocused || confirmPassword">Confirm
               Password</label>
             <dx-text-box [(value)]="confirmPassword" [mode]="confirmPasswordMode"
               (onFocusIn)="ConfirmpasswordFocused = true" (onFocusOut)="ConfirmpasswordFocused = false">
             </dx-text-box>
+            <span class="eye-toggle" (mousedown)="$event.preventDefault(); toggleConfirmPassword()">
+              <i [class]="confirmPasswordMode === 'password' ? 'dx-icon-eyeclose' : 'dx-icon-eyeopen'"></i>
+            </span>
           </div>
         </div>
         <dx-button text="Create Account" type="default" stylingMode="contained" [width]="'100%'" class="login-btn"

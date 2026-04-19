@@ -19,6 +19,26 @@ $color-gray-text: #999999;
   }
 }
 
+.password-wrapper {
+  position: relative;
+
+  .eye-toggle {
+    position: absolute;
+    right: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    cursor: pointer;
+    z-index: 10;
+    color: var(--color-gray-text, #999);
+    font-size: 18px;
+    line-height: 1;
+
+    &:hover {
+      color: var(--color-primary);
+    }
+  }
+}
+
 // CARD
 
 .register-card {
@@ -98,6 +118,7 @@ $color-gray-text: #999999;
     opacity: 0;
     transform: translateX(-50%) translateY(-20px);
   }
+
   to {
     opacity: 1;
     transform: translateX(-50%) translateY(0);

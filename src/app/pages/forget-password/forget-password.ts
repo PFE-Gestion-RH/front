@@ -1,19 +1,20 @@
 import { CommonModule } from '@angular/common';
-import { Component ,ChangeDetectorRef} from '@angular/core';
+import { Component, ChangeDetectorRef } from '@angular/core';
 import { Router, RouterModule } from '@angular/router';
-import { DxButtonModule, DxTextBoxModule } from 'devextreme-angular';
+import { DxButtonModule, DxTextBoxModule, DxValidatorModule, DxValidationGroupModule } from 'devextreme-angular';
 import { SharedService } from '../../services/shared.service';
 import { ToastType } from '../../components/toast/toast';
 import { HttpClient } from '@angular/common/http';
 import { ApiResponse } from '../../models/auth/api-response.model';
 import { environment } from '../../environments/environment';
-
+import { DxiValidationRuleModule } from 'devextreme-angular/ui/nested';
+import { DxValidationGroupComponent } from 'devextreme-angular';
 @Component({
   selector: 'app-forget-password',
   templateUrl: './forget-password.html',
   styleUrls: ['./forget-password.scss'],
   standalone: true,
-  imports: [CommonModule, RouterModule, DxTextBoxModule, DxButtonModule],
+  imports: [CommonModule, RouterModule, DxTextBoxModule, DxValidationGroupModule, DxValidatorModule, DxButtonModule, DxiValidationRuleModule, DxValidationGroupComponent],
 })
 
 export class ForgetPassword {
@@ -26,20 +27,18 @@ export class ForgetPassword {
     private router: Router,
     private http: HttpClient,
     private sharedService: SharedService,
-    private cdr: ChangeDetectorRef 
-  ) {}
+    private cdr: ChangeDetectorRef
+  ) { }
 
-  sendResetLink(): void {
+  sendResetLink(validationGroup: DxValidationGroupComponent): void {
     if (this.isLoading) return;
 
-    if (!this.email) {
-      this.sharedService.showToastMessage(ToastType.Warning, 'Please enter your email address.');
-      return;
-    }
+    const result = validationGroup.instance.validate();
 
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(this.email)) {
-      this.sharedService.showToastMessage(ToastType.Warning, 'Please enter a valid email address.');
+    if (!result.isValid) {
+      // Prend le premier message d'erreur et l'affiche en toast
+      const message = result.brokenRules?.[0]?.message ?? 'Invalid input';
+      this.sharedService.showToastMessage(ToastType.Warning, message as string);
       return;
     }
 
@@ -51,12 +50,12 @@ export class ForgetPassword {
           this.isLoading = false;
           this.showEmailSent = true;
           this.sharedService.showToastMessage(ToastType.Success, res.message || 'Reset link sent successfully!', 4000);
-          this.cdr.detectChanges(); 
+          this.cdr.detectChanges();
         },
         error: (err) => {
           this.isLoading = false;
           this.sharedService.showToastMessage(ToastType.Error, err.error?.message || 'Failed to send reset link.', 4000);
-          this.cdr.detectChanges(); 
+          this.cdr.detectChanges();
         }
       });
   }

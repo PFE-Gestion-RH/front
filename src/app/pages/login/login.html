@@ -1,7 +1,11 @@
 <div class="login-page">
 
-  <div class="login-left"></div>
-
+  <div class="login-left">
+    <div class="illustration-wrapper">
+      <img src="assets/barthauer_illustration_v3.svg" alt="All services at a click" class="illustration-img"
+        draggable="false" />
+    </div>
+  </div>
   <div class="login-right">
     <div class="login-form-container">
 
@@ -12,69 +16,35 @@
       </div>
 
       <div class="form-group floating-group">
-        <div class="input-wrapper"
-             [class.focused]="emailFocused || email">
-
-          <div class="left-bar"
-               [class.visible]="emailFocused"></div>
-
-          <label class="floating-label"
-                 [class.active]="emailFocused || email">
-            Email
-          </label>
-
-          <dx-text-box
-            [(value)]="email"
-            (onFocusIn)="emailFocused = true"
-            (onFocusOut)="emailFocused = false">
+        <div class="input-wrapper" [class.focused]="emailFocused || email">
+          <div class="left-bar" [class.visible]="emailFocused"></div>
+          <label class="floating-label" [class.active]="emailFocused || email">Email</label>
+          <dx-text-box [(value)]="email" [disabled]="isLoading" (onFocusIn)="emailFocused = true"
+            (onFocusOut)="emailFocused = false" (onEnterKey)="onLogin()">
           </dx-text-box>
-
         </div>
       </div>
-
       <div class="form-group floating-group">
-        <div class="input-wrapper"
-             [class.focused]="passwordFocused || password">
-
-          <div class="left-bar"
-               [class.visible]="passwordFocused"></div>
-
-          <label class="floating-label"
-                 [class.active]="passwordFocused || password">
-            Password
-          </label>
-
-        <dx-text-box
-  [(value)]="password"
-  [mode]="passwordMode"
-  (onFocusIn)="passwordFocused = true"
-  (onFocusOut)="passwordFocused = false">
-
-  <dxi-button
-    name="togglePassword"
-    location="after"
-    [options]="{
-      icon: passwordMode === 'password' ? 'eyeclose' : 'eyeopen',
-      stylingMode: 'text',
-      type: 'normal',
-      onClick: togglePassword.bind(this)
-    }">
-  </dxi-button>
-
-</dx-text-box>
-
+        <div class="input-wrapper password-wrapper" [class.focused]="passwordFocused || password">
+          <div class="left-bar" [class.visible]="passwordFocused"></div>
+          <label class="floating-label" [class.active]="passwordFocused || password">Password</label>
+          <dx-text-box [(value)]="password" [mode]="passwordMode" [disabled]="isLoading"
+            (onFocusIn)="passwordFocused = true" (onFocusOut)="passwordFocused = false" (onEnterKey)="onLogin()">
+          </dx-text-box>
+          <span class="eye-toggle" (mousedown)="$event.preventDefault(); togglePassword()">
+            <i [class]="passwordMode === 'password' ? 'dx-icon-eyeclose' : 'dx-icon-eyeopen'"></i>
+          </span>
         </div>
       </div>
-
- 
-
-      <dx-button
-        text="Login"
-        type="default"
-        stylingMode="contained"
-        [width]="'100%'"
-        class="login-btn"
+      <!-- Login button with loader -->
+      <dx-button type="default" stylingMode="contained" [width]="'100%'" class="login-btn" [disabled]="isLoading"
         (onClick)="onLogin()">
+        <div *dxTemplate="let data of 'content'" class="btn-content">
+          <span *ngIf="!isLoading">Login</span>
+          <span *ngIf="isLoading" class="btn-loader">
+            <span class="spinner"></span>
+          </span>
+        </div>
       </dx-button>
 
       <div class="forgot-row">
@@ -83,12 +53,9 @@
 
       <div class="register-row">
         <span>Don't have an account yet? </span>
-        <a (click)="goToRegister()" class="register-link">
-          Create an account
-        </a>
+        <a (click)="goToRegister()" class="register-link">Create an account</a>
       </div>
 
     </div>
   </div>
-
 </div>

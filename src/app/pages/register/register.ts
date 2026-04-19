@@ -3,17 +3,17 @@ import { CommonModule } from '@angular/common';
 import { Router, RouterModule } from '@angular/router';
 import { HttpClient } from '@angular/common/http';
 import { ToastType } from '../../components/toast/toast';
-import { DxButtonModule, DxTextBoxModule } from 'devextreme-angular';
 import { ApiResponse } from '../../models/auth/api-response.model';
 import { SharedService } from '../../services/shared.service';
 import { environment } from '../../environments/environment';
-
+import { DxButtonModule, DxTextBoxModule, DxNumberBoxModule, DxValidatorModule } from 'devextreme-angular';
+import { DxiValidationRuleModule } from 'devextreme-angular/ui/nested';
 type RegisterData = string;
 
 @Component({
   selector: 'app-register',
   standalone: true,
-  imports: [CommonModule, RouterModule, DxTextBoxModule, DxButtonModule],
+  imports: [CommonModule, RouterModule, DxTextBoxModule, DxButtonModule, DxNumberBoxModule, DxValidatorModule, DxiValidationRuleModule],
   templateUrl: './register.html',
   styleUrls: ['./register.scss'],
 })
@@ -23,8 +23,7 @@ export class Register {
   email = '';
   password = '';
   confirmPassword = '';
-  employeeNumber = '';
-
+  employeeNumber: number = 0;
   passwordMode: 'password' | 'text' = 'password';
   confirmPasswordMode: 'password' | 'text' = 'password';
 
@@ -63,26 +62,18 @@ export class Register {
 
   togglePassword() {
     this.passwordMode = this.passwordMode === 'password' ? 'text' : 'password';
-    this.passwordButtonOptions = {
-      ...this.passwordButtonOptions,
-      icon: this.passwordMode === 'password' ? 'eyeclose' : 'eyeopen',
-    };
   }
 
   toggleConfirmPassword() {
     this.confirmPasswordMode = this.confirmPasswordMode === 'password' ? 'text' : 'password';
-    this.confirmPasswordButtonOptions = {
-      ...this.confirmPasswordButtonOptions,
-      icon: this.confirmPasswordMode === 'password' ? 'eyeclose' : 'eyeopen',
-    };
   }
+
 
   register() {
     if (this.isLoading) return;
 
-    // 👇 employeeNumber ajouté à la validation
     if (!this.LastName || !this.FirstName || !this.employeeNumber || !this.email || !this.password || !this.confirmPassword) {
-      this.sharedService.showToastMessage(ToastType.Warning, 'Please fill in all fields');
+      this.sharedService.showToastMessage(ToastType.Warning, 'Please fill in all fields correctly');
       return;
     }
 
@@ -93,9 +84,8 @@ export class Register {
 
     this.isLoading = true;
 
-    // 👇 employeeNumber ajouté au body
     const body = {
-      employeeNumber: this.employeeNumber.trim(),
+      employeeNumber: this.employeeNumber,
       LastName: this.LastName,
       FirstName: this.FirstName,
       email: this.email,
