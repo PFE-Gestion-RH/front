@@ -36,10 +36,14 @@
           </span>
         </div>
       </div>
-      <!-- Login button with loader -->
-      <dx-button [text]="isLoading ? '' : 'Login'" type="default" stylingMode="contained" [width]="'100%'"
-        class="login-btn" [disabled]="isLoading" (onClick)="onLogin()">
-      </dx-button>
+      <div class="btn-wrapper">
+        <dx-button [text]="isLoading ? '' : 'Login'" type="default" stylingMode="contained" [width]="'100%'"
+          class="login-btn" [disabled]="isLoading" (onClick)="onLogin()">
+        </dx-button>
+        <span class="btn-spinner" *ngIf="isLoading">
+          <span class="spinner"></span>
+        </span>
+      </div>
       <div class="forgot-row">
         <a (click)="goToForgot()">Forgot password?</a>
       </div>
