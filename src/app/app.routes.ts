@@ -23,6 +23,7 @@ import { Settings } from './pages/settings/settings';
 // ── AJOUT : import du dashboard TeamLead ─────────────────────────────────────
 import { TeamleadDashboardComponent } from './pages/TeamLead/dashboard/dashboard';
 import { AdminDahboard } from './pages/Admin/admin-dahboard/admin-dahboard';
+import { Dashboard } from './pages/Admin/dashboard/dashboard';
 
 export { MyAbsences as myabsences } from './pages/Employee/myAbsences/myAbsences';
 export { MyPermissions as mypermissions } from './pages/Employee/myPermissions/myPermissions';
@@ -41,7 +42,7 @@ export const routes: Routes = [
     children: [
 
       // ── Admin ─────────────────────────────────────────────────────────────
-      { path: 'admin', component: AdminDahboard, data: { role: 'Admin' } },
+      { path: 'admin', component: Dashboard, data: { role: 'Admin' } },
       { path: 'admin/users', component: Users, data: { role: 'Admin' } },
       { path: 'admin/teams', component: Teams, data: { role: 'Admin' } },
       { path: 'admin/leave-categories', component: LeaveCategories, data: { role: 'Admin' } },
