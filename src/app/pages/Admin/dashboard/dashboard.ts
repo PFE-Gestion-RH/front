@@ -2,6 +2,7 @@ import { Component, OnInit, OnDestroy, AfterViewInit, ElementRef, ViewChild, Cha
 import { HttpClient } from '@angular/common/http';
 import { IReportEmbedConfiguration, models } from 'powerbi-client';
 import { PowerBIEmbedModule } from 'powerbi-client-angular';
+import { environment } from '../../../environments/environment.prod';
 
 @Component({
   selector: 'app-dashboard',
@@ -50,8 +51,7 @@ export class Dashboard implements OnInit, AfterViewInit, OnDestroy {
 
     console.log('[PBI] initial window.innerWidth =', initialWidth, '→ layout =', initialLayout);
 
-    this.http.get<any>('http://localhost:5000/api/powerbi/embed-config').subscribe({
-      next: (data) => {
+this.http.get<any>(`${environment.apiUrl}/powerbi/embed-config`).subscribe({      next: (data) => {
         this.embedData = data;
         setTimeout(() => {
           const availableWidth = this.wrapperRef?.nativeElement?.offsetWidth || (window.innerWidth - 180);
