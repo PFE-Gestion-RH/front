@@ -40,6 +40,7 @@ export const routes: Routes = [
     component: Layout,
     canActivate: [AuthGuard],
     children: [
+      
 
       // ── Admin ─────────────────────────────────────────────────────────────
       { path: 'admin', component: AdminDahboard, data: { role: 'Admin' } },
