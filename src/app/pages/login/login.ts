@@ -64,7 +64,8 @@ export class Login {
       })
       .subscribe({
         next: (res) => {
-          this.isLoading = false;  // ← toujours en premier
+          this.isLoading = false;
+          this.cdr.detectChanges(); // ← force le re-render
           if (res.isSuccess && res.data) {
             const userId = res.data.user.id || res.data.user.email || 'default';
             const savedLanguage = localStorage.getItem(`language_${userId}`) || 'en';
@@ -87,7 +88,7 @@ export class Login {
         },
         error: (err) => {
           this.isLoading = false;
-          this.cdr.detectChanges();
+          this.cdr.detectChanges(); // ← ici aussi
           this.errorMessage = err.error?.message || err.error?.Message || err.error?.title || 'Login failed';
           this.sharedService.showToastMessage(ToastType.Error, this.errorMessage, 3000);
         },
