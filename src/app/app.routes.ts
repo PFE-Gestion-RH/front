@@ -42,7 +42,7 @@ export const routes: Routes = [
     children: [
 
       // ── Admin ─────────────────────────────────────────────────────────────
-      { path: 'admin', component: Dashboard, data: { role: 'Admin' } },
+      { path: 'admin', component: AdminDahboard, data: { role: 'Admin' } },
       { path: 'admin/users', component: Users, data: { role: 'Admin' } },
       { path: 'admin/teams', component: Teams, data: { role: 'Admin' } },
       { path: 'admin/leave-categories', component: LeaveCategories, data: { role: 'Admin' } },
