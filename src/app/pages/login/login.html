@@ -37,16 +37,9 @@
         </div>
       </div>
       <!-- Login button with loader -->
-      <dx-button type="default" stylingMode="contained" [width]="'100%'" class="login-btn" [disabled]="isLoading"
-        (onClick)="onLogin()">
-        <div *dxTemplate="let data of 'content'" class="btn-content">
-          <span *ngIf="!isLoading">Login</span>
-          <span *ngIf="isLoading" class="btn-loader">
-            <span class="spinner"></span>
-          </span>
-        </div>
+      <dx-button [text]="isLoading ? '' : 'Login'" type="default" stylingMode="contained" [width]="'100%'"
+        class="login-btn" [disabled]="isLoading" (onClick)="onLogin()">
       </dx-button>
-
       <div class="forgot-row">
         <a (click)="goToForgot()">Forgot password?</a>
       </div>
