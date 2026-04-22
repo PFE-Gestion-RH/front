@@ -13,6 +13,7 @@ import {
   DxTextBoxModule, DxLoadIndicatorModule, DxLoadPanelModule, DxValidatorModule,
   DxValidationGroupComponent
 } from 'devextreme-angular';
+import { effect } from '@angular/core';
 import { DxCardViewComponent } from 'devextreme-angular';
 import { SignalRService } from '../../../services/signalr.service';
 import {
@@ -56,7 +57,7 @@ export class MyAbsences implements OnInit, OnDestroy {
   columns: any[] = [];
   occupationBadge: { color: string; message: string } | null = null;
   private occupationMap = new Map<string, DayOccupation>();
-
+  today: Date = new Date();
   private statusSub!: Subscription;
 
   isLoading = false;
@@ -64,7 +65,7 @@ export class MyAbsences implements OnInit, OnDestroy {
   showPopup = false;
   maxDaysAllowed = 0;
   requiresDocument = false;
-
+  activeView: 'grid' | 'card' = 'grid';
   absenceDateRange: { startDate: Date | null; endDate: Date | null } = {
     startDate: null, endDate: null
   };
@@ -83,9 +84,29 @@ export class MyAbsences implements OnInit, OnDestroy {
     private signalRService: SignalRService,
     private translate: TranslateService,
     private calendarService: CalendarService
-  ) { }
-
+  ) {
+    effect(() => {
+      const view = this.sharedService.viewMode();
+      // Ne pas écraser si mobile
+      if (window.innerWidth >= 768) {
+        this.activeView = view;
+        this.cdr.detectChanges();
+      }
+    });
+  }
   ngOnInit(): void {
+    const isMobile = window.innerWidth < 768;
+    if (isMobile) {
+      this.activeView = 'card';
+    } else {
+      const user = JSON.parse(localStorage.getItem('user') || '{}');
+      const userId = user.id || user.email || 'default';
+      const saved = (localStorage.getItem(`view_${userId}`) as 'grid' | 'card') || 'grid';
+      this.activeView = saved;
+      // ← synchroniser le signal avec localStorage
+      this.sharedService.viewMode.set(saved);
+    }
+
     this.buildColumns();
     this.initSharedDataSource();
     this.loadLeaveCategories();

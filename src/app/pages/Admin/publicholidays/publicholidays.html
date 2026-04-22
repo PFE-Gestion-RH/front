@@ -1,32 +1,30 @@
 <div class="public-holidays-page">
   <div class="public-holidays-grid" style="position: relative;">
 
-    <dx-load-panel
-      [visible]="isLoading"
-      [position]="{ of: '.public-holidays-grid' }"
-      [showIndicator]="true" [showPane]="true"
-      [shading]="true" [shadingColor]="'rgba(255,255,255,0.6)'"
+    <dx-load-panel [visible]="isLoading" [position]="{ of: '.public-holidays-grid' }" [showIndicator]="true"
+      [showPane]="true" [shading]="true" [shadingColor]="'rgba(255,255,255,0.6)'"
       [message]="'PUBLIC_HOLIDAYS.LOADING' | translate">
     </dx-load-panel>
 
- <div class="app-page-header">
-  <h2 class="page-title">{{ 'PUBLIC_HOLIDAYS.TITLE' | translate }}</h2>
-  <div class="header-actions">
-    <div class="year-selector">
-      <dx-select-box [items]="years" [(value)]="selectedYear" (onValueChanged)="onYearChanged()" [width]="100">
-      </dx-select-box>
+    <div class="app-page-header">
+      <h2 class="page-title">{{ 'PUBLIC_HOLIDAYS.TITLE' | translate }}</h2>
+      <div class="header-actions">
+        <div class="year-selector">
+          <dx-select-box [items]="years" [(value)]="selectedYear" (onValueChanged)="onYearChanged()" [width]="100">
+          </dx-select-box>
+        </div>
+        <button class="seed-btn" (click)="seedHolidays()" [disabled]="isSeeding">
+          {{ isSeeding ? ('PUBLIC_HOLIDAYS.SEEDING' | translate) : ('PUBLIC_HOLIDAYS.SEED_BTN' | translate) + ' ' +
+          selectedYear }}
+        </button>
+        <button class="add-btn icon-only" (click)="openAdd()" [title]="'PUBLIC_HOLIDAYS.ADD' | translate">
+          <i class="dx-icon dx-icon-plus"></i>
+        </button>
+      </div>
+
     </div>
-    <button class="seed-btn" (click)="seedHolidays()" [disabled]="isSeeding">
-      {{ isSeeding ? ('PUBLIC_HOLIDAYS.SEEDING' | translate) : ('PUBLIC_HOLIDAYS.SEED_BTN' | translate) + ' ' + selectedYear }}
-    </button>
-    <button class="add-btn icon-only" (click)="openAdd()" [title]="'PUBLIC_HOLIDAYS.ADD' | translate">
-      <i class="dx-icon dx-icon-plus"></i>
-    </button>
-  </div>
-</div>
-    <div class="table-view">
-      <dx-data-grid [dataSource]="sharedDataSource" [columns]="columns"
-        [showBorders]="false" [showRowLines]="true" [showColumnLines]="false"
+    <div class="table-view" *ngIf="activeView === 'grid'"> <dx-data-grid [dataSource]="sharedDataSource"
+        [columns]="columns" [showBorders]="false" [showRowLines]="true" [showColumnLines]="false"
         [hoverStateEnabled]="true" keyExpr="id" [remoteOperations]="false">
         <dxo-load-panel [enabled]="false"></dxo-load-panel>
         <dxo-search-panel [visible]="true" [placeholder]="'PUBLIC_HOLIDAYS.SEARCH' | translate"></dxo-search-panel>
@@ -39,9 +37,10 @@
       </dx-data-grid>
     </div>
 
-    <div class="cards-view" [class.is-loading]="isLoading">
-      <dx-card-view [dataSource]="sharedDataSource" keyExpr="id" [cardMinWidth]="280" cardsPerRow="auto">
-        <dxo-card-view-search-panel [visible]="true" [placeholder]="'PUBLIC_HOLIDAYS.SEARCH' | translate"></dxo-card-view-search-panel>
+    <div class="cards-view" [class.is-loading]="isLoading" *ngIf="activeView === 'card'"> <dx-card-view
+        [dataSource]="sharedDataSource" keyExpr="id" [cardMinWidth]="280" cardsPerRow="auto">
+        <dxo-card-view-search-panel [visible]="true"
+          [placeholder]="'PUBLIC_HOLIDAYS.SEARCH' | translate"></dxo-card-view-search-panel>
         <dxo-card-view-paging [enabled]="true" [pageSize]="pageSize"></dxo-card-view-paging>
         <dxo-card-view-pager [visible]="true" [showNavigationButtons]="true" [showInfo]="true"
           [infoText]="'PUBLIC_HOLIDAYS.INFO' | translate">
@@ -63,7 +62,8 @@
             </div>
             <span class="badge" [class.badge-recurring]="params.field.value?.isRecurring"
               [class.badge-once]="!params.field.value?.isRecurring">
-              {{ params.field.value?.isRecurring ? ('PUBLIC_HOLIDAYS.YEARLY' | translate) : ('PUBLIC_HOLIDAYS.ONCE' | translate) }}
+              {{ params.field.value?.isRecurring ? ('PUBLIC_HOLIDAYS.YEARLY' | translate) : ('PUBLIC_HOLIDAYS.ONCE' |
+              translate) }}
             </span>
           </div>
           <div class="card-divider"></div>
@@ -88,7 +88,8 @@
         <div class="form-section">
           <div class="form-field">
             <label>{{ 'PUBLIC_HOLIDAYS.NAME_EN' | translate }}</label>
-            <dx-text-box [(value)]="form.name" [placeholder]="'PUBLIC_HOLIDAYS.NAME_PLACEHOLDER' | translate" [disabled]="isSaving">
+            <dx-text-box [(value)]="form.name" [placeholder]="'PUBLIC_HOLIDAYS.NAME_PLACEHOLDER' | translate"
+              [disabled]="isSaving">
               <dx-validator>
                 <dxi-validation-rule type="required" message="Name is required"></dxi-validation-rule>
               </dx-validator>
@@ -96,7 +97,8 @@
           </div>
           <div class="form-field">
             <label>{{ 'PUBLIC_HOLIDAYS.NAME_AR_LABEL' | translate }}</label>
-            <dx-text-box [(value)]="form.nameAr!" placeholder="Ex: عيد الاستقلال" [rtlEnabled]="true" [disabled]="isSaving">
+            <dx-text-box [(value)]="form.nameAr!" placeholder="Ex: عيد الاستقلال" [rtlEnabled]="true"
+              [disabled]="isSaving">
             </dx-text-box>
           </div>
           <div class="form-field">
@@ -113,7 +115,8 @@
           </div>
         </div>
         <div class="form-actions">
-          <dx-button [text]="'PUBLIC_HOLIDAYS.CANCEL' | translate" [disabled]="isSaving" (onClick)="showPopup = false"></dx-button>
+          <dx-button [text]="'PUBLIC_HOLIDAYS.CANCEL' | translate" [disabled]="isSaving"
+            (onClick)="showPopup = false"></dx-button>
           <dx-button [disabled]="isSaving" type="default" (onClick)="save(validationGroup)">
             <div *dxTemplate="let data of 'content'" style="display:flex;align-items:center;gap:8px;">
               <dx-load-indicator [visible]="isSaving" height="16" width="16"></dx-load-indicator>
@@ -135,7 +138,8 @@
         </p>
       </div>
       <div class="form-actions">
-        <dx-button [text]="'PUBLIC_HOLIDAYS.CANCEL' | translate" [disabled]="isDeleting" (onClick)="showDeletePopup = false"></dx-button>
+        <dx-button [text]="'PUBLIC_HOLIDAYS.CANCEL' | translate" [disabled]="isDeleting"
+          (onClick)="showDeletePopup = false"></dx-button>
         <dx-button [disabled]="isDeleting" type="danger" (onClick)="confirmDelete()">
           <div *dxTemplate="let data of 'content'" style="display:flex;align-items:center;gap:8px;">
             <dx-load-indicator [visible]="isDeleting" height="16" width="16"></dx-load-indicator>

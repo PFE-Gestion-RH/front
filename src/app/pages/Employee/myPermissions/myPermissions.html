@@ -1,9 +1,8 @@
 <div class="permissions-page">
   <div class="permissions-grid" style="position: relative;">
 
-    <dx-load-panel [visible]="isLoading" [position]="{ of: '.permissions-grid' }"
-      [showIndicator]="true" [showPane]="true" [shading]="true"
-      [shadingColor]="'rgba(255,255,255,0.6)'"
+    <dx-load-panel [visible]="isLoading" [position]="{ of: '.permissions-grid' }" [showIndicator]="true"
+      [showPane]="true" [shading]="true" [shadingColor]="'rgba(255,255,255,0.6)'"
       [message]="'MY_PERMISSIONS.LOADING' | translate">
     </dx-load-panel>
 
@@ -12,10 +11,9 @@
       <button class="add-btn" (click)="openAdd()">{{ 'MY_PERMISSIONS.ADD' | translate }}</button>
     </div>
 
-    <div class="table-view">
-      <dx-data-grid [dataSource]="sharedDataSource" [columns]="columns"
-        [showBorders]="false" [showRowLines]="true" [showColumnLines]="false"
-        [hoverStateEnabled]="true"
+    <div class="table-view" *ngIf="activeView === 'grid'">
+      <dx-data-grid [dataSource]="sharedDataSource" [columns]="columns" [showBorders]="false" [showRowLines]="true"
+        [showColumnLines]="false" [hoverStateEnabled]="true"
         [remoteOperations]="{ paging: true, filtering: false, sorting: false }">
         <dxo-load-panel [enabled]="false"></dxo-load-panel>
         <dxo-search-panel [visible]="true" [placeholder]="'MY_PERMISSIONS.SEARCH' | translate"></dxo-search-panel>
@@ -28,10 +26,11 @@
       </dx-data-grid>
     </div>
 
-    <div class="cards-view" [class.is-loading]="isLoading">
-      <dx-card-view [dataSource]="cardDataSource" keyExpr="id"
-        [cardMinWidth]="280" cardsPerRow="auto" [remoteOperations]="{ paging: true }">
-        <dxo-card-view-search-panel [visible]="true" [placeholder]="'MY_PERMISSIONS.SEARCH' | translate"></dxo-card-view-search-panel>
+    <div class="cards-view" [class.is-loading]="isLoading" *ngIf="activeView === 'card'"> <dx-card-view
+        [dataSource]="cardDataSource" keyExpr="id" [cardMinWidth]="280" cardsPerRow="auto"
+        [remoteOperations]="{ paging: true }">
+        <dxo-card-view-search-panel [visible]="true"
+          [placeholder]="'MY_PERMISSIONS.SEARCH' | translate"></dxo-card-view-search-panel>
         <dxo-card-view-paging [enabled]="true" [pageSize]="pageSize"></dxo-card-view-paging>
         <dxo-card-view-pager [visible]="true" [showNavigationButtons]="true" [showInfo]="true"
           [infoText]="'MY_PERMISSIONS.INFO' | translate">
@@ -66,8 +65,8 @@
     </div>
   </div>
 
-  <dx-popup [(visible)]="showPopup" [width]="500" [height]="'auto'"
-    [title]="'MY_PERMISSIONS.NEW_TITLE' | translate" [showCloseButton]="!isSaving">
+  <dx-popup [(visible)]="showPopup" [width]="500" [height]="'auto'" [title]="'MY_PERMISSIONS.NEW_TITLE' | translate"
+    [showCloseButton]="!isSaving">
     <div *dxTemplate="let data of 'content'" class="profile-form">
       <dx-validation-group #validationGroup>
         <div class="form-section">
@@ -75,16 +74,14 @@
           <div class="form-field">
             <label>{{ 'MY_PERMISSIONS.REASON' | translate }}</label>
             <dx-text-box [(value)]="newPermission.reason"
-              [placeholder]="'MY_PERMISSIONS.REASON_PLACEHOLDER' | translate"
-              [disabled]="isSaving">
+              [placeholder]="'MY_PERMISSIONS.REASON_PLACEHOLDER' | translate" [disabled]="isSaving">
             </dx-text-box>
           </div>
 
           <div class="form-field">
             <label>{{ 'MY_PERMISSIONS.DATE' | translate }}</label>
-            <dx-date-box [(value)]="permissionDate" type="date"
-              displayFormat="dd/MM/yyyy" pickerType="calendar"
-              [disabled]="isSaving" (onValueChanged)="onDateChanged($event)">
+            <dx-date-box [(value)]="permissionDate" type="date" displayFormat="dd/MM/yyyy" pickerType="calendar"
+              [min]="today" [disabled]="isSaving" (onValueChanged)="onDateChanged($event)">
               <dx-validator>
                 <dxi-validation-rule type="required" message="Date is required"></dxi-validation-rule>
               </dx-validator>
@@ -94,8 +91,7 @@
           <div class="form-row">
             <div class="form-field">
               <label>{{ 'MY_PERMISSIONS.START_TIME' | translate }}</label>
-              <dx-date-box [(value)]="permissionStartTime" type="time"
-                displayFormat="HH:mm" pickerType="native"
+              <dx-date-box [(value)]="permissionStartTime" type="time" displayFormat="HH:mm" pickerType="native"
                 [disabled]="isSaving" (onValueChanged)="onStartTimeChanged($event)">
                 <dx-validator>
                   <dxi-validation-rule type="required" message="Start time is required"></dxi-validation-rule>
@@ -104,8 +100,7 @@
             </div>
             <div class="form-field">
               <label>{{ 'MY_PERMISSIONS.END_TIME' | translate }}</label>
-              <dx-date-box [(value)]="permissionEndTime" type="time"
-                displayFormat="HH:mm" pickerType="native"
+              <dx-date-box [(value)]="permissionEndTime" type="time" displayFormat="HH:mm" pickerType="native"
                 [disabled]="isSaving" (onValueChanged)="onEndTimeChanged($event)">
                 <dx-validator>
                   <dxi-validation-rule type="required" message="End time is required"></dxi-validation-rule>
@@ -116,7 +111,8 @@
 
         </div>
         <div class="form-actions">
-          <dx-button [text]="'MY_PERMISSIONS.CANCEL' | translate" [disabled]="isSaving" (onClick)="showPopup = false"></dx-button>
+          <dx-button [text]="'MY_PERMISSIONS.CANCEL' | translate" [disabled]="isSaving"
+            (onClick)="showPopup = false"></dx-button>
           <dx-button [disabled]="isSaving" type="default" (onClick)="save(validationGroup)">
             <div *dxTemplate="let data of 'content'" style="display:flex;align-items:center;gap:8px;">
               <dx-load-indicator [visible]="isSaving" height="16" width="16"></dx-load-indicator>

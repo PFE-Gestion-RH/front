@@ -22,7 +22,7 @@
 }
 
 .team-tooltip-box {
-    position: fixed; 
+    position: fixed;
     background: #1a3a5c;
     color: #fff;
     border-radius: 8px;
@@ -63,5 +63,20 @@
     i {
         font-size: 13px;
         opacity: 0.8;
+    }
+}
+
+.table-view,
+.cards-view {
+    flex: 1;
+    min-height: 0;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+
+    dx-data-grid,
+    dx-card-view {
+        flex: 1;
+        min-height: 0;
     }
 }

@@ -1,0 +1,14 @@
+.table-view,
+.cards-view {
+    flex: 1;
+    min-height: 0;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+
+    dx-data-grid,
+    dx-card-view {
+        flex: 1;
+        min-height: 0;
+    }
+}

@@ -8,6 +8,21 @@
   display: flex;
   flex-direction: column;
 
+  .table-view,
+  .cards-view {
+    flex: 1;
+    min-height: 0;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+
+    dx-data-grid,
+    dx-card-view {
+      flex: 1;
+      min-height: 0;
+    }
+  }
+
   .users-grid {
     background: var(--color-bg-white);
     border-radius: 12px;
@@ -21,11 +36,14 @@
     max-height: 100%;
     position: relative;
 
-    .app-page-header .page-title { font-size: 22px; }
+    .app-page-header .page-title {
+      font-size: 22px;
+    }
   }
 
   // Cacher "No Data" du CardView pendant le chargement
   .cards-view.is-loading {
+
     .dx-cardview-nodata,
     .dx-empty-message,
     .dx-datagrid-nodata {
@@ -87,7 +105,10 @@
           text-overflow: ellipsis;
         }
 
-        .card-role { font-size: 12px; color: var(--color-accent); }
+        .card-role {
+          font-size: 12px;
+          color: var(--color-accent);
+        }
       }
 
       .badge {
@@ -98,16 +119,31 @@
         flex-shrink: 0;
         white-space: nowrap;
 
-        &.active  { background: rgba(34, 197, 94, 0.12); color: #16a34a; }
-        &.inactive { background: rgba(239, 68, 68, 0.1);  color: #dc2626; }
+        &.active {
+          background: rgba(34, 197, 94, 0.12);
+          color: #16a34a;
+        }
+
+        &.inactive {
+          background: rgba(239, 68, 68, 0.1);
+          color: #dc2626;
+        }
       }
     }
 
     .card-email-row {
-      .card-email { font-size: 13px; color: var(--color-accent); display: block; }
+      .card-email {
+        font-size: 13px;
+        color: var(--color-accent);
+        display: block;
+      }
     }
 
-    .card-divider { height: 1px; background: var(--color-bg-left); margin: 2px 0; }
+    .card-divider {
+      height: 1px;
+      background: var(--color-bg-left);
+      margin: 2px 0;
+    }
 
     .card-actions {
       display: flex;
@@ -122,10 +158,17 @@
   // Responsive
   @media (max-width: 1024px) {
     padding: 16px;
-    .users-grid { flex: 1; min-height: 0; max-height: none; }
+
+    .users-grid {
+      flex: 1;
+      min-height: 0;
+      max-height: none;
+    }
   }
 
-  @media (max-width: 768px) { padding: 12px; }
+  @media (max-width: 768px) {
+    padding: 12px;
+  }
 
   @media (max-width: 600px) {
     padding: 8px;
@@ -144,23 +187,44 @@
           min-height: 55px !important;
         }
 
-        .card-avatar img { width: 100%; height: 100%; object-fit: cover; object-position: center; }
-
-        .card-info {
-          .card-name { font-size: 13px !important; }
-          .card-role { font-size: 11px !important; }
+        .card-avatar img {
+          width: 100%;
+          height: 100%;
+          object-fit: cover;
+          object-position: center;
         }
 
-        .badge { font-size: 10px !important; padding: 2px 7px !important; }
+        .card-info {
+          .card-name {
+            font-size: 13px !important;
+          }
+
+          .card-role {
+            font-size: 11px !important;
+          }
+        }
+
+        .badge {
+          font-size: 10px !important;
+          padding: 2px 7px !important;
+        }
       }
 
       .card-email-row {
         padding-left: 44px;
         margin-top: 1px;
-        .card-email { font-size: 11px !important; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+        .card-email {
+          font-size: 11px !important;
+          white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
+        }
       }
 
-      .card-divider { margin: 6px 0 5px !important; }
+      .card-divider {
+        margin: 6px 0 5px !important;
+      }
 
       .card-actions {
         gap: 6px !important;
@@ -170,7 +234,12 @@
           padding: 5px 10px !important;
           font-size: 11px !important;
           border-radius: 5px !important;
-          i.dx-icon { font-size: 11px !important; width: 11px !important; height: 11px !important; }
+
+          i.dx-icon {
+            font-size: 11px !important;
+            width: 11px !important;
+            height: 11px !important;
+          }
         }
       }
     }

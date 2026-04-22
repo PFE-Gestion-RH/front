@@ -10,18 +10,31 @@
             <div class="kpi-card">
                 <span class="kpi-label">{{ 'EMPLOYEE_DASHBOARD.REMAINING_LEAVES' | translate }}</span>
                 <span class="kpi-value">{{ data.kpi.remainingLeaves }}</span>
+                <span class="kpi-sub">
+                    <span *ngFor="let cat of data.kpi.remainingByCategory">
+                        {{ cat.categoryName }}: {{ cat.usedDays }}j &nbsp;
+                    </span>
+                </span>
             </div>
+
             <div class="kpi-card">
                 <span class="kpi-label">{{ 'EMPLOYEE_DASHBOARD.USED_LEAVES' | translate }}</span>
                 <span class="kpi-value">{{ data.kpi.usedLeaveDays }}</span>
                 <span class="kpi-sub">
-                    {{ data.kpi.usedAbsences }} absence / {{ data.kpi.usedPermissions }} permission
+                    <span *ngFor="let cat of data.kpi.usedByCategory">
+                        {{ cat.categoryName }}: {{ cat.usedDays }}j &nbsp;
+                    </span>
                 </span>
             </div>
+
             <div class="kpi-card">
                 <span class="kpi-label">{{ 'EMPLOYEE_DASHBOARD.PENDING_REQUESTS' | translate }}</span>
                 <span class="kpi-value">{{ data.kpi.pendingRequests }}</span>
-                <span class="kpi-sub">{{ data.kpi.pendingAbsences }} abs · {{ data.kpi.pendingPermissions }} perm</span>
+                <span class="kpi-sub">
+                    <span *ngFor="let cat of data.kpi.pendingByCategory">
+                        {{ cat.categoryName }}: {{ cat.usedDays }} &nbsp;
+                    </span>
+                </span>
             </div>
             <div class="kpi-card kpi-card--date">
                 <span class="kpi-label">{{ 'EMPLOYEE_DASHBOARD.NEXT_LEAVE' | translate }}</span>
@@ -74,17 +87,17 @@
             <div *ngIf="data.myRequests.length === 0" class="empty-state">
                 {{ 'EMPLOYEE_DASHBOARD.NO_REQUESTS' | translate }}
             </div>
-            <dx-data-grid *ngIf="data.myRequests.length > 0" [dataSource]="data.myRequests" [showBorders]="true"
-                [showRowLines]="true" [showColumnLines]="true" [hoverStateEnabled]="true" [columnAutoWidth]="true">
 
+            <!-- Table view (desktop) -->
+            <dx-data-grid *ngIf="data.myRequests.length > 0" class="table-view" [dataSource]="data.myRequests"
+                [showBorders]="true" [showRowLines]="true" [showColumnLines]="true" [hoverStateEnabled]="true"
+                [columnAutoWidth]="true">
                 <dxi-column dataField="type" [caption]="'EMPLOYEE_DASHBOARD.TYPE_COL' | translate"
                     [minWidth]="100"></dxi-column>
                 <dxi-column [caption]="'EMPLOYEE_DASHBOARD.DATES' | translate" [minWidth]="140"
                     cellTemplate="datesTpl"></dxi-column>
                 <dxi-column [caption]="'EMPLOYEE_DASHBOARD.STATUS' | translate" [minWidth]="110"
                     cellTemplate="statusTpl"></dxi-column>
-
-
                 <div *dxTemplate="let cell of 'datesTpl'">{{ cell.data.startDate }} → {{ cell.data.endDate }}</div>
                 <div *dxTemplate="let cell of 'statusTpl'">
                     <span class="badge" [class.badge-warn]="getStatusConfig(cell.data.status).cssClass === 'badge-warn'"
@@ -94,10 +107,24 @@
                         {{ getStatusConfig(cell.data.status).label }}
                     </span>
                 </div>
-
-
                 <dxo-pager [showPageSizeSelector]="false" [showInfo]="false"></dxo-pager>
             </dx-data-grid>
+
+            <!-- Cards view (mobile) -->
+            <div *ngIf="data.myRequests.length > 0" class="cards-view">
+                <div *ngFor="let req of data.myRequests" class="request-card">
+                    <div class="request-card-header">
+                        <span class="request-type">{{ req.type }}</span>
+                        <span class="badge" [class.badge-warn]="getStatusConfig(req.status).cssClass === 'badge-warn'"
+                            [class.badge-ok]="getStatusConfig(req.status).cssClass === 'badge-ok'"
+                            [class.badge-danger]="getStatusConfig(req.status).cssClass === 'badge-danger'"
+                            [class.badge-info]="getStatusConfig(req.status).cssClass === 'badge-info'">
+                            {{ getStatusConfig(req.status).label }}
+                        </span>
+                    </div>
+                    <div class="request-dates">{{ req.startDate }} → {{ req.endDate }}</div>
+                </div>
+            </div>
         </div>
 
     </ng-container>

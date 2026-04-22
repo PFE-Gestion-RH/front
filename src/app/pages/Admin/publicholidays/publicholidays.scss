@@ -8,6 +8,21 @@
   display: flex;
   flex-direction: column;
 
+  .table-view,
+  .cards-view {
+    flex: 1;
+    min-height: 0;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+
+    dx-data-grid,
+    dx-card-view {
+      flex: 1;
+      min-height: 0;
+    }
+  }
+
   .public-holidays-grid {
     background: var(--color-bg-white);
     border-radius: 12px;

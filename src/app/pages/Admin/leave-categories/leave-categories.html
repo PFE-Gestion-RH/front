@@ -1,13 +1,8 @@
 <div class="leave-categories-page">
   <div class="leave-categories-grid" style="position: relative;">
 
-    <dx-load-panel
-      [visible]="isLoading"
-      [position]="{ of: '.leave-categories-grid' }"
-      [showIndicator]="true"
-      [showPane]="true"
-      [shading]="true"
-      [shadingColor]="'rgba(255,255,255,0.6)'"
+    <dx-load-panel [visible]="isLoading" [position]="{ of: '.leave-categories-grid' }" [showIndicator]="true"
+      [showPane]="true" [shading]="true" [shadingColor]="'rgba(255,255,255,0.6)'"
       [message]="'LEAVE_CATEGORIES.LOADING' | translate">
     </dx-load-panel>
 
@@ -16,16 +11,9 @@
       <button class="add-btn" (click)="openAdd()">{{ 'LEAVE_CATEGORIES.ADD' | translate }}</button>
     </div>
 
-    <div class="table-view">
-      <dx-data-grid
-        [dataSource]="sharedDataSource"
-        [columns]="columns"
-        [showBorders]="false"
-        [showRowLines]="true"
-        [showColumnLines]="false"
-        [hoverStateEnabled]="true"
-        keyExpr="id"
-        [remoteOperations]="true">
+    <div class="table-view" *ngIf="activeView === 'grid'"> <dx-data-grid [dataSource]="sharedDataSource"
+        [columns]="columns" [showBorders]="false" [showRowLines]="true" [showColumnLines]="false"
+        [hoverStateEnabled]="true" keyExpr="id" [remoteOperations]="true">
         <dxo-load-panel [enabled]="false"></dxo-load-panel>
         <dxo-search-panel [visible]="true" [placeholder]="'LEAVE_CATEGORIES.SEARCH' | translate"></dxo-search-panel>
         <dxo-selection mode="none"></dxo-selection>
@@ -37,9 +25,10 @@
       </dx-data-grid>
     </div>
 
-    <div class="cards-view" [class.is-loading]="isLoading">
-      <dx-card-view [dataSource]="sharedDataSource" keyExpr="id" [cardMinWidth]="280" cardsPerRow="auto">
-        <dxo-card-view-search-panel [visible]="true" [placeholder]="'LEAVE_CATEGORIES.SEARCH' | translate"></dxo-card-view-search-panel>
+    <div class="cards-view" [class.is-loading]="isLoading" *ngIf="activeView === 'card'"> <dx-card-view
+        [dataSource]="sharedDataSource" keyExpr="id" [cardMinWidth]="280" cardsPerRow="auto">
+        <dxo-card-view-search-panel [visible]="true"
+          [placeholder]="'LEAVE_CATEGORIES.SEARCH' | translate"></dxo-card-view-search-panel>
         <dxo-card-view-paging [enabled]="true" [pageSize]="pageSize"></dxo-card-view-paging>
         <dxo-card-view-pager [visible]="true" [showNavigationButtons]="true" [showInfo]="true"
           [infoText]="'LEAVE_CATEGORIES.INFO' | translate">
@@ -80,7 +69,8 @@
         <div class="form-section">
           <div class="form-field">
             <label>{{ 'LEAVE_CATEGORIES.NAME' | translate }}</label>
-            <dx-text-box [(value)]="form.name" [placeholder]="'LEAVE_CATEGORIES.NAME_PLACEHOLDER' | translate" [disabled]="isSaving">
+            <dx-text-box [(value)]="form.name" [placeholder]="'LEAVE_CATEGORIES.NAME_PLACEHOLDER' | translate"
+              [disabled]="isSaving">
               <dx-validator>
                 <dxi-validation-rule type="required" message="Name is required"></dxi-validation-rule>
               </dx-validator>
@@ -88,7 +78,8 @@
           </div>
           <div class="form-field">
             <label>{{ 'LEAVE_CATEGORIES.MAX_DAYS' | translate }}</label>
-            <dx-number-box [(value)]="form.maxDays" [placeholder]="'LEAVE_CATEGORIES.DAYS_PLACEHOLDER' | translate" [min]="0" [disabled]="isSaving">
+            <dx-number-box [(value)]="form.maxDays" [placeholder]="'LEAVE_CATEGORIES.DAYS_PLACEHOLDER' | translate"
+              [min]="0" [disabled]="isSaving">
               <dx-validator>
                 <dxi-validation-rule type="required" message="Max days is required"></dxi-validation-rule>
               </dx-validator>
@@ -96,7 +87,8 @@
           </div>
         </div>
         <div class="form-actions">
-          <dx-button [text]="'LEAVE_CATEGORIES.CANCEL' | translate" [disabled]="isSaving" (onClick)="showPopup = false"></dx-button>
+          <dx-button [text]="'LEAVE_CATEGORIES.CANCEL' | translate" [disabled]="isSaving"
+            (onClick)="showPopup = false"></dx-button>
           <dx-button [disabled]="isSaving" type="default" (onClick)="save(validationGroup)">
             <div *dxTemplate="let data of 'content'" style="display:flex;align-items:center;gap:8px;">
               <dx-load-indicator [visible]="isSaving" height="16" width="16"></dx-load-indicator>
@@ -118,7 +110,8 @@
         </p>
       </div>
       <div class="form-actions">
-        <dx-button [text]="'LEAVE_CATEGORIES.CANCEL' | translate" [disabled]="isDeleting" (onClick)="showDeletePopup = false"></dx-button>
+        <dx-button [text]="'LEAVE_CATEGORIES.CANCEL' | translate" [disabled]="isDeleting"
+          (onClick)="showDeletePopup = false"></dx-button>
         <dx-button [disabled]="isDeleting" type="danger" (onClick)="confirmDelete()">
           <div *dxTemplate="let data of 'content'" style="display:flex;align-items:center;gap:8px;">
             <dx-load-indicator [visible]="isDeleting" height="16" width="16"></dx-load-indicator>

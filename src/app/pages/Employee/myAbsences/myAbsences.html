@@ -10,8 +10,7 @@
       <button class="add-btn" (click)="openAdd()">{{ 'MY_ABSENCES.ADD' | translate }}</button>
     </div>
 
-    <div class="table-view">
-      <dx-data-grid [dataSource]="sharedDataSource" [columns]="columns" [showBorders]="false" [showRowLines]="true"
+<div class="table-view" *ngIf="activeView === 'grid'">      <dx-data-grid [dataSource]="sharedDataSource" [columns]="columns" [showBorders]="false" [showRowLines]="true"
         [showColumnLines]="false" [hoverStateEnabled]="true"
         [remoteOperations]="{ paging: true, filtering: false, sorting: false }">
         <dxo-load-panel [enabled]="false"></dxo-load-panel>
@@ -25,8 +24,7 @@
       </dx-data-grid>
     </div>
 
-    <div class="cards-view" [class.is-loading]="isLoading">
-      <dx-card-view [dataSource]="cardDataSource" keyExpr="id" [cardMinWidth]="280" cardsPerRow="auto"
+<div class="cards-view" [class.is-loading]="isLoading" *ngIf="activeView === 'card'">      <dx-card-view [dataSource]="cardDataSource" keyExpr="id" [cardMinWidth]="280" cardsPerRow="auto"
         [remoteOperations]="{ paging: true }">
         <dxo-card-view-search-panel [visible]="true"
           [placeholder]="'MY_ABSENCES.SEARCH' | translate"></dxo-card-view-search-panel>
@@ -105,7 +103,8 @@
           <div class="form-field">
             <label>{{ 'MY_ABSENCES.DATE_RANGE' | translate }}</label>
             <dx-date-range-box [(startDate)]="absenceDateRange.startDate" [(endDate)]="absenceDateRange.endDate"
-              displayFormat="dd/MM/yyyy" [disabled]="isSaving" (onValueChanged)="onDateRangeChanged($event)">
+              [min]="today" displayFormat="dd/MM/yyyy" [disabled]="isSaving"
+              (onValueChanged)="onDateRangeChanged($event)">
               <dx-validator>
                 <dxi-validation-rule type="required" message="Date range is required"></dxi-validation-rule>
               </dx-validator>

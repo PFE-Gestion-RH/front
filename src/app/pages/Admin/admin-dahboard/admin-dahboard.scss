@@ -286,3 +286,50 @@ $radius: 8px;
         }
     }
 }
+
+.admin-dashboard {
+    .cards-view {
+        display: none;
+    }
+
+    .request-card {
+        padding: 10px 12px;
+        border-bottom: 1px solid $border;
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+
+        &:last-child {
+            border-bottom: none;
+        }
+    }
+
+    .request-card-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .request-type {
+        font-size: 12px;
+        font-weight: 600;
+        color: $text-dark;
+    }
+
+    .request-dates {
+        font-size: 11px;
+        color: $text-muted;
+    }
+}
+
+@media (max-width: 600px) {
+    .admin-dashboard {
+        .table-view {
+            display: none;
+        }
+
+        .cards-view {
+            display: block;
+        }
+    }
+}

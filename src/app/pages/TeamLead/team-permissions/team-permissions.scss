@@ -37,70 +37,86 @@
     }
   }
 }
-.team-dot-wrapper {
-    position: relative;
-    display: inline-flex;
-    align-items: center;
 
-    &:hover .team-tooltip-box {
-        opacity: 1;
-        visibility: visible;
-        transform: translateX(-50%) translateY(0);
-    }
+.team-dot-wrapper {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+
+  &:hover .team-tooltip-box {
+    opacity: 1;
+    visibility: visible;
+    transform: translateX(-50%) translateY(0);
+  }
 }
 
 .team-dot {
-    display: inline-block;
-    width: 7px;
-    height: 7px;
-    border-radius: 50%;
-    background: #378ADD;
-    opacity: 0.8;
-    flex-shrink: 0;
-    cursor: pointer;
+  display: inline-block;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #378ADD;
+  opacity: 0.8;
+  flex-shrink: 0;
+  cursor: pointer;
 }
 
 .team-tooltip-box {
-    position: fixed; 
-    background: #1a3a5c;
-    color: #fff;
-    border-radius: 8px;
-    padding: 8px 12px;
-    min-width: 180px;
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
-    font-size: 12px;
-    white-space: nowrap;
-    opacity: 0;
-    visibility: hidden;
-    transition: opacity 0.15s ease;
-    z-index: 99999;
-    pointer-events: none;
+  position: fixed;
+  background: #1a3a5c;
+  color: #fff;
+  border-radius: 8px;
+  padding: 8px 12px;
+  min-width: 180px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 12px;
+  white-space: nowrap;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.15s ease;
+  z-index: 99999;
+  pointer-events: none;
 
-    &.visible {
-        opacity: 1;
-        visibility: visible;
-    }
+  &.visible {
+    opacity: 1;
+    visibility: visible;
+  }
 
-    &::after {
-        content: '';
-        position: absolute;
-        top: 100%;
-        left: 50%;
-        transform: translateX(-50%);
-        border: 5px solid transparent;
-        border-top-color: #1a3a5c;
-    }
+  &::after {
+    content: '';
+    position: absolute;
+    top: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    border: 5px solid transparent;
+    border-top-color: #1a3a5c;
+  }
 }
 
 .tooltip-row {
-    display: flex;
-    align-items: center;
-    gap: 6px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
 
-    i {
-        font-size: 13px;
-        opacity: 0.8;
-    }
+  i {
+    font-size: 13px;
+    opacity: 0.8;
+  }
+}
+
+.table-view,
+.cards-view {
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+
+  dx-data-grid,
+  dx-card-view {
+    flex: 1;
+    min-height: 0;
+  }
 }

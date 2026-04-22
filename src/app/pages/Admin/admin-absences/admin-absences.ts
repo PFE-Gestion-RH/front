@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy, ChangeDetectorRef, ViewEncapsulation } from '@angular/core';
+import { Component, effect, OnInit, OnDestroy, ChangeDetectorRef, ViewEncapsulation } from '@angular/core';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -45,7 +45,7 @@ export class AdminAbsences implements OnInit, OnDestroy {
 
   isLoading = false;
   isProcessing = false;
-
+  activeView: 'grid' | 'card' = 'grid';
   showApprovePopup = false;
   showRejectPopup = false;
   showReasonPopup = false;
@@ -63,9 +63,27 @@ export class AdminAbsences implements OnInit, OnDestroy {
     private cdr: ChangeDetectorRef,
     private signalRService: SignalRService,
     private translate: TranslateService
-  ) { }
+  ) {
+    effect(() => {
+      const view = this.sharedService.viewMode();
+      if (window.innerWidth >= 768) {
+        this.activeView = view;
+        this.cdr.detectChanges();
+      }
+    });
+  }
 
   ngOnInit(): void {
+    const isMobile = window.innerWidth < 768;
+    if (isMobile) {
+      this.activeView = 'card';
+    } else {
+      const user = JSON.parse(localStorage.getItem('user') || '{}');
+      const userId = user.id || user.email || 'default';
+      const saved = localStorage.getItem(`view_${userId}`) as 'grid' | 'card';
+      this.activeView = saved || 'grid';
+      this.sharedService.viewMode.set(this.activeView);
+    }
     this.buildColumns();
     this.initSharedDataSource();
     this.translate.onLangChange.subscribe(() => {

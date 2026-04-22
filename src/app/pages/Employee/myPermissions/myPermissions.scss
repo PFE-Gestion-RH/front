@@ -8,6 +8,21 @@
   display: flex;
   flex-direction: column;
 
+  .table-view,
+  .cards-view {
+    flex: 1;
+    min-height: 0;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+
+    dx-data-grid,
+    dx-card-view {
+      flex: 1;
+      min-height: 0;
+    }
+  }
+
   .permissions-grid {
     background: var(--color-bg-white);
     border-radius: 12px;
@@ -48,12 +63,29 @@
       .card-info {
         flex: 1;
         min-width: 0;
-        .card-name { margin: 0 0 2px 0; font-size: 15px; font-weight: 700; color: var(--color-primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-        .card-role { font-size: 12px; color: var(--color-accent); }
+
+        .card-name {
+          margin: 0 0 2px 0;
+          font-size: 15px;
+          font-weight: 700;
+          color: var(--color-primary);
+          white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
+        }
+
+        .card-role {
+          font-size: 12px;
+          color: var(--color-accent);
+        }
       }
     }
 
-    .card-divider { height: 1px; background: var(--color-bg-left); margin: 2px 0; }
+    .card-divider {
+      height: 1px;
+      background: var(--color-bg-left);
+      margin: 2px 0;
+    }
 
     .card-statuses {
       display: flex;
@@ -64,7 +96,11 @@
         align-items: center;
         gap: 6px;
 
-        .status-label { font-size: 11px; font-weight: 600; color: var(--color-accent); }
+        .status-label {
+          font-size: 11px;
+          font-weight: 600;
+          color: var(--color-accent);
+        }
       }
     }
   }
@@ -79,15 +115,23 @@
   // Responsive
   @media (max-width: 1024px) {
     padding: 16px;
-    .permissions-grid { flex: 1; min-height: 0; max-height: none; }
+
+    .permissions-grid {
+      flex: 1;
+      min-height: 0;
+      max-height: none;
+    }
   }
 
-  @media (max-width: 768px) { padding: 12px; }
+  @media (max-width: 768px) {
+    padding: 12px;
+  }
 
   @media (max-width: 600px) {
     padding: 8px;
   }
 }
+
 // Fix validation icon position inside form fields
 .form-field {
   .dx-invalid .dx-texteditor-input-container {
@@ -107,6 +151,7 @@
     right: 36px !important;
   }
 }
+
 // Fix validation icon position inside form fields
 .form-field {
   .dx-invalid .dx-texteditor-input-container {
@@ -126,6 +171,7 @@
     right: 36px !important;
   }
 }
+
 // Hide validation error messages, keep only red borders + icons
 .form-field .dx-invalid-message {
   display: none !important;

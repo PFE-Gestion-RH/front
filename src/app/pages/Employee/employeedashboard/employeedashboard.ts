@@ -20,10 +20,14 @@ interface EmployeeKpi {
   nextLeaveDate: string;
   nextLeaveType: string;
   nextLeaveDays: number;
+  usedByCategory: { categoryName: string; usedDays: number }[];
+  remainingByCategory: { categoryName: string; usedDays: number }[];
+  pendingByCategory: { categoryName: string; usedDays: number }[];
 }
 
 interface AbsenceTrendPoint { month: string; count: number; }
 interface AbsenceType { type: string; count: number; percentage: number; }
+
 interface MyRequest {
   id: number; type: string;
   startDate: string; endDate: string; status: string;

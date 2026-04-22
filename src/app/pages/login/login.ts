@@ -1,5 +1,5 @@
 import { HttpClient } from '@angular/common/http';
-import { Component } from '@angular/core';
+import { Component, ChangeDetectorRef } from '@angular/core';
 import { Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
@@ -31,7 +31,8 @@ export class Login {
     private http: HttpClient,
     private router: Router,
     private sharedService: SharedService,
-    private translate: TranslateService
+    private translate: TranslateService,
+    private cdr: ChangeDetectorRef
   ) { }
 
   togglePassword() {
@@ -44,12 +45,16 @@ export class Login {
       return;
     }
     this.isLoading = true;
+    this.cdr.detectChanges();
+
     this.http.post<ApiResponse<LoginResponse>>(`${environment.apiUrl}/account/login`, {
       email: this.email,
       password: this.password,
     }).subscribe({
       next: (res) => {
         this.isLoading = false;
+        this.cdr.detectChanges();
+
         if (res.isSuccess && res.data) {
           this.sharedService.setUser(res.data.user, res.data.token);
           const userId = res.data.user.id || res.data.user.email || 'default';
@@ -71,6 +76,7 @@ export class Login {
       },
       error: (err) => {
         this.isLoading = false;
+        this.cdr.detectChanges();
         this.sharedService.showToastMessage(ToastType.Error, err.error?.message || 'Login failed');
       }
     });

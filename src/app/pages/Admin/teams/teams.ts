@@ -1,4 +1,4 @@
-import { Component, OnInit, NgZone, signal, ChangeDetectorRef, ViewEncapsulation, ViewChild } from '@angular/core';
+import { Component, OnInit, NgZone, signal, ChangeDetectorRef, effect, ViewEncapsulation, ViewChild } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -47,7 +47,7 @@ export class Teams implements OnInit {
   allUsers = signal<User[]>([]);
   pageSize = 10;
   columns: any[] = [];
-
+  activeView: 'grid' | 'card' = 'grid';
   isLoading = false;
   isSaving = false;
   isDeleting = false;
@@ -83,9 +83,26 @@ export class Teams implements OnInit {
     private ngZone: NgZone,
     private cdr: ChangeDetectorRef,
     private translate: TranslateService
-  ) {}
-
+  ) {
+    effect(() => {
+      const view = this.sharedService.viewMode();
+      if (window.innerWidth >= 768) {
+        this.activeView = view;
+        this.cdr.detectChanges();
+      }
+    });
+  }
   ngOnInit(): void {
+    const isMobile = window.innerWidth < 768;
+    if (isMobile) {
+      this.activeView = 'card';
+    } else {
+      const user = JSON.parse(localStorage.getItem('user') || '{}');
+      const userId = user.id || user.email || 'default';
+      const saved = localStorage.getItem(`view_${userId}`) as 'grid' | 'card';
+      this.activeView = saved || 'grid';
+      this.sharedService.viewMode.set(this.activeView);
+    }
     this.buildColumns();
     this.initSharedDataSource();
     this.loadUsers();

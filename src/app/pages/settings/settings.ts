@@ -64,11 +64,14 @@ export class Settings implements OnInit {
     this.profile.lastName = user.lastName || '';
     this.profile.email = user.email || '';
 
-    // ← langue par utilisateur
     const userId = this.getUserId();
     this.language = localStorage.getItem(`language_${userId}`) || 'en';
-  }
 
+    // ← charger préférence vue par user
+    const saved = localStorage.getItem(`view_${userId}`);
+    this.viewMode = saved || 'grid';
+    this.sharedService.viewMode.set(this.viewMode as 'grid' | 'card');
+  }
   saveProfile(): void {
     if (this.isSaving) return;
     const token = this.sharedService.getToken();
@@ -119,13 +122,14 @@ export class Settings implements OnInit {
   }
 
   saveUISettings(): void {
-    localStorage.setItem('viewMode', this.viewMode);
+    const userId = this.getUserId();
+    localStorage.setItem(`view_${userId}`, this.viewMode);
+    this.sharedService.viewMode.set(this.viewMode as 'grid' | 'card');
     this.sharedService.showToastMessage(ToastType.Success, 'View settings saved!');
   }
-
   saveLanguage(): void {
     const userId = this.getUserId();
-    localStorage.setItem(`language_${userId}`, this.language); 
+    localStorage.setItem(`language_${userId}`, this.language);
     this.translate.use(this.language);
     this.sharedService.showToastMessage(ToastType.Success,
       this.language === 'fr' ? 'Langue sauvegardée !' : 'Language saved!'

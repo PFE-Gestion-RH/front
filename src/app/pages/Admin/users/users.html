@@ -11,9 +11,9 @@
     </div>
 
     <!-- TABLE desktop -->
-    <div class="table-view">
-      <dx-data-grid [dataSource]="sharedDataSource" [columns]="columns" [showBorders]="false" [showRowLines]="true"
-        [showColumnLines]="false" [hoverStateEnabled]="true" keyExpr="id" [remoteOperations]="true">
+    <div class="table-view" *ngIf="activeView === 'grid'"> <dx-data-grid [dataSource]="sharedDataSource"
+        [columns]="columns" [showBorders]="false" [showRowLines]="true" [showColumnLines]="false"
+        [hoverStateEnabled]="true" keyExpr="id" [remoteOperations]="true">
 
         <dxo-load-panel [enabled]="false"></dxo-load-panel>
         <dxo-search-panel [visible]="true" [placeholder]="'USERS.SEARCH' | translate"></dxo-search-panel>
@@ -27,8 +27,8 @@
     </div>
 
     <!-- CARDS tablette/mobile -->
-    <div class="cards-view" [class.is-loading]="isLoading">
-      <dx-card-view [dataSource]="sharedDataSource" keyExpr="id" [cardMinWidth]="280" cardsPerRow="auto">
+    <div class="cards-view" [class.is-loading]="isLoading" *ngIf="activeView === 'card'"> <dx-card-view
+        [dataSource]="sharedDataSource" keyExpr="id" [cardMinWidth]="280" cardsPerRow="auto">
 
         <dxo-card-view-search-panel [visible]="true"
           [placeholder]="'USERS.SEARCH' | translate"></dxo-card-view-search-panel>

@@ -84,9 +84,11 @@
 
                 <div class="table-card">
                     <h3 class="table-title">{{ 'TEAMLEAD_DASHBOARD.RECENT_REQUESTS' | translate }}</h3>
-                    <dx-data-grid [dataSource]="data.recentRequests" [showBorders]="false" [showRowLines]="true"
-                        [showColumnLines]="false" [hoverStateEnabled]="true" [columnAutoWidth]="true">
 
+                    <!-- Table view (desktop) -->
+                    <dx-data-grid class="table-view" [dataSource]="data.recentRequests" [showBorders]="false"
+                        [showRowLines]="true" [showColumnLines]="false" [hoverStateEnabled]="true"
+                        [columnAutoWidth]="true">
                         <dxi-column dataField="employeeName" [caption]="'TEAMLEAD_DASHBOARD.MEMBER' | translate"
                             [minWidth]="70"></dxi-column>
                         <dxi-column dataField="type" [caption]="'TEAMLEAD_DASHBOARD.TYPE' | translate"
@@ -97,7 +99,6 @@
                             cellTemplate="statusTpl"></dxi-column>
                         <dxi-column [caption]="'TEAMLEAD_DASHBOARD.ACTIONS' | translate" [minWidth]="80"
                             cellTemplate="actionsTpl" alignment="center"></dxi-column>
-
                         <div *dxTemplate="let cell of 'datesTpl'">{{ cell.data.startDate }} → {{ cell.data.endDate }}
                         </div>
                         <div *dxTemplate="let cell of 'statusTpl'">
@@ -110,32 +111,49 @@
                             </span>
                         </div>
                         <div *dxTemplate="let cell of 'actionsTpl'">
-
                             <ng-container
                                 *ngIf="cell.data.status === 'PendingTeamLead' || cell.data.status === 'PendingAdministration'; else noActions">
-
                                 <div class="card-actions">
                                     <button class="action-btn approve-btn" (click)="onApprove(cell.data)">
-                                        <i class="dx-icon dx-icon-check"></i>
-                                        {{ 'TEAMLEAD_DASHBOARD.APPROVE' | translate }}
+                                        <i class="dx-icon dx-icon-check"></i> {{ 'TEAMLEAD_DASHBOARD.APPROVE' |
+                                        translate }}
                                     </button>
-
                                     <button class="action-btn reject-btn" (click)="onReject(cell.data)">
-                                        <i class="dx-icon dx-icon-close"></i>
-                                        {{ 'TEAMLEAD_DASHBOARD.REJECT' | translate }}
+                                        <i class="dx-icon dx-icon-close"></i> {{ 'TEAMLEAD_DASHBOARD.REJECT' | translate
+                                        }}
                                     </button>
                                 </div>
-
                             </ng-container>
-
-                            <ng-template #noActions>
-                                <span class="na-value">N/A</span>
-                            </ng-template>
-
+                            <ng-template #noActions><span class="na-value">N/A</span></ng-template>
                         </div>
                     </dx-data-grid>
-                </div>
 
+                    <!-- Cards view (mobile) -->
+                    <div class="cards-view">
+                        <div *ngFor="let req of data.recentRequests" class="request-card">
+                            <div class="request-card-header">
+                                <span class="request-type">{{ req.employeeName }}</span>
+                                <span class="badge"
+                                    [class.badge-warn]="getStatusConfig(req.status).cssClass === 'badge-warn'"
+                                    [class.badge-ok]="getStatusConfig(req.status).cssClass === 'badge-ok'"
+                                    [class.badge-danger]="getStatusConfig(req.status).cssClass === 'badge-danger'"
+                                    [class.badge-info]="getStatusConfig(req.status).cssClass === 'badge-info'">
+                                    {{ getStatusConfig(req.status).label }}
+                                </span>
+                            </div>
+                            <div class="request-dates">{{ req.type }} · {{ req.startDate }} → {{ req.endDate }}</div>
+                            <div class="card-actions"
+                                *ngIf="req.status === 'PendingTeamLead' || req.status === 'PendingAdministration'">
+                                <button class="action-btn approve-btn" (click)="onApprove(req)">
+                                    <i class="dx-icon dx-icon-check"></i> {{ 'TEAMLEAD_DASHBOARD.APPROVE' | translate }}
+                                </button>
+                                <button class="action-btn reject-btn" (click)="onReject(req)">
+                                    <i class="dx-icon dx-icon-close"></i> {{ 'TEAMLEAD_DASHBOARD.REJECT' | translate }}
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </ng-container>
         </ng-container>
 

@@ -8,6 +8,21 @@
   display: flex;
   flex-direction: column;
 
+  .table-view,
+  .cards-view {
+    flex: 1;
+    min-height: 0;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+
+    dx-data-grid,
+    dx-card-view {
+      flex: 1;
+      min-height: 0;
+    }
+  }
+
   .occupation-badge {
     margin-top: 6px;
     padding: 6px 10px;

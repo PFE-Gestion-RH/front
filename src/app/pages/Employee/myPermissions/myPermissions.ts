@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy, ChangeDetectorRef, ViewEncapsulation, ViewChild } from '@angular/core';
+import { Component, OnInit, OnDestroy, ChangeDetectorRef, ViewEncapsulation, ViewChild, effect } from '@angular/core';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -47,8 +47,9 @@ export class MyPermissions implements OnInit, OnDestroy {
   cardDataSource!: DataSource;
   pageSize = 10;
   columns: any[] = [];
-
+  today: Date = new Date();
   private statusSub!: Subscription;
+  activeView: 'grid' | 'card' = 'grid';
 
   isLoading = false;
   isSaving = false;
@@ -65,14 +66,33 @@ export class MyPermissions implements OnInit, OnDestroy {
   getCardData = (rowData: any) => rowData;
 
   constructor(
+
     private http: HttpClient,
     private sharedService: SharedService,
     private cdr: ChangeDetectorRef,
     private signalRService: SignalRService,
     private translate: TranslateService
-  ) {}
+  ) {
+    effect(() => {
+      const view = this.sharedService.viewMode();
+      if (window.innerWidth >= 768) {
+        this.activeView = view;
+        this.cdr.detectChanges();
+      }
+    });
+  }
 
   ngOnInit(): void {
+    const isMobile = window.innerWidth < 768;
+if (isMobile) {
+  this.activeView = 'card';
+} else {
+  const user = JSON.parse(localStorage.getItem('user') || '{}');
+  const userId = user.id || user.email || 'default';
+  const saved = localStorage.getItem(`view_${userId}`) as 'grid' | 'card';
+  this.activeView = saved || 'grid';
+  this.sharedService.viewMode.set(this.activeView);
+}
     this.buildColumns();
     this.initSharedDataSource();
     this.translate.onLangChange.subscribe(() => {

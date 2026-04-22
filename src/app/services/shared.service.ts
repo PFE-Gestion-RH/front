@@ -6,11 +6,11 @@ import { ToastType } from '../components/toast/toast';
 export class SharedService {
 
   public showToast = signal(false)
-  public sideNavOpen = signal(false)
+  public sideNavOpen = signal(window.innerWidth > 1024)
   public toastType = signal<ToastType>(ToastType.Success)
   public toastMessage = signal('')
-  public   refreshHeaderProfilePicture = signal(0)
-
+  public refreshHeaderProfilePicture = signal(0)
+  public viewMode = signal<'grid' | 'card'>('grid');
   private toastTimeOut: number;
 
   constructor() { }
