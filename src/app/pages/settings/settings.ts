@@ -67,11 +67,18 @@ export class Settings implements OnInit {
     const userId = this.getUserId();
     this.language = localStorage.getItem(`language_${userId}`) || 'en';
 
-    // ← charger préférence vue par user
     const saved = localStorage.getItem(`view_${userId}`);
     this.viewMode = saved || 'grid';
     this.sharedService.viewMode.set(this.viewMode as 'grid' | 'card');
+
+    // ✅ Vider les champs password après autocomplete
+    setTimeout(() => {
+      this.profile.newPassword = '';
+      this.profile.confirmPassword = '';
+      this.cdr.detectChanges();
+    }, 200);
   }
+
   saveProfile(): void {
     if (this.isSaving) return;
     const token = this.sharedService.getToken();
@@ -81,6 +88,12 @@ export class Settings implements OnInit {
       return;
     }
 
+    // ✅ Vider si l'un des deux est vide
+    if (!this.profile.newPassword || !this.profile.confirmPassword) {
+      this.profile.newPassword = '';
+      this.profile.confirmPassword = '';
+    }
+
     this.isSaving = true;
     const user = JSON.parse(localStorage.getItem('user') || '{}');
     const body = {
@@ -88,10 +101,11 @@ export class Settings implements OnInit {
       lastName: this.profile.lastName,
       email: this.profile.email,
       currentPassword: '',
-      newPassword: this.profile.newPassword || '',
-      confirmPassword: this.profile.confirmPassword || '',
+      newPassword: this.profile.newPassword,
+      confirmPassword: this.profile.confirmPassword,
       profilePictureBase64: this.profile.profilePictureBase64 ?? user.profilePicture ?? null
     };
+
     this.http.put(`${environment.apiUrl}/profile`, body, {
       headers: {
         'Authorization': `Bearer ${token}`,
@@ -126,6 +140,7 @@ export class Settings implements OnInit {
     this.sharedService.viewMode.set(this.viewMode as 'grid' | 'card');
     this.sharedService.showToastMessage(ToastType.Success, 'View settings saved!');
   }
+
   saveLanguage(): void {
     const userId = this.getUserId();
     localStorage.setItem(`language_${userId}`, this.language);
@@ -141,35 +156,22 @@ export class Settings implements OnInit {
     if (!file) return;
 
     const reader = new FileReader();
-
     reader.onload = (e: any) => {
       const img = new Image();
       img.src = e.target.result;
-
       img.onload = () => {
         const canvas = document.createElement('canvas');
         const ctx = canvas.getContext('2d');
-
-        // 🔽 réduire dimensions (optionnel mais recommandé)
         const maxWidth = 300;
         const scaleSize = maxWidth / img.width;
-
         canvas.width = maxWidth;
         canvas.height = img.height * scaleSize;
-
         ctx?.drawImage(img, 0, 0, canvas.width, canvas.height);
-
-        // 🔽 qualité (0.1 = très compressé, 1 = haute qualité)
-        const quality = 0.6;
-
-        const compressedBase64 = canvas.toDataURL('image/jpeg', quality);
-
+        const compressedBase64 = canvas.toDataURL('image/jpeg', 0.6);
         this.profile.profilePictureBase64 = compressedBase64;
         this.cdr.detectChanges();
-
       };
     };
-
     reader.readAsDataURL(file);
   }
 }
