@@ -43,17 +43,17 @@
 
       <div class="section-title">{{ 'SETTINGS.CHANGE_PASSWORD' | translate }}</div>
 
-     
+
 
       <div class="form-field">
         <label>{{ 'SETTINGS.NEW_PASSWORD' | translate }}</label>
-        <input [(ngModel)]="profile.newPassword" class="form-input" type="password"
+        <input [(ngModel)]="profile.newPassword" class="form-input" type="password" autocomplete="new-password"
           [placeholder]="'SETTINGS.NEW_PASSWORD' | translate" />
       </div>
 
       <div class="form-field">
         <label>{{ 'SETTINGS.CONFIRM_PASSWORD' | translate }}</label>
-        <input [(ngModel)]="profile.confirmPassword" class="form-input" type="password"
+        <input [(ngModel)]="profile.confirmPassword" class="form-input" type="password" autocomplete="new-password"
           [placeholder]="'SETTINGS.CONFIRM_PASSWORD' | translate" />
       </div>
 

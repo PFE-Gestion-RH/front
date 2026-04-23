@@ -87,31 +87,30 @@ export class Settings implements OnInit {
       firstName: this.profile.firstName,
       lastName: this.profile.lastName,
       email: this.profile.email,
-      currentPassword: this.profile.currentPassword,
-      newPassword: this.profile.newPassword,
-      confirmPassword: this.profile.confirmPassword,
+      currentPassword: '',
+      newPassword: this.profile.newPassword || '',
+      confirmPassword: this.profile.confirmPassword || '',
       profilePictureBase64: this.profile.profilePictureBase64 ?? user.profilePicture ?? null
     };
-
     this.http.put(`${environment.apiUrl}/profile`, body, {
       headers: {
         'Authorization': `Bearer ${token}`,
         'Content-Type': 'application/json'
       }
     }).subscribe({
-      next: () => {
+      next: (res: any) => {
         const updatedUser = {
           ...user,
           firstName: this.profile.firstName,
           lastName: this.profile.lastName,
           email: this.profile.email,
-          profilePicture: this.profile.profilePictureBase64 ?? user.profilePicture
+          profilePicture: this.profile.profilePictureBase64 ?? res.data ?? user.profilePicture
         };
         localStorage.setItem('user', JSON.stringify(updatedUser));
         this.isSaving = false;
         this.cdr.detectChanges();
         this.sharedService.showToastMessage(ToastType.Success, 'Profil mis à jour !');
-        this.sharedService.refreshHeaderProfilePicture.update(_ => _ + 1)
+        this.sharedService.refreshHeaderProfilePicture.update(_ => _ + 1);
       },
       error: (err) => {
         this.isSaving = false;
