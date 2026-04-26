@@ -34,7 +34,7 @@ export class Settings implements OnInit {
     profilePictureBase64: null as string | null
   };
 
-  viewMode = localStorage.getItem('viewMode') || 'grid';
+  viewMode = 'grid';
   language = 'en';
 
   languages = [
@@ -67,11 +67,10 @@ export class Settings implements OnInit {
     const userId = this.getUserId();
     this.language = localStorage.getItem(`language_${userId}`) || 'en';
 
+    // Lire la préférence sauvegardée pour afficher le bon état dans l'UI
     const saved = localStorage.getItem(`view_${userId}`);
     this.viewMode = saved || 'grid';
-    this.sharedService.viewMode.set(this.viewMode as 'grid' | 'card');
 
-    // ✅ Vider les champs password après autocomplete
     setTimeout(() => {
       this.profile.newPassword = '';
       this.profile.confirmPassword = '';
@@ -88,7 +87,6 @@ export class Settings implements OnInit {
       return;
     }
 
-    // ✅ Vider si l'un des deux est vide
     if (!this.profile.newPassword || !this.profile.confirmPassword) {
       this.profile.newPassword = '';
       this.profile.confirmPassword = '';
@@ -136,8 +134,15 @@ export class Settings implements OnInit {
 
   saveUISettings(): void {
     const userId = this.getUserId();
+    // Toujours sauvegarder la préférence en localStorage
     localStorage.setItem(`view_${userId}`, this.viewMode);
-    this.sharedService.viewMode.set(this.viewMode as 'grid' | 'card');
+
+    // Appliquer le signal UNIQUEMENT sur desktop (>= 1024px)
+    // Sur mobile/tablette, MyAbsences force toujours 'card' via son effect()
+    if (window.innerWidth >= 1024) {
+      this.sharedService.viewMode.set(this.viewMode as 'grid' | 'card');
+    }
+
     this.sharedService.showToastMessage(ToastType.Success, 'View settings saved!');
   }
 
