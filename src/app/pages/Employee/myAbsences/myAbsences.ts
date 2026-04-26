@@ -27,6 +27,7 @@ import { LeaveCategory } from '../../../models/leave-category.model';
 import { environment } from '../../../environments/environment';
 import { CalendarService } from '../../../services/calendar.service';
 import { DayOccupation } from '../../../models/calendar.model';
+import { GeminiService } from '../../../services/gemini.service';
 
 @Component({
   selector: 'app-my-absences',
@@ -55,10 +56,20 @@ export class MyAbsences implements OnInit, OnDestroy {
   balances: LeaveBalanceDto[] = [];
   pageSize = 10;
   columns: any[] = [];
-  occupationBadge: { color: string; message: string } | null = null;
   private occupationMap = new Map<string, DayOccupation>();
   today: Date = new Date();
   private statusSub!: Subscription;
+  private teamId = 0;
+
+  // Groq AI
+  geminiMessage = '';
+  geminiLoading = false;
+  alternatives: { startDate: string; endDate: string; reason: string }[] = [];
+  loadingAlternatives = false;
+
+  // Warning popup
+  showWarningPopup = false;
+  warningMessage = '';
 
   isLoading = false;
   isSaving = false;
@@ -83,38 +94,39 @@ export class MyAbsences implements OnInit, OnDestroy {
     private cdr: ChangeDetectorRef,
     private signalRService: SignalRService,
     private translate: TranslateService,
-    private calendarService: CalendarService
+    private calendarService: CalendarService,
+    private geminiService: GeminiService
   ) {
     effect(() => {
       const view = this.sharedService.viewMode();
-      // Ne pas écraser si mobile
-      if (window.innerWidth >= 768) {
+      // Seulement sur desktop
+      if (window.innerWidth >= 1024) {
         this.activeView = view;
         this.cdr.detectChanges();
       }
     });
   }
+
   ngOnInit(): void {
-    const isMobile = window.innerWidth < 768;
-    if (isMobile) {
-      this.activeView = 'card';
-    } else {
-      const user = JSON.parse(localStorage.getItem('user') || '{}');
-      const userId = user.id || user.email || 'default';
-      const saved = (localStorage.getItem(`view_${userId}`) as 'grid' | 'card') || 'grid';
-      this.activeView = saved;
-      // ← synchroniser le signal avec localStorage
-      this.sharedService.viewMode.set(saved);
-    }
+    const user = JSON.parse(localStorage.getItem('user') || '{}');
+    const userId = user.id || user.email || 'default';
+    this.teamId = user.teamId ?? user.teams?.[0]?.id ?? 0;
+
+    this.applyView(); // ← appel initial
+
+    // ← Listener resize
+    window.addEventListener('resize', this.onResize);
 
     this.buildColumns();
     this.initSharedDataSource();
     this.loadLeaveCategories();
     this.loadCalendarOccupation();
+
     this.translate.onLangChange.subscribe(() => {
       this.buildColumns();
       this.cdr.detectChanges();
     });
+
     this.statusSub = this.signalRService.requestStatusChanged$.subscribe(event => {
       if (event.type === 'Absence') {
         this.sharedDataSource.reload();
@@ -126,6 +138,27 @@ export class MyAbsences implements OnInit, OnDestroy {
 
   ngOnDestroy(): void {
     this.statusSub?.unsubscribe();
+    window.removeEventListener('resize', this.onResize); // ← cleanup
+  }
+
+  // ← méthode resize
+  private onResize = (): void => {
+    this.applyView();
+  }
+
+  // ← méthode centralisée
+  private applyView(): void {
+    const user = JSON.parse(localStorage.getItem('user') || '{}');
+    const userId = user.id || user.email || 'default';
+
+    if (window.innerWidth < 1024) {
+      this.activeView = 'card';
+    } else {
+      const saved = (localStorage.getItem(`view_${userId}`) as 'grid' | 'card') || 'grid';
+      this.activeView = saved;
+      this.sharedService.viewMode.set(saved);
+    }
+    this.cdr.detectChanges();
   }
 
   getHeaders() {
@@ -149,9 +182,42 @@ export class MyAbsences implements OnInit, OnDestroy {
     return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
   }
 
+  private computeAvgRate(): number {
+    if (!this.absenceDateRange.startDate || !this.absenceDateRange.endDate) return 0;
+    const start = new Date(this.absenceDateRange.startDate);
+    const end = new Date(this.absenceDateRange.endDate);
+    let totalRate = 0;
+    let count = 0;
+    for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
+      const key = this.toKey(new Date(d));
+      const day = this.occupationMap.get(key);
+      if (day) { totalRate += day.occupationRate; count++; }
+    }
+    return count > 0 ? totalRate / count : 0;
+  }
+
+  private computeMaxAbsent(): number {
+    if (!this.absenceDateRange.startDate || !this.absenceDateRange.endDate) return 0;
+    const start = new Date(this.absenceDateRange.startDate);
+    const end = new Date(this.absenceDateRange.endDate);
+    let maxAbsent = 0;
+    for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
+      const key = this.toKey(new Date(d));
+      const day = this.occupationMap.get(key);
+      if (day) maxAbsent = Math.max(maxAbsent, day.absentCount);
+    }
+    return maxAbsent;
+  }
+
+  private computeTotalMembers(): number {
+    const first = this.occupationMap.values().next().value;
+    return first?.totalMembers ?? 0;
+  }
+
   computeOccupationBadge(): void {
     if (!this.absenceDateRange.startDate || !this.absenceDateRange.endDate) {
-      this.occupationBadge = null;
+      this.geminiMessage = '';
+      this.geminiLoading = false;
       return;
     }
 
@@ -160,6 +226,7 @@ export class MyAbsences implements OnInit, OnDestroy {
 
     let totalRate = 0;
     let maxAbsent = 0;
+    let totalMembers = 0;
     let count = 0;
 
     for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
@@ -168,43 +235,31 @@ export class MyAbsences implements OnInit, OnDestroy {
       if (day) {
         totalRate += day.occupationRate;
         maxAbsent = Math.max(maxAbsent, day.absentCount);
+        totalMembers = day.totalMembers;
         count++;
-      }
-    }
-
-    // Charge les mois manquants si la plage dépasse le mois courant
-    if (count === 0) {
-      this.loadCalendarOccupation(start.getFullYear(), start.getMonth() + 1);
-      if (end.getMonth() !== start.getMonth()) {
-        this.loadCalendarOccupation(end.getFullYear(), end.getMonth() + 1);
       }
     }
 
     const avgRate = count > 0 ? totalRate / count : 0;
 
-    if (avgRate === 0) {
-      this.occupationBadge = {
-        color: 'badge-green',
-        message: `✅ Disponible — ${maxAbsent} absent(s) sur cette période`
-      };
-    } else if (avgRate < 0.30) {
-      this.occupationBadge = {
-        color: 'badge-green',
-        message: `✅ Peu chargé — ${maxAbsent} absent(s) sur cette période`
-      };
-    } else if (avgRate < 0.50) {
-      this.occupationBadge = {
-        color: 'badge-orange',
-        message: `⚠️ Modérément chargé — ${maxAbsent} absent(s) sur cette période`
-      };
-    } else {
-      this.occupationBadge = {
-        color: 'badge-red',
-        message: `🔴 Période chargée — ${maxAbsent} absent(s) sur cette période`
-      };
-    }
-
+    this.geminiLoading = true;
+    this.geminiMessage = '';
+    this.alternatives = [];
     this.cdr.detectChanges();
+
+    this.geminiService.getRecommendation(
+      avgRate, maxAbsent, totalMembers,
+      this.newAbsence.startDate,
+      this.newAbsence.endDate
+    ).then(msg => {
+      this.geminiMessage = msg;
+      this.geminiLoading = false;
+      this.cdr.detectChanges();
+    }).catch(() => {
+      this.geminiMessage = '';
+      this.geminiLoading = false;
+      this.cdr.detectChanges();
+    });
   }
 
   // ── Columns ───────────────────────────────────────────────────────────────
@@ -316,7 +371,10 @@ export class MyAbsences implements OnInit, OnDestroy {
     this.newAbsence.endDate = '';
     this.newAbsence.numberOfDays = 0;
     this.absenceDateRange = { startDate: null, endDate: null };
-    this.occupationBadge = null;
+    this.geminiMessage = '';
+    this.geminiLoading = false;
+    this.alternatives = [];
+    this.loadingAlternatives = false;
     this.cdr.detectChanges();
   }
 
@@ -327,16 +385,39 @@ export class MyAbsences implements OnInit, OnDestroy {
       this.newAbsence.startDate = this.toKey(start);
       this.newAbsence.endDate = this.toKey(end);
 
-      // Charge les mois si nécessaire
-      this.loadCalendarOccupation(start.getFullYear(), start.getMonth() + 1);
+      const requests: Promise<void>[] = [];
+
+      requests.push(new Promise<void>(resolve => {
+        this.calendarService.getMonthOccupation(start.getFullYear(), start.getMonth() + 1).subscribe({
+          next: (days) => {
+            days.forEach(d => this.occupationMap.set(d.date.substring(0, 10), d));
+            resolve();
+          },
+          error: () => resolve()
+        });
+      }));
+
       if (end.getMonth() !== start.getMonth()) {
-        this.loadCalendarOccupation(end.getFullYear(), end.getMonth() + 1);
+        requests.push(new Promise<void>(resolve => {
+          this.calendarService.getMonthOccupation(end.getFullYear(), end.getMonth() + 1).subscribe({
+            next: (days) => {
+              days.forEach(d => this.occupationMap.set(d.date.substring(0, 10), d));
+              resolve();
+            },
+            error: () => resolve()
+          });
+        }));
       }
 
-      this.calculateDays();
-      this.computeOccupationBadge();
+      Promise.all(requests).then(() => {
+        this.calculateDays();
+        this.computeOccupationBadge();
+      });
+
     } else {
-      this.occupationBadge = null;
+      this.geminiMessage = '';
+      this.geminiLoading = false;
+      this.alternatives = [];
     }
   }
 
@@ -351,7 +432,8 @@ export class MyAbsences implements OnInit, OnDestroy {
       this.newAbsence.endDate = '';
       this.newAbsence.numberOfDays = 0;
       this.absenceDateRange.endDate = null;
-      this.occupationBadge = null;
+      this.geminiMessage = '';
+      this.alternatives = [];
       this.cdr.detectChanges();
       return;
     }
@@ -361,7 +443,8 @@ export class MyAbsences implements OnInit, OnDestroy {
       this.newAbsence.endDate = '';
       this.newAbsence.numberOfDays = 0;
       this.absenceDateRange.endDate = null;
-      this.occupationBadge = null;
+      this.geminiMessage = '';
+      this.alternatives = [];
       this.cdr.detectChanges();
       return;
     }
@@ -379,6 +462,7 @@ export class MyAbsences implements OnInit, OnDestroy {
     start.setDate(start.getDate() + this.newAbsence.numberOfDays - 1);
     this.newAbsence.endDate = start.toISOString().split('T')[0];
     this.absenceDateRange.endDate = new Date(this.newAbsence.endDate);
+    this.alternatives = [];
     this.computeOccupationBadge();
     this.cdr.detectChanges();
   }
@@ -391,7 +475,12 @@ export class MyAbsences implements OnInit, OnDestroy {
     };
     this.maxDaysAllowed = 0;
     this.requiresDocument = false;
-    this.occupationBadge = null;
+    this.geminiMessage = '';
+    this.geminiLoading = false;
+    this.showWarningPopup = false;
+    this.warningMessage = '';
+    this.alternatives = [];
+    this.loadingAlternatives = false;
     this.occupationMap.clear();
     this.loadBalance();
     this.loadCalendarOccupation();
@@ -411,18 +500,84 @@ export class MyAbsences implements OnInit, OnDestroy {
     reader.readAsDataURL(file);
   }
 
+  selectAlternative(alt: { startDate: string; endDate: string }): void {
+    const start = new Date(alt.startDate);
+    const end = new Date(alt.endDate);
+    this.absenceDateRange = { startDate: start, endDate: end };
+    this.newAbsence.startDate = this.toKey(start);
+    this.newAbsence.endDate = this.toKey(end);
+    this.newAbsence.numberOfDays = Math.round((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)) + 1;
+    this.alternatives = [];
+    this.computeOccupationBadge();
+    this.cdr.detectChanges();
+  }
+
   save(validationGroup: any): void {
     const result = validationGroup.instance.validate();
     if (!result.isValid) {
       this.sharedService.showToastMessage(ToastType.Error, 'Please fill all required fields');
       return;
     }
+
     const balance = this.balances.find(b => b.leaveCategoryId == this.newAbsence.leaveCategoryId);
     if (balance && this.maxDaysAllowed > 0 && this.newAbsence.numberOfDays > balance.remainingDays) {
       this.sharedService.showToastMessage(ToastType.Error,
         `Insufficient balance. You have ${balance.remainingDays} days remaining`);
       return;
     }
+
+    const avgRate = this.computeAvgRate();
+    const maxAbsent = this.computeMaxAbsent();
+    const totalMembers = this.computeTotalMembers();
+
+    if (avgRate >= 0.50) {
+      this.warningMessage = `⚠️ ${maxAbsent} collègue(s) absent(s) sur ${totalMembers} (${Math.round(avgRate * 100)}%). Voulez-vous continuer ?`;
+      this.showWarningPopup = true;
+      this.cdr.detectChanges();
+      return;
+    }
+
+    this.submitAbsence();
+  }
+
+  confirmSubmit(): void {
+    this.showWarningPopup = false;
+    this.submitAbsence();
+  }
+
+  cancelWarning(): void {
+    this.showWarningPopup = false;
+    this.loadingAlternatives = true;
+    this.alternatives = [];
+    this.cdr.detectChanges();
+
+    const avgRate = this.computeAvgRate();
+    const maxAbsent = this.computeMaxAbsent();
+    const totalMembers = this.computeTotalMembers();
+
+    this.geminiService.getAlternatives(
+      avgRate, maxAbsent, totalMembers,
+      this.newAbsence.startDate,
+      this.newAbsence.endDate
+    ).then(alts => {
+      this.alternatives = alts;
+      this.loadingAlternatives = false;
+      this.cdr.detectChanges();
+    }).catch(() => {
+      this.loadingAlternatives = false;
+      this.cdr.detectChanges();
+    });
+  }
+
+  get popupWidth(): number | string {
+    return window.innerWidth <= 768 ? '95vw' : 500;
+  }
+
+  get popupMaxHeight(): number | string {
+    return '90vh';
+  }
+
+  private submitAbsence(): void {
     if (this.isSaving) return;
     this.isSaving = true;
     this.cdr.detectChanges();
