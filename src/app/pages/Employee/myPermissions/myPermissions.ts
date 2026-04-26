@@ -75,7 +75,7 @@ export class MyPermissions implements OnInit, OnDestroy {
   ) {
     effect(() => {
       const view = this.sharedService.viewMode();
-      if (window.innerWidth >= 768) {
+      if (window.innerWidth >= 1024) {
         this.activeView = view;
         this.cdr.detectChanges();
       }
@@ -83,16 +83,9 @@ export class MyPermissions implements OnInit, OnDestroy {
   }
 
   ngOnInit(): void {
-    const isMobile = window.innerWidth < 768;
-if (isMobile) {
-  this.activeView = 'card';
-} else {
-  const user = JSON.parse(localStorage.getItem('user') || '{}');
-  const userId = user.id || user.email || 'default';
-  const saved = localStorage.getItem(`view_${userId}`) as 'grid' | 'card';
-  this.activeView = saved || 'grid';
-  this.sharedService.viewMode.set(this.activeView);
-}
+    this.applyView();
+    window.addEventListener('resize', this.onResize);
+
     this.buildColumns();
     this.initSharedDataSource();
     this.translate.onLangChange.subscribe(() => {
@@ -107,9 +100,25 @@ if (isMobile) {
       }
     });
   }
-
   ngOnDestroy(): void {
     this.statusSub?.unsubscribe();
+    window.removeEventListener('resize', this.onResize); // ← ajoute
+  }
+  private onResize = (): void => {
+    this.applyView();
+  }
+
+  private applyView(): void {
+    const user = JSON.parse(localStorage.getItem('user') || '{}');
+    const userId = user.id || user.email || 'default';
+    if (window.innerWidth < 1024) {
+      this.activeView = 'card';
+    } else {
+      const saved = (localStorage.getItem(`view_${userId}`) as 'grid' | 'card') || 'grid';
+      this.activeView = saved;
+      this.sharedService.viewMode.set(saved);
+    }
+    this.cdr.detectChanges();
   }
 
   getHeaders() {

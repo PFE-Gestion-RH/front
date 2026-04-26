@@ -1,4 +1,4 @@
-import { Component, OnInit, NgZone, ChangeDetectorRef, ViewEncapsulation, ViewChild, effect } from '@angular/core';
+import { Component, OnInit, OnDestroy, NgZone, ChangeDetectorRef, ViewEncapsulation, ViewChild, effect } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -39,7 +39,7 @@ import { environment } from '../../../environments/environment';
   styleUrls: ['./users.scss'],
   encapsulation: ViewEncapsulation.None
 })
-export class Users implements OnInit {
+export class Users implements OnInit, OnDestroy {
 
   @ViewChild('validationGroup') validationGroupRef: any;
 
@@ -75,23 +75,17 @@ export class Users implements OnInit {
   ) {
     effect(() => {
       const view = this.sharedService.viewMode();
-      if (window.innerWidth >= 768) {
+      if (window.innerWidth >= 1024) {
         this.activeView = view;
         this.cdr.detectChanges();
       }
     });
   }
+
   ngOnInit(): void {
-     const isMobile = window.innerWidth < 768;
-  if (isMobile) {
-    this.activeView = 'card';
-  } else {
-    const user = JSON.parse(localStorage.getItem('user') || '{}');
-    const userId = user.id || user.email || 'default';
-    const saved = localStorage.getItem(`view_${userId}`) as 'grid' | 'card';
-    this.activeView = saved || 'grid';
-    this.sharedService.viewMode.set(this.activeView);
-  }
+    this.applyView();
+    window.addEventListener('resize', this.onResize);
+
     this.buildColumns();
     this.initSharedDataSource();
     this.translate.onLangChange.subscribe(() => {
@@ -100,10 +94,30 @@ export class Users implements OnInit {
     });
   }
 
+  ngOnDestroy(): void {
+    window.removeEventListener('resize', this.onResize);
+  }
+
+  private onResize = (): void => {
+    this.applyView();
+  }
+
+  private applyView(): void {
+    const user = JSON.parse(localStorage.getItem('user') || '{}');
+    const userId = user.id || user.email || 'default';
+    if (window.innerWidth < 1024) {
+      this.activeView = 'card';
+    } else {
+      const saved = (localStorage.getItem(`view_${userId}`) as 'grid' | 'card') || 'grid';
+      this.activeView = saved;
+      this.sharedService.viewMode.set(saved);
+    }
+    this.cdr.detectChanges();
+  }
+
   buildColumns(): void {
     this.columns = [
-      { dataField: 'employeeNumber', caption: this.translate.instant('USERS.EMPLOYEE_NUMBER') }, // 👈 NOUVEAU
-
+      { dataField: 'employeeNumber', caption: this.translate.instant('USERS.EMPLOYEE_NUMBER') },
       { dataField: 'firstName', caption: this.translate.instant('USERS.FIRST_NAME') },
       { dataField: 'lastName', caption: this.translate.instant('USERS.LAST_NAME') },
       { dataField: 'email', caption: this.translate.instant('USERS.EMAIL') },
@@ -191,9 +205,10 @@ export class Users implements OnInit {
     this.isEditMode = true;
     this.selectedUser = {
       ...user,
-      employeeNumber: user.employeeNumber ?? '', // 👈 fallback
+      employeeNumber: user.employeeNumber ?? '',
       password: ''
-    }; this.showPopup = true;
+    };
+    this.showPopup = true;
     this.cdr.detectChanges();
   }
 
