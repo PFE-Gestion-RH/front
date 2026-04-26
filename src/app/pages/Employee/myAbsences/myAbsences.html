@@ -10,7 +10,8 @@
       <button class="add-btn" (click)="openAdd()">{{ 'MY_ABSENCES.ADD' | translate }}</button>
     </div>
 
-<div class="table-view" *ngIf="activeView === 'grid'">      <dx-data-grid [dataSource]="sharedDataSource" [columns]="columns" [showBorders]="false" [showRowLines]="true"
+    <div class="table-view" *ngIf="activeView === 'grid'">
+      <dx-data-grid [dataSource]="sharedDataSource" [columns]="columns" [showBorders]="false" [showRowLines]="true"
         [showColumnLines]="false" [hoverStateEnabled]="true"
         [remoteOperations]="{ paging: true, filtering: false, sorting: false }">
         <dxo-load-panel [enabled]="false"></dxo-load-panel>
@@ -24,7 +25,8 @@
       </dx-data-grid>
     </div>
 
-<div class="cards-view" [class.is-loading]="isLoading" *ngIf="activeView === 'card'">      <dx-card-view [dataSource]="cardDataSource" keyExpr="id" [cardMinWidth]="280" cardsPerRow="auto"
+    <div class="cards-view" [class.is-loading]="isLoading" *ngIf="activeView === 'card'">
+      <dx-card-view [dataSource]="cardDataSource" keyExpr="id" [cardMinWidth]="280" cardsPerRow="auto"
         [remoteOperations]="{ paging: true }">
         <dxo-card-view-search-panel [visible]="true"
           [placeholder]="'MY_ABSENCES.SEARCH' | translate"></dxo-card-view-search-panel>
@@ -63,8 +65,9 @@
     </div>
   </div>
 
-  <dx-popup [(visible)]="showPopup" [width]="500" [height]="'auto'" [title]="'MY_ABSENCES.NEW_TITLE' | translate"
-    [showCloseButton]="!isSaving">
+  <!-- Popup formulaire -->
+  <dx-popup [(visible)]="showPopup" [width]="popupWidth" [height]="'auto'" [maxHeight]="popupMaxHeight"
+    [title]="'MY_ABSENCES.NEW_TITLE' | translate" [showCloseButton]="!isSaving">
     <div *dxTemplate="let data of 'content'" class="profile-form">
       <dx-validation-group #validationGroup>
         <div class="form-section">
@@ -100,6 +103,7 @@
           }
           }
           }
+
           <div class="form-field">
             <label>{{ 'MY_ABSENCES.DATE_RANGE' | translate }}</label>
             <dx-date-range-box [(startDate)]="absenceDateRange.startDate" [(endDate)]="absenceDateRange.endDate"
@@ -110,11 +114,29 @@
               </dx-validator>
             </dx-date-range-box>
 
-            <!-- Badge coloré -->
-            <div class="occupation-badge" *ngIf="occupationBadge" [ngClass]="occupationBadge.color">
-              {{ occupationBadge.message }}
+            <!-- Message Groq AI — masqué si alternatives visibles -->
+            <div class="gemini-message loading" *ngIf="geminiLoading && alternatives.length === 0">
+              🤖 Analyse en cours...
+            </div>
+            <div class="gemini-message" *ngIf="geminiMessage && !geminiLoading && alternatives.length === 0">
+              <div *ngFor="let line of geminiMessage.split('\n')">{{ line }}</div>
+            </div>
+            <!-- Alternatives IA -->
+            <div class="alternatives-loading" *ngIf="loadingAlternatives">
+              🤖 Recherche d'alternatives en cours...
+            </div>
+            <div class="alternatives" *ngIf="alternatives.length > 0 && !loadingAlternatives">
+              <p class="alternatives-title">📅 Dates alternatives suggérées par l'IA :</p>
+              <div class="alternative-item" *ngFor="let alt of alternatives" (click)="selectAlternative(alt)">
+                <span class="alt-icon">✅</span>
+                <span class="alt-dates">
+                  {{ alt.startDate | date:'dd/MM' }} → {{ alt.endDate | date:'dd/MM/yyyy' }}
+                </span>
+                <span class="alt-reason">{{ alt.reason }}</span>
+              </div>
             </div>
           </div>
+
           <div class="form-field">
             <label>{{ 'MY_ABSENCES.NUMBER_OF_DAYS' | translate }}
               <span class="days-info">{{ maxDaysAllowed > 0 ? '(' + ('MY_ABSENCES.MAX' | translate) + ' ' +
@@ -160,4 +182,22 @@
       </dx-validation-group>
     </div>
   </dx-popup>
+
+  <!-- Popup avertissement -->
+  <dx-popup [(visible)]="showWarningPopup" [width]="420" [height]="'auto'" [showTitle]="false" [showCloseButton]="false"
+    [dragEnabled]="false">
+    <div *dxTemplate="let data of 'content'" class="warning-popup">
+      <h3 class="warning-title">Période chargée</h3>
+      <p class="warning-text">{{ warningMessage }}</p>
+      <div class="warning-actions">
+        <button class="btn-secondary" (click)="cancelWarning()">
+          Choisir d'autres dates
+        </button>
+        <button class="btn-primary" (click)="confirmSubmit()">
+          Soumettre quand même
+        </button>
+      </div>
+    </div>
+  </dx-popup>
+
 </div>

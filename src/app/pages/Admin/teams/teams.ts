@@ -1,4 +1,4 @@
-import { Component, OnInit, NgZone, signal, ChangeDetectorRef, effect, ViewEncapsulation, ViewChild } from '@angular/core';
+import { Component, OnInit, OnDestroy, NgZone, signal, ChangeDetectorRef, effect, ViewEncapsulation, ViewChild } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -14,7 +14,6 @@ import {
   DxButtonComponent, DxCheckBoxComponent, DxLoadIndicatorModule, DxLoadPanelModule,
   DxTextBoxModule, DxSelectBoxModule, DxValidatorModule, DxValidationGroupComponent
 } from 'devextreme-angular';
-import { dxDataGridColumn } from 'devextreme/ui/data_grid';
 import {
   DxiCardViewColumnComponent,
   DxoCardViewPagingComponent,
@@ -39,7 +38,7 @@ import { environment } from '../../../environments/environment';
   styleUrl: './teams.scss',
   encapsulation: ViewEncapsulation.None
 })
-export class Teams implements OnInit {
+export class Teams implements OnInit, OnDestroy {
 
   @ViewChild('validationGroup') validationGroupRef: any;
 
@@ -86,23 +85,17 @@ export class Teams implements OnInit {
   ) {
     effect(() => {
       const view = this.sharedService.viewMode();
-      if (window.innerWidth >= 768) {
+      if (window.innerWidth >= 1024) {
         this.activeView = view;
         this.cdr.detectChanges();
       }
     });
   }
+
   ngOnInit(): void {
-    const isMobile = window.innerWidth < 768;
-    if (isMobile) {
-      this.activeView = 'card';
-    } else {
-      const user = JSON.parse(localStorage.getItem('user') || '{}');
-      const userId = user.id || user.email || 'default';
-      const saved = localStorage.getItem(`view_${userId}`) as 'grid' | 'card';
-      this.activeView = saved || 'grid';
-      this.sharedService.viewMode.set(this.activeView);
-    }
+    this.applyView();
+    window.addEventListener('resize', this.onResize);
+
     this.buildColumns();
     this.initSharedDataSource();
     this.loadUsers();
@@ -110,6 +103,27 @@ export class Teams implements OnInit {
       this.buildColumns();
       this.cdr.detectChanges();
     });
+  }
+
+  ngOnDestroy(): void {
+    window.removeEventListener('resize', this.onResize);
+  }
+
+  private onResize = (): void => {
+    this.applyView();
+  }
+
+  private applyView(): void {
+    const user = JSON.parse(localStorage.getItem('user') || '{}');
+    const userId = user.id || user.email || 'default';
+    if (window.innerWidth < 1024) {
+      this.activeView = 'card';
+    } else {
+      const saved = (localStorage.getItem(`view_${userId}`) as 'grid' | 'card') || 'grid';
+      this.activeView = saved;
+      this.sharedService.viewMode.set(saved);
+    }
+    this.cdr.detectChanges();
   }
 
   buildColumns(): void {

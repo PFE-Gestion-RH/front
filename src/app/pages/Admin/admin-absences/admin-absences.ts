@@ -66,7 +66,7 @@ export class AdminAbsences implements OnInit, OnDestroy {
   ) {
     effect(() => {
       const view = this.sharedService.viewMode();
-      if (window.innerWidth >= 768) {
+      if (window.innerWidth >= 1024) {
         this.activeView = view;
         this.cdr.detectChanges();
       }
@@ -74,16 +74,9 @@ export class AdminAbsences implements OnInit, OnDestroy {
   }
 
   ngOnInit(): void {
-    const isMobile = window.innerWidth < 768;
-    if (isMobile) {
-      this.activeView = 'card';
-    } else {
-      const user = JSON.parse(localStorage.getItem('user') || '{}');
-      const userId = user.id || user.email || 'default';
-      const saved = localStorage.getItem(`view_${userId}`) as 'grid' | 'card';
-      this.activeView = saved || 'grid';
-      this.sharedService.viewMode.set(this.activeView);
-    }
+    this.applyView();
+    window.addEventListener('resize', this.onResize);
+
     this.buildColumns();
     this.initSharedDataSource();
     this.translate.onLangChange.subscribe(() => {
@@ -99,6 +92,24 @@ export class AdminAbsences implements OnInit, OnDestroy {
 
   ngOnDestroy(): void {
     this.newRequestSub?.unsubscribe();
+    window.removeEventListener('resize', this.onResize);
+  }
+
+  private onResize = (): void => {
+    this.applyView();
+  }
+
+  private applyView(): void {
+    const user = JSON.parse(localStorage.getItem('user') || '{}');
+    const userId = user.id || user.email || 'default';
+    if (window.innerWidth < 1024) {
+      this.activeView = 'card';
+    } else {
+      const saved = (localStorage.getItem(`view_${userId}`) as 'grid' | 'card') || 'grid';
+      this.activeView = saved;
+      this.sharedService.viewMode.set(saved);
+    }
+    this.cdr.detectChanges();
   }
 
   getHeaders() {
@@ -136,7 +147,6 @@ export class AdminAbsences implements OnInit, OnDestroy {
         cellTemplate: (container: any, options: any) => {
           const data = options.data;
 
-          // ❌ Pas d'actions → afficher N/A
           if (data.status !== 'PendingAdministration') {
             const span = document.createElement('span');
             span.textContent = 'N/A';

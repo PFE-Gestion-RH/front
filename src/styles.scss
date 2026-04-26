@@ -752,7 +752,7 @@ app-public-holidays {
 }
 
 .cards-view {
-  display: none;
+  display: flex;
   flex-direction: column;
   flex: 1;
   min-height: 0;
@@ -1172,11 +1172,11 @@ dx-card-view .dx-loadpanel-wrapper {
 
 @media (max-width: 1024px) {
   .table-view {
-    display: none !important;
+    display: none !important; // ← remet cette ligne
   }
 
   .cards-view {
-    display: flex !important;
+    display: flex !important; // ← remet cette ligne
     flex: 1;
     min-height: 0;
     overflow: hidden;
