@@ -48,7 +48,6 @@ import { DayOccupation } from '../../../models/calendar.model';
 export class MyAbsences implements OnInit, OnDestroy {
 
   @ViewChild('validationGroup') validationGroupRef: any;
-
   sharedDataSource!: DataSource;
   cardDataSource!: DataSource;
   leaveCategories: LeaveCategory[] = [];
