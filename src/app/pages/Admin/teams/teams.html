@@ -10,9 +10,9 @@
       <button class="add-btn" (click)="openAdd()">{{ 'TEAMS.ADD' | translate }}</button>
     </div>
 
-
     <!-- TABLE desktop -->
-    <div class="table-view" *ngIf="activeView === 'grid'"> <dx-data-grid [dataSource]="sharedDataSource"
+    <div class="table-view" *ngIf="activeView === 'grid'">
+      <dx-data-grid [dataSource]="sharedDataSource"
         [columns]="columns" [showBorders]="false" [showRowLines]="true" [showColumnLines]="false"
         [hoverStateEnabled]="true" [columnHidingEnabled]="false" [focusedRowEnabled]="false" keyExpr="id"
         [remoteOperations]="true">
@@ -29,8 +29,8 @@
     </div>
 
     <!-- CARDS mobile/tablette -->
-    <div class="cards-view" [class.is-loading]="isLoading" *ngIf="activeView === 'card'"> <dx-card-view
-        [dataSource]="sharedDataSource" keyExpr="id" [cardMinWidth]="280" cardsPerRow="auto">
+    <div class="cards-view" [class.is-loading]="isLoading" *ngIf="activeView === 'card'">
+      <dx-card-view [dataSource]="sharedDataSource" keyExpr="id" [cardMinWidth]="280" cardsPerRow="auto">
 
         <dxo-card-view-search-panel [visible]="true"
           [placeholder]="'TEAMS.SEARCH' | translate"></dxo-card-view-search-panel>
@@ -49,7 +49,6 @@
         <div *dxTemplate="let params of 'cardBodyTemplate'" class="card-body-template">
           <div class="card-top">
             <div class="card-avatar">
-
               {{ params.field.value?.name?.[0] | uppercase }}
             </div>
             <div class="card-info">
@@ -98,23 +97,26 @@
     <div *dxTemplate="let data of 'content'" class="profile-form">
       <dx-validation-group #validationGroup>
         <div class="form-section">
+
           <div class="form-field">
             <label>{{ 'TEAMS.TEAM_NAME' | translate }}</label>
+            <!-- ✅ FIX 1 : [validationRules] déclaré dans le .ts, pas inline dans le template
+                          → évite que DxValidator reçoive un nouveau tableau à chaque cycle (stack overflow) -->
             <dx-text-box [(value)]="teamForm.name" [placeholder]="'TEAMS.TEAM_NAME' | translate" [disabled]="isSaving">
-              <dx-validator>
-                <dxi-validation-rule type="required" message="Team name is required"></dxi-validation-rule>
-              </dx-validator>
+              <dx-validator [validationRules]="nameValidationRules"></dx-validator>
             </dx-text-box>
           </div>
+
           <div class="form-field">
             <label>{{ 'TEAMS.TEAM_LEAD' | translate }}</label>
-            <dx-select-box [dataSource]="teamLeads" displayExpr="fullName" valueExpr="id"
+            <!-- ✅ FIX 2 : teamLeadsList (propriété stable) remplace le getter teamLeads
+                          → évite que DxSelectBox reçoive un nouvel array à chaque cycle (stack overflow) -->
+            <dx-select-box [dataSource]="teamLeadsList" displayExpr="fullName" valueExpr="id"
               [(value)]="teamForm.teamLeadId" [placeholder]="'TEAMS.TEAM_LEAD' | translate" [disabled]="isSaving">
-              <dx-validator>
-                <dxi-validation-rule type="required" message="Team Lead is required"></dxi-validation-rule>
-              </dx-validator>
+              <dx-validator [validationRules]="teamLeadValidationRules"></dx-validator>
             </dx-select-box>
           </div>
+
           <div class="form-field">
             <label>{{ 'TEAMS.MEMBERS' | translate }}</label>
             <div class="selected-badges">
@@ -130,6 +132,7 @@
               </button>
             </div>
           </div>
+
         </div>
         <div class="form-actions">
           <dx-button [text]="'TEAMS.CANCEL' | translate" [disabled]="isSaving"
@@ -151,15 +154,33 @@
     [showCloseButton]="true">
     <div *dxTemplate="let data of 'content'" class="profile-form">
       <div class="form-section members-list-section">
-        @if (employees.length === 0) {
+        @if (employeesList.length === 0) {
         <span class="no-members">{{ 'TEAMS.NO_MEMBERS' | translate }}</span>
         }
-        @for (emp of employees; track emp.id) {
-        <div class="member-list-row" (click)="toggleMember(emp.id)">
-          <dx-check-box [value]="teamForm.memberIds.includes(emp.id)" (onValueChanged)="toggleMember(emp.id)"
-            (click)="$event.stopPropagation()">
+        <!-- ✅ FIX 3 : employeesList (propriété stable) remplace le getter employees -->
+        @for (emp of employeesList; track emp.id) {
+        <!--
+          ✅ FIX 4 : (onValueChanged) → (onClick) sur DxCheckBox
+              onValueChanged se déclenche aussi lors des mises à jour programmatiques de [value]
+              → quand toggleMember modifie memberIds → Angular re-rend → [value] change
+              → onValueChanged se déclenche → toggleMember → boucle infinie (stack overflow)
+
+              (onClick) ne se déclenche QUE sur le clic utilisateur, jamais sur les updates programmatiques
+              → pas de boucle
+
+          ✅ FIX 5 : (click) sur la row retiré
+              Le (click) sur la div parent + (click)="$event.stopPropagation()" sur le checkbox
+              causait une double exécution de toggleMember (row click + checkbox click)
+              On garde uniquement (onClick) sur le DxCheckBox
+        -->
+        <div class="member-list-row">
+          <dx-check-box
+            [value]="isMemberSelected(emp.id)"
+            (onClick)="toggleMember(emp.id)">
           </dx-check-box>
-          <span class="member-list-name">{{ emp.firstName }} {{ emp.lastName }}</span>
+          <span class="member-list-name" (click)="toggleMember(emp.id)">
+            {{ emp.firstName }} {{ emp.lastName }}
+          </span>
         </div>
         }
       </div>
