@@ -9,7 +9,6 @@
       <h2 class="page-title">{{ 'USERS.TITLE' | translate }}</h2>
       <button class="add-btn" (click)="openAdd()">{{ 'USERS.ADD' | translate }}</button>
     </div>
-
     <!-- TABLE desktop -->
     <div class="table-view" *ngIf="activeView === 'grid'"> <dx-data-grid [dataSource]="sharedDataSource"
         [columns]="columns" [showBorders]="false" [showRowLines]="true" [showColumnLines]="false"
