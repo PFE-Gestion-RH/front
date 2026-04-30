@@ -9,11 +9,11 @@
       <h2 class="page-title">{{ 'USERS.TITLE' | translate }}</h2>
       <button class="add-btn" (click)="openAdd()">{{ 'USERS.ADD' | translate }}</button>
     </div>
-    <!-- TABLE desktop -->
-    <div class="table-view" *ngIf="activeView === 'grid'"> <dx-data-grid [dataSource]="sharedDataSource"
-        [columns]="columns" [showBorders]="false" [showRowLines]="true" [showColumnLines]="false"
-        [hoverStateEnabled]="true" keyExpr="id" [remoteOperations]="true">
 
+    <!-- TABLE desktop -->
+    <div class="table-view" *ngIf="activeView === 'grid'">
+      <dx-data-grid [dataSource]="sharedDataSource" [columns]="columns" [showBorders]="false" [showRowLines]="true"
+        [showColumnLines]="false" [hoverStateEnabled]="true" keyExpr="id" [remoteOperations]="true">
         <dxo-load-panel [enabled]="false"></dxo-load-panel>
         <dxo-search-panel [visible]="true" [placeholder]="'USERS.SEARCH' | translate"></dxo-search-panel>
         <dxo-selection mode="none"></dxo-selection>
@@ -26,8 +26,8 @@
     </div>
 
     <!-- CARDS tablette/mobile -->
-    <div class="cards-view" [class.is-loading]="isLoading" *ngIf="activeView === 'card'"> <dx-card-view
-        [dataSource]="sharedDataSource" keyExpr="id" [cardMinWidth]="280" cardsPerRow="auto">
+    <div class="cards-view" [class.is-loading]="isLoading" *ngIf="activeView === 'card'">
+      <dx-card-view [dataSource]="sharedDataSource" keyExpr="id" [cardMinWidth]="280" cardsPerRow="auto">
 
         <dxo-card-view-search-panel [visible]="true"
           [placeholder]="'USERS.SEARCH' | translate"></dxo-card-view-search-panel>
@@ -40,6 +40,7 @@
         <dxi-card-view-column dataField="lastName" [visible]="false" [allowSearch]="true"></dxi-card-view-column>
         <dxi-card-view-column dataField="email" [visible]="false" [allowSearch]="true"></dxi-card-view-column>
         <dxi-card-view-column dataField="role" [visible]="false" [allowSearch]="true"></dxi-card-view-column>
+        <dxi-card-view-column dataField="employeeNumber" [visible]="false" [allowSearch]="true"></dxi-card-view-column>
 
         <dxi-card-view-column caption="" [calculateFieldValue]="getCardData" fieldValueTemplate="cardBodyTemplate"
           [allowSorting]="false" [allowSearch]="false" [allowFiltering]="false">
@@ -48,11 +49,10 @@
         <div *dxTemplate="let params of 'cardBodyTemplate'" class="card-body-template">
           <div class="card-top">
             <div class="card-avatar">
-              <img *ngIf="params.field.value?.profilePicture; else initials" [src]="params.field.value?.profilePicture"
-                alt="avatar" />
+              <img *ngIf="params.field.value?.profilePicture; else initials"
+                [src]="params.field.value?.profilePicture" alt="avatar" />
               <ng-template #initials>
-                {{ (params.field.value?.firstName?.[0] ?? '') | uppercase }}{{ (params.field.value?.lastName?.[0] ?? '')
-                | uppercase }}
+                {{ (params.field.value?.firstName?.[0] ?? '') | uppercase }}{{ (params.field.value?.lastName?.[0] ?? '') | uppercase }}
               </ng-template>
             </div>
             <div class="card-info">
@@ -64,30 +64,29 @@
               {{ params.field.value?.isActive ? ('USERS.ACTIVE' | translate) : ('USERS.INACTIVE' | translate) }}
             </span>
           </div>
+
           <div class="card-email-row">
             <span class="card-email">{{ params.field.value?.email }}</span>
-            <div class="card-email-row">
-  <span class="card-emp-number">
-    <i class="dx-icon dx-icon-card"></i>
-    {{ params.field.value?.employeeNumber || '—' }}
-  </span>
-</div>
           </div>
-          
+
+          <!-- ← matricule -->
+          <div class="card-email-row">
+            <span class="card-emp-number">
+              <i class="dx-icon dx-icon-card"></i>
+              {{ params.field.value?.employeeNumber || '—' }}
+            </span>
+          </div>
+
           <div class="card-divider"></div>
           <div class="card-actions">
             <button class="action-btn edit-btn" (click)="openEdit(params.field.value); $event.stopPropagation()">
               <i class="dx-icon dx-icon-edit"></i> {{ 'USERS.EDIT' | translate }}
             </button>
-            <button class="action-btn" (click)="resendCredentials(params.field.value); $event.stopPropagation()"
-              style="color: #3B8AB2; border-color: #3B8AB2;">
-              <i class="dx-icon dx-icon-email"></i> {{ 'USERS.RESEND' | translate }}
-            </button>
             <button class="action-btn toggle-btn" (click)="toggleActive(params.field.value); $event.stopPropagation()">
               @if (params.field.value?.isActive) {
-              <i class="dx-icon dx-icon-minus"></i> {{ 'USERS.DEACTIVATE' | translate }}
+                <i class="dx-icon dx-icon-minus"></i> {{ 'USERS.DEACTIVATE' | translate }}
               } @else {
-              <i class="dx-icon dx-icon-check"></i> {{ 'USERS.ACTIVATE' | translate }}
+                <i class="dx-icon dx-icon-check"></i> {{ 'USERS.ACTIVATE' | translate }}
               }
             </button>
             <button class="action-btn delete-btn" (click)="deleteUser(params.field.value); $event.stopPropagation()">
@@ -105,6 +104,7 @@
     <div *dxTemplate="let data of 'content'" class="profile-form">
       <dx-validation-group #validationGroup>
         <div class="form-section">
+
           <div class="form-field">
             <label>{{ 'USERS.FIRST_NAME' | translate }}</label>
             <dx-text-box [(value)]="selectedUser.firstName" [placeholder]="'USERS.FIRST_NAME' | translate"
@@ -124,34 +124,49 @@
               </dx-validator>
             </dx-text-box>
           </div>
+
+          <!-- Matricule : editable en Add, readonly en Edit -->
           @if (!isEditMode) {
-          <div class="form-field">
-            <label>{{ 'USERS.EMPLOYEE_NUMBER' | translate }}</label>
-            <dx-text-box [(value)]="selectedUser.employeeNumber" [placeholder]="'USERS.EMPLOYEE_NUMBER' | translate"
-              [disabled]="isSaving">
-              <dx-validator>
-                <dxi-validation-rule type="required" message="Employee number is required"></dxi-validation-rule>
-              </dx-validator>
-            </dx-text-box>
-          </div>
+            <div class="form-field">
+              <label>{{ 'USERS.EMPLOYEE_NUMBER' | translate }}</label>
+              <dx-text-box [(value)]="selectedUser.employeeNumber"
+                [placeholder]="'USERS.EMPLOYEE_NUMBER' | translate" [disabled]="isSaving">
+                <dx-validator>
+                  <dxi-validation-rule type="required" message="Employee number is required"></dxi-validation-rule>
+                </dx-validator>
+              </dx-text-box>
+            </div>
           }
           @if (isEditMode) {
-          <div class="form-field">
-            <label>{{ 'USERS.EMPLOYEE_NUMBER' | translate }}</label>
-            <dx-text-box [value]="selectedUser.employeeNumber" [readOnly]="false" [disabled]="false">
-            </dx-text-box>
-          </div>
+            <div class="form-field">
+              <label>{{ 'USERS.EMPLOYEE_NUMBER' | translate }}</label>
+              <dx-text-box [value]="selectedUser.employeeNumber" [readOnly]="true" [disabled]="true">
+              </dx-text-box>
+            </div>
           }
 
           <div class="form-field">
             <label>{{ 'USERS.EMAIL' | translate }}</label>
-            <dx-text-box [(value)]="selectedUser.email" [placeholder]="'USERS.EMAIL' | translate" [disabled]="isSaving">
+            <dx-text-box [(value)]="selectedUser.email" [placeholder]="'USERS.EMAIL' | translate"
+              [disabled]="isSaving">
               <dx-validator>
                 <dxi-validation-rule type="required" message="Email is required"></dxi-validation-rule>
                 <dxi-validation-rule type="email" message="Invalid email format"></dxi-validation-rule>
               </dx-validator>
             </dx-text-box>
           </div>
+
+          @if (!isEditMode) {
+            <div class="form-field">
+              <label>{{ 'AUTH.PASSWORD' | translate }}</label>
+              <dx-text-box [(value)]="selectedUser.password" mode="password"
+                [placeholder]="'AUTH.PASSWORD' | translate" [disabled]="isSaving">
+                <dx-validator>
+                  <dxi-validation-rule type="required" message="Password is required"></dxi-validation-rule>
+                </dx-validator>
+              </dx-text-box>
+            </div>
+          }
 
           <div class="form-field">
             <label>{{ 'USERS.ROLE' | translate }}</label>
@@ -161,6 +176,7 @@
               </dx-validator>
             </dx-select-box>
           </div>
+
         </div>
 
         <div class="form-actions">
@@ -170,7 +186,7 @@
             <div *dxTemplate="let data of 'content'" style="display:flex;align-items:center;gap:8px;">
               <dx-load-indicator [visible]="isSaving" height="16" width="16"></dx-load-indicator>
               @if (!isSaving) {
-              <span>{{ 'USERS.SAVE' | translate }}</span>
+                <span>{{ 'USERS.SAVE' | translate }}</span>
               }
             </div>
           </dx-button>
@@ -197,7 +213,7 @@
           <div *dxTemplate="let data of 'content'" style="display:flex;align-items:center;gap:8px;">
             <dx-load-indicator [visible]="isDeleting" height="16" width="16"></dx-load-indicator>
             @if (!isDeleting) {
-            <span>{{ 'USERS.DELETE' | translate }}</span>
+              <span>{{ 'USERS.DELETE' | translate }}</span>
             }
           </div>
         </dx-button>
@@ -212,8 +228,7 @@
       <div class="form-section">
         <p class="delete-message">
           {{ 'USERS.TOGGLE_CONFIRM' | translate }}
-          <strong>{{ userToToggle?.isActive ? ('USERS.DEACTIVATE' | translate) : ('USERS.ACTIVATE' | translate)
-            }}</strong>
+          <strong>{{ userToToggle?.isActive ? ('USERS.DEACTIVATE' | translate) : ('USERS.ACTIVATE' | translate) }}</strong>
           {{ userToToggle?.firstName }} {{ userToToggle?.lastName }} ?
         </p>
       </div>
@@ -224,7 +239,7 @@
           <div *dxTemplate="let data of 'content'" style="display:flex;align-items:center;gap:8px;">
             <dx-load-indicator [visible]="isToggling" height="16" width="16"></dx-load-indicator>
             @if (!isToggling) {
-            <span>{{ 'USERS.CONFIRM' | translate }}</span>
+              <span>{{ 'USERS.CONFIRM' | translate }}</span>
             }
           </div>
         </dx-button>
