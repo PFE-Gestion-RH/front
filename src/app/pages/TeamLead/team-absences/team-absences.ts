@@ -47,9 +47,20 @@ export class TeamAbsences implements OnInit, OnDestroy {
   showApprovePopup = false;
   showRejectPopup = false;
   showReasonPopup = false;
+  showSimulatePopup = false;
+  showMultiSimulatePopup = false;
   selectedRequest: any = null;
   rejectionReason = '';
   pendingOnly = false;
+
+  // Simulation simple
+  simulationResult: any = null;
+  isSimulating = false;
+
+  // Simulation multi
+  multiSimulationResult: any = null;
+  isMultiSimulating = false;
+  selectedIds: Set<number> = new Set();
 
   tooltipVisible = false;
   tooltipX = 0;
@@ -78,7 +89,6 @@ export class TeamAbsences implements OnInit, OnDestroy {
   ngOnInit(): void {
     this.applyView();
     window.addEventListener('resize', this.onResize);
-
     this.buildColumns();
     this.initSharedDataSource();
     this.translate.onLangChange.subscribe(() => {
@@ -114,6 +124,59 @@ export class TeamAbsences implements OnInit, OnDestroy {
     this.cdr.detectChanges();
   }
 
+  // ── Checkbox sélection ────────────────────────────────────────────────────
+  toggleSelection(id: number): void {
+    if (this.selectedIds.has(id)) {
+      this.selectedIds.delete(id);
+    } else {
+      this.selectedIds.add(id);
+    }
+    this.cdr.detectChanges();
+  }
+
+  isSelected(id: number): boolean {
+    return this.selectedIds.has(id);
+  }
+
+  get selectedCount(): number {
+    return this.selectedIds.size;
+  }
+
+  // ── Simulation multi ──────────────────────────────────────────────────────
+  simulateSelected(): void {
+    if (this.selectedIds.size < 2) {
+      this.sharedService.showToastMessage(ToastType.Error, 'Sélectionnez au moins 2 demandes');
+      return;
+    }
+
+    this.multiSimulationResult = null;
+    this.isMultiSimulating = true;
+    this.showMultiSimulatePopup = true;
+    this.cdr.detectChanges();
+
+    this.http.post<ApiResponse<any>>(
+      `${environment.apiUrl}/demande/simulate-multi`,
+      { requestIds: Array.from(this.selectedIds) },
+      { headers: this.getHeaders() }
+    ).subscribe({
+      next: (res) => {
+        if (res.isSuccess) {
+          this.multiSimulationResult = res.data;
+        } else {
+          this.sharedService.showToastMessage(ToastType.Error, res.error || 'Failed');
+          this.showMultiSimulatePopup = false;
+        }
+        this.isMultiSimulating = false;
+        this.cdr.detectChanges();
+      },
+      error: () => {
+        this.isMultiSimulating = false;
+        this.showMultiSimulatePopup = false;
+        this.cdr.detectChanges();
+      }
+    });
+  }
+
   showTooltip(event: MouseEvent, data: any): void {
     const rect = (event.target as HTMLElement).getBoundingClientRect();
     this.tooltipData = data;
@@ -135,6 +198,32 @@ export class TeamAbsences implements OnInit, OnDestroy {
   buildColumns(): void {
     this.columns = [
       {
+        caption: '',
+        width: 40,
+        cellTemplate: (container: any, options: any) => {
+          const data = options.data;
+          if (data.status !== 'PendingTeamLead') return;
+
+          const wrapper = document.createElement('div');
+          wrapper.style.display = 'flex';
+          wrapper.style.justifyContent = 'center';
+          wrapper.style.alignItems = 'center';
+
+          const checkbox = document.createElement('input');
+          checkbox.type = 'checkbox';
+          checkbox.checked = this.isSelected(data.id);
+          checkbox.style.cssText = 'width:16px; height:16px; cursor:pointer; accent-color:#3B8AB2;';
+          checkbox.addEventListener('change', (e) => {
+            e.stopPropagation();
+            this.toggleSelection(data.id);
+            this.cdr.detectChanges();
+          });
+
+          wrapper.appendChild(checkbox);
+          container.appendChild(wrapper);
+        }
+      },
+      {
         caption: this.translate.instant('TEAM_ABSENCES.EMPLOYEE'),
         dataField: 'employeeName',
         cellTemplate: 'employeeTooltipTemplate'
@@ -155,7 +244,7 @@ export class TeamAbsences implements OnInit, OnDestroy {
       },
       {
         caption: this.translate.instant('TEAM_ABSENCES.ACTIONS'),
-        minWidth: 220,
+        minWidth: 320,
         cellTemplate: (container: any, options: any) => {
           const data = options.data;
 
@@ -167,6 +256,11 @@ export class TeamAbsences implements OnInit, OnDestroy {
             return;
           }
 
+          const simulateBtn = document.createElement('button');
+          simulateBtn.className = 'action-btn simulate-btn';
+          simulateBtn.innerHTML = `<i class="dx-icon dx-icon-chart"></i> ${this.translate.instant('TEAM_ABSENCES.SIMULATE')}`;
+          simulateBtn.onclick = () => this.simulateRequest(data);
+
           const approveBtn = document.createElement('button');
           approveBtn.className = 'action-btn approve-btn';
           approveBtn.innerHTML = `<i class="dx-icon dx-icon-check"></i> ${this.translate.instant('TEAM_ABSENCES.APPROVE')}`;
@@ -177,14 +271,28 @@ export class TeamAbsences implements OnInit, OnDestroy {
           rejectBtn.innerHTML = `<i class="dx-icon dx-icon-close"></i> ${this.translate.instant('TEAM_ABSENCES.REJECT')}`;
           rejectBtn.onclick = () => this.rejectRequest(data);
 
-          container.append(approveBtn, rejectBtn);
+          container.append(simulateBtn, approveBtn, rejectBtn);
         }
       }
     ];
   }
 
   onFilterChange(): void {
+    this.selectedIds.clear();
     this.initSharedDataSource();
+  }
+  get maxRate(): number {
+    if (!this.multiSimulationResult?.dailyImpacts?.length) return 0;
+    return Math.max(...this.multiSimulationResult.dailyImpacts.map((d: any) => d.rate));
+  }
+
+  get criticalDays(): number {
+    if (!this.multiSimulationResult?.dailyImpacts?.length) return 0;
+    return this.multiSimulationResult.dailyImpacts.filter((d: any) => d.color === 'red').length;
+  }
+
+  get totalDays(): number {
+    return this.multiSimulationResult?.dailyImpacts?.length ?? 0;
   }
 
   getStatusLabel(status: string): string {
@@ -239,6 +347,36 @@ export class TeamAbsences implements OnInit, OnDestroy {
     });
   }
 
+  // ── Simulation simple ─────────────────────────────────────────────────────
+  simulateRequest(request: any): void {
+    this.selectedRequest = request;
+    this.simulationResult = null;
+    this.isSimulating = true;
+    this.showSimulatePopup = true;
+    this.cdr.detectChanges();
+
+    this.http.get<ApiResponse<any>>(
+      `${environment.apiUrl}/demande/${request.id}/simulate`,
+      { headers: this.getHeaders() }
+    ).subscribe({
+      next: (res) => {
+        if (res.isSuccess) {
+          this.simulationResult = res.data;
+        } else {
+          this.sharedService.showToastMessage(ToastType.Error, res.error || 'Simulation failed');
+          this.showSimulatePopup = false;
+        }
+        this.isSimulating = false;
+        this.cdr.detectChanges();
+      },
+      error: () => {
+        this.isSimulating = false;
+        this.showSimulatePopup = false;
+        this.cdr.detectChanges();
+      }
+    });
+  }
+
   approveRequest(request: any): void {
     this.selectedRequest = request;
     this.showApprovePopup = true;
@@ -269,12 +407,14 @@ export class TeamAbsences implements OnInit, OnDestroy {
       next: (res) => {
         if (res.isSuccess) {
           this.sharedService.showToastMessage(ToastType.Success, 'Request approved');
+          this.selectedIds.delete(this.selectedRequest.id);
           this.sharedDataSource.reload();
           this.cardDataSource.reload();
         } else {
           this.sharedService.showToastMessage(ToastType.Error, res.error || 'Approval failed');
         }
         this.showApprovePopup = false;
+        this.showSimulatePopup = false;
         this.selectedRequest = null;
         this.isProcessing = false;
         this.cdr.detectChanges();
@@ -295,6 +435,7 @@ export class TeamAbsences implements OnInit, OnDestroy {
       next: (res) => {
         if (res.isSuccess) {
           this.sharedService.showToastMessage(ToastType.Success, 'Request rejected');
+          this.selectedIds.delete(this.selectedRequest.id);
           this.sharedDataSource.reload();
           this.cardDataSource.reload();
         } else {

@@ -1,4 +1,7 @@
-import { Component, OnInit, OnDestroy, NgZone, signal, ChangeDetectorRef, effect, ViewEncapsulation, ViewChild } from '@angular/core';
+import {
+  Component, OnInit, OnDestroy, NgZone, signal,
+  ChangeDetectorRef, ViewEncapsulation, ViewChild, Injector
+} from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -43,7 +46,34 @@ export class Teams implements OnInit, OnDestroy {
   @ViewChild('validationGroup') validationGroupRef: any;
 
   sharedDataSource!: DataSource;
+
+  // ─── Utilisateurs ────────────────────────────────────────────────────────────
+  // Signal gardé uniquement pour usage interne
   allUsers = signal<User[]>([]);
+
+  // ✅ FIX 1 : Propriétés stables calculées une seule fois dans loadUsers()
+  //            Remplacent les getters teamLeads / employees qui étaient recalculés
+  //            à chaque cycle de détection → nouvel array → DxSelectBox recharge → stack overflow
+  teamLeadsList: any[] = [];
+  employeesList: User[] = [];
+
+  // ✅ FIX 2 : Map précalculée pour getMemberNameById()
+  //            Évite de lire le signal allUsers() pendant la détection de changement → NG0100
+  private memberNameMap = new Map<number, string>();
+
+  // ✅ FIX 3 : Set stable pour gérer la sélection des membres
+  //            Remplace teamForm.memberIds comme source de vérité pour isMemberSelected()
+  //            → toggleMember ne touche plus au DOM via detectChanges() → pas de boucle
+  selectedMemberIds = new Set<number>();
+
+  // ─── Règles de validation ────────────────────────────────────────────────────
+  // ✅ FIX 4 : Tableaux déclarés comme propriétés stables
+  //            Évite [validationRules]="[{...}]" inline dans le template qui crée
+  //            un nouvel array à chaque cycle → DxValidator ngDoCheck boucle → stack overflow
+  nameValidationRules: any[] = [];
+  teamLeadValidationRules: any[] = [];
+
+  // ─── UI state ────────────────────────────────────────────────────────────────
   pageSize = 10;
   columns: any[] = [];
   activeView: 'grid' | 'card' = 'grid';
@@ -61,46 +91,31 @@ export class Teams implements OnInit, OnDestroy {
   teamForm: CreateTeamForm = { name: '', teamLeadId: null, memberIds: [] };
   getCardData = (rowData: any) => rowData;
 
-  get teamLeads(): any[] {
-    return this.allUsers()
-      .filter(u => u.role === UserRole.TeamLead)
-      .map(u => ({ ...u, fullName: `${u.firstName} ${u.lastName}` }));
-  }
-
-  get employees(): User[] {
-    return this.allUsers().filter(u => u.role === UserRole.Employee);
-  }
-
-  getMemberNameById(id: number): string {
-    const user = this.allUsers().find(u => u.id === id);
-    return user ? `${user.firstName} ${user.lastName}` : '';
-  }
-
   constructor(
     private http: HttpClient,
     private sharedService: SharedService,
     private ngZone: NgZone,
     private cdr: ChangeDetectorRef,
-    private translate: TranslateService
+    private translate: TranslateService,
+    private injector: Injector
   ) {
-    effect(() => {
-      const view = this.sharedService.viewMode();
-      if (window.innerWidth >= 1024) {
-        this.activeView = view;
-        this.cdr.detectChanges();
-      }
-    });
+    // ✅ FIX 5 : effect() retiré du constructeur
+    //            L'ancien effect() appelait cdr.detectChanges() ce qui déclenchait
+    //            NG0100 (true→false) pendant la phase d'initialisation de la vue
+    //            La vue responsive est désormais gérée uniquement par applyView() + resize event
   }
 
   ngOnInit(): void {
     this.applyView();
     window.addEventListener('resize', this.onResize);
-
     this.buildColumns();
+    this.buildValidationRules();
     this.initSharedDataSource();
     this.loadUsers();
+
     this.translate.onLangChange.subscribe(() => {
       this.buildColumns();
+      this.buildValidationRules();
       this.cdr.detectChanges();
     });
   }
@@ -110,7 +125,10 @@ export class Teams implements OnInit, OnDestroy {
   }
 
   private onResize = (): void => {
-    this.applyView();
+    this.ngZone.run(() => {
+      this.applyView();
+      this.cdr.detectChanges();
+    });
   }
 
   private applyView(): void {
@@ -123,7 +141,16 @@ export class Teams implements OnInit, OnDestroy {
       this.activeView = saved;
       this.sharedService.viewMode.set(saved);
     }
-    this.cdr.detectChanges();
+  }
+
+  // ✅ FIX 4 : Règles construites une seule fois (et à chaque changement de langue)
+  buildValidationRules(): void {
+    this.nameValidationRules = [
+      { type: 'required', message: this.translate.instant('TEAMS.VALIDATION.NAME_REQUIRED') }
+    ];
+    this.teamLeadValidationRules = [
+      { type: 'required', message: this.translate.instant('TEAMS.VALIDATION.TEAMLEAD_REQUIRED') }
+    ];
   }
 
   buildColumns(): void {
@@ -207,17 +234,61 @@ export class Teams implements OnInit, OnDestroy {
           this.ngZone.run(() => {
             if (res.isSuccess) {
               const data = res.data;
-              this.allUsers.set(Array.isArray(data) ? data : data.items ?? []);
+              const users: User[] = Array.isArray(data) ? data : data.items ?? [];
+
+              // ✅ FIX 1 : Calculé une seule fois ici, jamais dans un getter
+              this.teamLeadsList = users
+                .filter(u => u.role === UserRole.TeamLead)
+                .map(u => ({ ...u, fullName: `${u.firstName} ${u.lastName}` }));
+
+              this.employeesList = users.filter(u => u.role === UserRole.Employee);
+
+              // ✅ FIX 2 : Map précalculée O(1)
+              this.memberNameMap = new Map(
+                users.map(u => [u.id, `${u.firstName} ${u.lastName}`])
+              );
+
+              this.allUsers.set(users);
+              this.cdr.detectChanges();
             }
           });
         }
       });
   }
 
+  // ✅ FIX 2 : Lookup stable via Map, plus de lecture du signal pendant le check
+  getMemberNameById(id: number): string {
+    return this.memberNameMap.get(id) ?? '';
+  }
+
+  // ✅ FIX 3 : isMemberSelected lit le Set stable, pas teamForm.memberIds directement
+  //            → pas de re-création d'array à chaque appel
+  isMemberSelected(userId: number): boolean {
+    return this.selectedMemberIds.has(userId);
+  }
+
+  // ✅ FIX 3 + FIX 6 : toggleMember sans detectChanges()
+  //            L'ancien code appelait cdr.detectChanges() ce qui re-rendait DxCheckBox
+  //            → onValueChanged se déclenchait → toggleMember → boucle infinie (stack overflow)
+  //            Solution : on met à jour le Set et teamForm.memberIds, Angular détecte
+  //            la mutation lors du prochain cycle naturel (pas besoin de forcer)
+  toggleMember(userId: number): void {
+    if (this.selectedMemberIds.has(userId)) {
+      this.selectedMemberIds.delete(userId);
+    } else {
+      this.selectedMemberIds.add(userId);
+    }
+    // Sync vers teamForm pour le save — on crée un nouveau tableau pour que
+    // le @for du template détecte le changement par référence
+    this.teamForm.memberIds = Array.from(this.selectedMemberIds);
+  }
+
   openAdd(): void {
     this.isEditMode = false;
     this.editingTeamId = null;
     this.teamForm = { name: '', teamLeadId: null, memberIds: [] };
+    // ✅ Reset du Set à l'ouverture
+    this.selectedMemberIds = new Set<number>();
     this.showPopup = true;
     this.cdr.detectChanges();
     setTimeout(() => { this.validationGroupRef?.instance?.reset(); }, 0);
@@ -226,25 +297,15 @@ export class Teams implements OnInit, OnDestroy {
   openEdit(team: Team): void {
     this.isEditMode = true;
     this.editingTeamId = team.id;
+    // ✅ Init du Set depuis les membres existants
+    this.selectedMemberIds = new Set<number>(team.members.map(m => m.id));
     this.teamForm = {
       name: team.name,
       teamLeadId: team.teamLeadId,
-      memberIds: team.members.map(m => m.id)
+      memberIds: Array.from(this.selectedMemberIds)
     };
     this.showPopup = true;
     this.cdr.detectChanges();
-  }
-
-  toggleMember(userId: number): void {
-    const index = this.teamForm.memberIds.indexOf(userId);
-    if (index === -1) this.teamForm.memberIds.push(userId);
-    else this.teamForm.memberIds.splice(index, 1);
-    this.teamForm.memberIds = [...this.teamForm.memberIds];
-    this.cdr.detectChanges();
-  }
-
-  isMemberSelected(userId: number): boolean {
-    return this.teamForm.memberIds.includes(userId);
   }
 
   save(validationGroup: any): void {
@@ -258,21 +319,22 @@ export class Teams implements OnInit, OnDestroy {
     this.cdr.detectChanges();
 
     if (this.isEditMode && this.editingTeamId) {
-      this.http.put<ApiResponse<string>>(`${environment.apiUrl}/teams/${this.editingTeamId}`, this.teamForm)
-        .subscribe({
-          next: (res) => {
-            if (res.isSuccess) {
-              this.sharedService.showToastMessage(ToastType.Success, 'Team updated successfully');
-              this.showPopup = false;
-              this.sharedDataSource.reload();
-            } else {
-              this.sharedService.showToastMessage(ToastType.Error, res.error || 'Update failed');
-            }
-            this.isSaving = false;
-            this.cdr.detectChanges();
-          },
-          error: () => { this.isSaving = false; this.cdr.detectChanges(); }
-        });
+      this.http.put<ApiResponse<string>>(
+        `${environment.apiUrl}/teams/${this.editingTeamId}`, this.teamForm
+      ).subscribe({
+        next: (res) => {
+          if (res.isSuccess) {
+            this.sharedService.showToastMessage(ToastType.Success, 'Team updated successfully');
+            this.showPopup = false;
+            this.sharedDataSource.reload();
+          } else {
+            this.sharedService.showToastMessage(ToastType.Error, res.error || res.message || 'Update failed');
+          }
+          this.isSaving = false;
+          this.cdr.detectChanges();
+        },
+        error: () => { this.isSaving = false; this.cdr.detectChanges(); }
+      });
     } else {
       this.http.post<ApiResponse<string>>(`${environment.apiUrl}/teams`, this.teamForm)
         .subscribe({
@@ -282,7 +344,7 @@ export class Teams implements OnInit, OnDestroy {
               this.showPopup = false;
               this.sharedDataSource.reload();
             } else {
-              this.sharedService.showToastMessage(ToastType.Error, res.error || 'Create failed');
+              this.sharedService.showToastMessage(ToastType.Error, res.error || res.message || 'Create failed');
             }
             this.isSaving = false;
             this.cdr.detectChanges();
@@ -309,7 +371,7 @@ export class Teams implements OnInit, OnDestroy {
             this.sharedService.showToastMessage(ToastType.Success, 'Team deleted successfully');
             this.sharedDataSource.reload();
           } else {
-            this.sharedService.showToastMessage(ToastType.Error, res.error || 'Delete failed');
+            this.sharedService.showToastMessage(ToastType.Error, res.error || res.message || 'Delete failed');
           }
           this.showDeletePopup = false;
           this.teamToDelete = null;

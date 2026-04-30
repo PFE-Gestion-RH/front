@@ -4,6 +4,5 @@ export interface UserForm {
   lastName: string;
   email: string;
   role: string;
-  password: string;
   employeeNumber: string;
 }

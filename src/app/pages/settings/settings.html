@@ -39,6 +39,11 @@
         <input [(ngModel)]="profile.email" class="form-input" type="email" [placeholder]="'SETTINGS.EMAIL' | translate"
           disabled />
       </div>
+      <div class="form-field">
+        <label>{{ 'SETTINGS.EMPLOYEE_NUMBER' | translate }}</label>
+        <input [(ngModel)]="profile.employeeNumber" class="form-input"
+          [placeholder]="'SETTINGS.EMPLOYEE_NUMBER' | translate" disabled />
+      </div>
 
       <div class="section-title">{{ 'SETTINGS.CHANGE_PASSWORD' | translate }}</div>
 

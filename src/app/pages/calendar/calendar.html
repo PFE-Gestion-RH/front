@@ -6,106 +6,102 @@
 
   <div class="calendar-grid">
 
-    <dx-load-panel
-      [visible]="loading"
-      [showIndicator]="true"
-      [showPane]="true"
-      [message]="'CALENDAR.LOADING' | translate"
-      [position]="{ of: '.calendar-grid' }">
+    <dx-load-panel [visible]="loading" [showIndicator]="true" [showPane]="true"
+      [message]="'CALENDAR.LOADING' | translate" [position]="{ of: '.calendar-grid' }">
     </dx-load-panel>
 
     <div class="calendar-legend">
       @for (item of legendItems; track item.type) {
-        <span class="legend-item">
-          <span class="legend-dot" [style.background]="item.color"></span>
-          {{ item.type | titlecase }}
-        </span>
+      <span class="legend-item">
+        <span class="legend-dot" [style.background]="item.color"></span>
+        {{ item.type | titlecase }}
+      </span>
       }
     </div>
+    @if (role?.toUpperCase() === 'TEAMLEAD' && analysis.length > 0) {
+    <div style="margin-bottom: 12px;">
+      <div style="display: flex; flex-wrap: wrap; gap: 8px;">
+        @for (item of analysis; track item.dayOfYear) {
+        <div style="display: flex; align-items: center; gap: 6px;
+          background: var(--color-background-danger);
+          border: 0.5px solid var(--color-border-danger);
+          border-radius: 8px; padding: 5px 10px;">
+          <span style="font-size: 12px; color: var(--color-text-danger); font-weight: 500;">
+            {{ item.message }}
+          </span>
+        </div>
+        }
+      </div>
+    </div>
+    }
 
-    <dx-scheduler
-      [dataSource]="events"
-      [currentDate]="currentDate"
-      (onOptionChanged)="onOptionChanged($event)"
-      [(currentView)]="currentView"
-      [views]="views"
-      startDateExpr="startDate"
-      endDateExpr="endDate"
-      textExpr="text"
-      allDayExpr="allDay"
-      [showAllDayPanel]="true"
-      [firstDayOfWeek]="1"
-      [height]="600"
-      [editing]="editingConfig"
-      (onAppointmentRendered)="onAppointmentRendered($event)"
-      (onAppointmentClick)="onAppointmentClick($event)"
+    <dx-scheduler [dataSource]="events" [currentDate]="currentDate" (onOptionChanged)="onOptionChanged($event)"
+      [(currentView)]="currentView" [views]="views" startDateExpr="startDate" endDateExpr="endDate" textExpr="text"
+      allDayExpr="allDay" [showAllDayPanel]="true" [firstDayOfWeek]="1" [height]="600" [editing]="editingConfig"
+      (onAppointmentRendered)="onAppointmentRendered($event)" (onAppointmentClick)="onAppointmentClick($event)"
       (onAppointmentDblClick)="onAppointmentDblClick($event)"
       (onAppointmentFormOpening)="onAppointmentFormOpening($event)">
     </dx-scheduler>
 
+
   </div>
 
   @if (showEventPopup) {
-    <dx-popup
-      [(visible)]="showEventPopup"
-      [width]="420"
-      [height]="'auto'"
-      [title]="popupTitle"
-      [showCloseButton]="true">
-      <div *dxTemplate="let data of 'content'" class="profile-form">
-        <div class="form-section">
-
-          <div class="form-field">
-            <label>{{ 'CALENDAR.TYPE' | translate }}</label>
-            <span class="badge" [class]="selectedEvent?.type">
-              {{ selectedEvent?.type | titlecase }}
-            </span>
-          </div>
-
-          @if (selectedEvent?.employeeName) {
-            <div class="form-field">
-              <label>{{ 'CALENDAR.EMPLOYEE' | translate }}</label>
-              <span>{{ selectedEvent?.employeeName }}</span>
-            </div>
-          }
-
-          <div class="form-field">
-            <label>{{ 'CALENDAR.START_DATE' | translate }}</label>
-            <span>{{ selectedEvent?.startDate | date:'dd MMM yyyy' }}</span>
-          </div>
-
-          <div class="form-field">
-            <label>{{ 'CALENDAR.END_DATE' | translate }}</label>
-            <span>{{ selectedEvent?.endDate | date:'dd MMM yyyy' }}</span>
-          </div>
-
-          @if (selectedEvent?.type === 'permission' && selectedEvent?.startTime) {
-            <div class="form-field">
-              <label>{{ 'CALENDAR.START_TIME' | translate }}</label>
-              <span>{{ selectedEvent?.startTime }}</span>
-            </div>
-          }
-
-          @if (selectedEvent?.type === 'permission' && selectedEvent?.endTime) {
-            <div class="form-field">
-              <label>{{ 'CALENDAR.END_TIME' | translate }}</label>
-              <span>{{ selectedEvent?.endTime }}</span>
-            </div>
-          }
-
-          @if (selectedEvent?.description) {
-            <div class="form-field">
-              <label>{{ 'CALENDAR.DESCRIPTION' | translate }}</label>
-              <span>{{ selectedEvent?.description }}</span>
-            </div>
-          }
-
+  <dx-popup [(visible)]="showEventPopup" [width]="420" [height]="'auto'" [title]="popupTitle" [showCloseButton]="true">
+    <div *dxTemplate="let data of 'content'" class="profile-form">
+      <div class="form-section">
+        <div class="form-field">
+          <label>{{ 'CALENDAR.TYPE' | translate }}</label>
+          <span class="badge" [class]="selectedEvent?.type">
+            {{ selectedEvent?.type | titlecase }}
+          </span>
         </div>
-        <div class="form-actions">
-          <dx-button [text]="'CALENDAR.CLOSE' | translate" (onClick)="showEventPopup = false"></dx-button>
+
+        @if (selectedEvent?.employeeName) {
+        <div class="form-field">
+          <label>{{ 'CALENDAR.EMPLOYEE' | translate }}</label>
+          <span>{{ selectedEvent?.employeeName }}</span>
         </div>
+        }
+
+        <div class="form-field">
+          <label>{{ 'CALENDAR.START_DATE' | translate }}</label>
+          <span>{{ selectedEvent?.startDate | date:'dd MMM yyyy' }}</span>
+        </div>
+
+        <div class="form-field">
+          <label>{{ 'CALENDAR.END_DATE' | translate }}</label>
+          <span>{{ selectedEvent?.endDate | date:'dd MMM yyyy' }}</span>
+        </div>
+
+        @if (selectedEvent?.type === 'permission' && selectedEvent?.startTime) {
+        <div class="form-field">
+          <label>{{ 'CALENDAR.START_TIME' | translate }}</label>
+          <span>{{ selectedEvent?.startTime }}</span>
+        </div>
+        }
+
+        @if (selectedEvent?.type === 'permission' && selectedEvent?.endTime) {
+        <div class="form-field">
+          <label>{{ 'CALENDAR.END_TIME' | translate }}</label>
+          <span>{{ selectedEvent?.endTime }}</span>
+        </div>
+        }
+
+        @if (selectedEvent?.description) {
+        <div class="form-field">
+          <label>{{ 'CALENDAR.DESCRIPTION' | translate }}</label>
+          <span>{{ selectedEvent?.description }}</span>
+        </div>
+        }
+
       </div>
-    </dx-popup>
+      <div class="form-actions">
+        <dx-button [text]="'CALENDAR.CLOSE' | translate" (onClick)="showEventPopup = false"></dx-button>
+      </div>
+    </div>
+  </dx-popup>
   }
+
 
 </div>

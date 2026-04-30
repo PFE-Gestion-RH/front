@@ -8,14 +8,24 @@
 
     <div class="app-page-header">
       <h2 class="page-title">{{ 'TEAM_ABSENCES.TITLE' | translate }}</h2>
-      <dx-check-box [(value)]="pendingOnly" [text]="'TEAM_ABSENCES.FOR_ME' | translate"
-        (onValueChanged)="onFilterChange()">
-      </dx-check-box>
+      <div style="display:flex; gap:12px; align-items:center;">
+        @if (selectedCount >= 2) {
+        <button class="action-btn simulate-btn" (click)="simulateSelected()">
+          <i class="dx-icon dx-icon-chart"></i>
+          {{ 'TEAM_ABSENCES.SIMULATE_MULTI' | translate }} ({{ selectedCount }})
+        </button>
+        }
+        <dx-check-box [(value)]="pendingOnly" [text]="'TEAM_ABSENCES.FOR_ME' | translate"
+          (onValueChanged)="onFilterChange()">
+        </dx-check-box>
+      </div>
     </div>
 
-    <div class="table-view" *ngIf="activeView === 'grid'"> <dx-data-grid [dataSource]="sharedDataSource"
-        [columns]="columns" [showBorders]="false" [showRowLines]="true" [showColumnLines]="false"
-        [hoverStateEnabled]="true" keyExpr="id" [remoteOperations]="{ paging: true, filtering: false, sorting: false }">
+    <!-- TABLE desktop -->
+    <div class="table-view" *ngIf="activeView === 'grid'">
+      <dx-data-grid [dataSource]="sharedDataSource" [columns]="columns" [showBorders]="false" [showRowLines]="true"
+        [showColumnLines]="false" [hoverStateEnabled]="true" keyExpr="id"
+        [remoteOperations]="{ paging: true, filtering: false, sorting: false }">
         <dxo-load-panel [enabled]="false"></dxo-load-panel>
         <dxo-search-panel [visible]="true" [placeholder]="'TEAM_ABSENCES.SEARCH' | translate"></dxo-search-panel>
         <dxo-selection mode="none"></dxo-selection>
@@ -36,8 +46,9 @@
       </dx-data-grid>
     </div>
 
-    <div class="cards-view" [class.is-loading]="isLoading" *ngIf="activeView === 'card'"> <dx-card-view
-        [dataSource]="cardDataSource" keyExpr="id" [cardMinWidth]="280" cardsPerRow="auto"
+    <!-- CARDS tablette/mobile -->
+    <div class="cards-view" [class.is-loading]="isLoading" *ngIf="activeView === 'card'">
+      <dx-card-view [dataSource]="cardDataSource" keyExpr="id" [cardMinWidth]="280" cardsPerRow="auto"
         [remoteOperations]="{ paging: true }">
         <dxo-card-view-search-panel [visible]="true"
           [placeholder]="'TEAM_ABSENCES.SEARCH' | translate"></dxo-card-view-search-panel>
@@ -68,7 +79,8 @@
                   (mouseenter)="showTooltip($event, params.field.value)" (mouseleave)="hideTooltip()">
                   <span class="team-dot"></span>
                 </span>
-              </h4> <span class="card-role">{{ params.field.value?.leaveCategoryName || 'N/A' }}</span>
+              </h4>
+              <span class="card-role">{{ params.field.value?.leaveCategoryName || 'N/A' }}</span>
             </div>
             <span class="badge" [class]="getStatusClass(params.field.value?.status)">
               {{ getStatusLabel(params.field.value?.status) }}
@@ -84,19 +96,30 @@
           <div class="card-divider"></div>
           <div class="card-actions">
             @if (params.field.value?.status === 'PendingTeamLead') {
-            <button class="action-btn approve-btn"
-              (click)="approveRequest(params.field.value); $event.stopPropagation()">
-              <i class="dx-icon dx-icon-check"></i> {{ 'TEAM_ABSENCES.APPROVE' | translate }}
-            </button>
-            <button class="action-btn reject-btn" (click)="rejectRequest(params.field.value); $event.stopPropagation()">
-              <i class="dx-icon dx-icon-close"></i> {{ 'TEAM_ABSENCES.REJECT' | translate }}
-            </button>
+            <div style="display:flex; align-items:center; gap:6px; flex-wrap:wrap;">
+              <input type="checkbox" [checked]="isSelected(params.field.value?.id)"
+                (change)="toggleSelection(params.field.value?.id)" (click)="$event.stopPropagation()"
+                style="width:16px; height:16px; cursor:pointer; accent-color:#3B8AB2; flex-shrink:0;" />
+              <button class="action-btn simulate-btn"
+                (click)="simulateRequest(params.field.value); $event.stopPropagation()">
+                <i class="dx-icon dx-icon-chart"></i> {{ 'TEAM_ABSENCES.SIMULATE' | translate }}
+              </button>
+              <button class="action-btn approve-btn"
+                (click)="approveRequest(params.field.value); $event.stopPropagation()">
+                <i class="dx-icon dx-icon-check"></i> {{ 'TEAM_ABSENCES.APPROVE' | translate }}
+              </button>
+              <button class="action-btn reject-btn"
+                (click)="rejectRequest(params.field.value); $event.stopPropagation()">
+                <i class="dx-icon dx-icon-close"></i> {{ 'TEAM_ABSENCES.REJECT' | translate }}
+              </button>
+            </div>
             }
           </div>
         </div>
       </dx-card-view>
     </div>
   </div>
+
   <div class="team-tooltip-box" [class.visible]="tooltipVisible" [style.top.px]="tooltipY" [style.left.px]="tooltipX">
     <span class="tooltip-row">
       <i class="dx-icon dx-icon-group"></i>
@@ -108,6 +131,144 @@
     </span>
   </div>
 
+  <!-- Popup Simulation Simple -->
+  <dx-popup [(visible)]="showSimulatePopup" [width]="460" [height]="'auto'" [maxHeight]="'80vh'"
+    [title]="'TEAM_ABSENCES.SIMULATE_TITLE' | translate" [showCloseButton]="true">
+    <div *dxTemplate="let data of 'content'" class="profile-form">
+      <div class="form-section">
+        @if (isSimulating) {
+        <div style="display:flex; align-items:center; gap:12px; padding:16px 0;">
+          <dx-load-indicator [visible]="true" height="24" width="24"></dx-load-indicator>
+          <span style="color:var(--color-text-secondary); font-size:14px;">
+            {{ 'TEAM_ABSENCES.SIMULATING' | translate }}
+          </span>
+        </div>
+        }
+        @if (!isSimulating && simulationResult) {
+        <div class="simulation-result">
+          <p class="simulation-employee">
+            <strong>{{ selectedRequest?.employeeName }}</strong> —
+            {{ selectedRequest?.startDate | date:'dd/MM/yyyy' }} →
+            {{ selectedRequest?.endDate | date:'dd/MM/yyyy' }}
+          </p>
+          <div class="simulation-comparison">
+            <div class="sim-card before">
+              <span class="sim-label">{{ 'TEAM_ABSENCES.SIM_BEFORE' | translate }}</span>
+              <span class="sim-value">{{ simulationResult.rateBefore }}%</span>
+              <span class="sim-sub">{{ simulationResult.absentBefore }} / {{ simulationResult.totalMembers }} {{
+                'TEAM_ABSENCES.SIM_ABSENT' | translate }}</span>
+            </div>
+            <div class="sim-arrow">→</div>
+            <div class="sim-card after" [class.alert]="simulationResult.alert">
+              <span class="sim-label">{{ 'TEAM_ABSENCES.SIM_AFTER' | translate }}</span>
+              <span class="sim-value">{{ simulationResult.rateAfter }}%</span>
+              <span class="sim-sub">{{ simulationResult.absentAfter }} / {{ simulationResult.totalMembers }} {{
+                'TEAM_ABSENCES.SIM_ABSENT' | translate }}</span>
+            </div>
+          </div>
+          <div class="simulation-message" [class.alert]="simulationResult.alert">
+            {{ simulationResult.message }}
+          </div>
+        </div>
+        }
+      </div>
+      <div class="form-actions">
+        <dx-button [text]="'TEAM_ABSENCES.CANCEL' | translate" (onClick)="showSimulatePopup = false"></dx-button>
+        @if (!isSimulating && simulationResult) {
+        <dx-button [text]="'TEAM_ABSENCES.REJECT' | translate" type="danger"
+          (onClick)="showSimulatePopup = false; rejectRequest(selectedRequest)"></dx-button>
+        <dx-button [text]="'TEAM_ABSENCES.APPROVE' | translate" type="default"
+          (onClick)="showSimulatePopup = false; approveRequest(selectedRequest)"></dx-button>
+        }
+      </div>
+    </div>
+  </dx-popup>
+
+  <!-- Popup Simulation Multi -->
+  <dx-popup [(visible)]="showMultiSimulatePopup" [width]="520" [height]="'auto'" [maxHeight]="'85vh'"
+    [title]="'TEAM_ABSENCES.SIMULATE_MULTI_TITLE' | translate" [showCloseButton]="true">
+    <div *dxTemplate="let data of 'content'" class="profile-form">
+      <div class="form-section">
+
+        @if (isMultiSimulating) {
+        <div style="display:flex; align-items:center; gap:12px; padding:16px 0;">
+          <dx-load-indicator [visible]="true" height="24" width="24"></dx-load-indicator>
+          <span style="color:var(--color-text-secondary); font-size:14px;">
+            {{ 'TEAM_ABSENCES.SIMULATING' | translate }}
+          </span>
+        </div>
+        }
+
+        @if (!isMultiSimulating && multiSimulationResult) {
+        <div class="multi-simulation-result">
+
+          <!-- Avant / Après -->
+          <div class="simulation-comparison" style="margin-bottom:16px;">
+            <div class="sim-card before">
+              <span class="sim-label">{{ 'TEAM_ABSENCES.SIM_BEFORE' | translate }}</span>
+              <span class="sim-value">{{ multiSimulationResult.rateBefore }}%</span>
+              <span class="sim-sub">
+                {{ multiSimulationResult.absentBefore }} / {{ multiSimulationResult.totalMembers }}
+                {{ 'TEAM_ABSENCES.SIM_ABSENT' | translate }}
+              </span>
+            </div>
+            <div class="sim-arrow">→</div>
+            <div class="sim-card after" [class.alert]="multiSimulationResult.rateAfter >= 50">
+              <span class="sim-label">{{ 'TEAM_ABSENCES.SIM_AFTER' | translate }}</span>
+              <span class="sim-value">{{ multiSimulationResult.rateAfter }}%</span>
+              <span class="sim-sub">
+                {{ multiSimulationResult.absentAfter }} / {{ multiSimulationResult.totalMembers }}
+                {{ 'TEAM_ABSENCES.SIM_ABSENT' | translate }}
+              </span>
+            </div>
+          </div>
+
+          <!-- Résumé période + jours critiques -->
+          <div class="simulation-comparison" style="gap:8px; flex-wrap:wrap; margin-bottom:12px;">
+            <div class="sim-card" style="flex:1; min-width:120px; text-align:center;">
+              <span class="sim-label">📅 Période</span>
+              <span class="sim-value" style="font-size:12px; font-weight:500;">
+                {{ multiSimulationResult.dailyImpacts[0]?.date }} →
+                {{ multiSimulationResult.dailyImpacts[totalDays - 1]?.date }}
+              </span>
+            </div>
+            <div class="sim-card" style="flex:1; min-width:100px; text-align:center;">
+              <span class="sim-label">🔴 Jours critiques</span>
+              <span class="sim-value">{{ criticalDays }} / {{ totalDays }}</span>
+            </div>
+          </div>
+
+          <!-- Conflits -->
+          @if (multiSimulationResult.conflicts?.length > 0) {
+          <div class="conflicts-section" style="margin-bottom:12px;">
+            <h4 style="font-size:13px; font-weight:600; margin-bottom:8px; color:var(--color-text-danger);">
+              ⚠️ {{ 'TEAM_ABSENCES.CONFLICTS' | translate }} ({{ multiSimulationResult.conflicts.length }})
+            </h4>
+            @for (conflict of multiSimulationResult.conflicts; track conflict.startDate) {
+            <div class="conflict-item">
+              <span class="conflict-dates">{{ conflict.startDate }} → {{ conflict.endDate }}</span>
+              <span class="conflict-rate" [class.red]="conflict.rate >= 50">{{ conflict.rate }}%</span>
+              <span class="conflict-names">{{ conflict.employeeNames.join(', ') }}</span>
+            </div>
+            }
+          </div>
+          }
+
+          <!-- Analyse Groq -->
+          <div class="simulation-message" [class.alert]="multiSimulationResult.rateAfter >= 50">
+            {{ multiSimulationResult.groqAnalysis }}
+          </div>
+
+        </div>
+        }
+      </div>
+      <div class="form-actions">
+        <dx-button [text]="'TEAM_ABSENCES.CANCEL' | translate" (onClick)="showMultiSimulatePopup = false"></dx-button>
+      </div>
+    </div>
+  </dx-popup>
+
+  <!-- Popup Approve -->
   <dx-popup [(visible)]="showApprovePopup" [width]="400" [height]="'auto'" [maxHeight]="'80vh'"
     [title]="'TEAM_ABSENCES.APPROVE_TITLE' | translate" [showCloseButton]="!isProcessing">
     <div *dxTemplate="let data of 'content'" class="profile-form">
@@ -131,6 +292,7 @@
     </div>
   </dx-popup>
 
+  <!-- Popup Reject -->
   <dx-popup [(visible)]="showRejectPopup" [width]="400" [height]="'auto'" [maxHeight]="'80vh'"
     [title]="'TEAM_ABSENCES.REJECT_TITLE' | translate" [showCloseButton]="!isProcessing">
     <div *dxTemplate="let data of 'content'" class="profile-form">
@@ -149,6 +311,7 @@
     </div>
   </dx-popup>
 
+  <!-- Popup Reason -->
   <dx-popup [(visible)]="showReasonPopup" [width]="400" [height]="'auto'" [maxHeight]="'80vh'"
     [title]="'TEAM_ABSENCES.REASON_TITLE' | translate" [showCloseButton]="!isProcessing">
     <div *dxTemplate="let data of 'content'" class="profile-form">
@@ -171,4 +334,5 @@
       </div>
     </div>
   </dx-popup>
+
 </div>

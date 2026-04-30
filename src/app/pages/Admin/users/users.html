@@ -40,6 +40,7 @@
         <dxi-card-view-column dataField="firstName" [visible]="false" [allowSearch]="true"></dxi-card-view-column>
         <dxi-card-view-column dataField="lastName" [visible]="false" [allowSearch]="true"></dxi-card-view-column>
         <dxi-card-view-column dataField="email" [visible]="false" [allowSearch]="true"></dxi-card-view-column>
+        <dxi-card-view-column dataField="employeeNumber" [visible]="false" [allowSearch]="true"></dxi-card-view-column>
         <dxi-card-view-column dataField="role" [visible]="false" [allowSearch]="true"></dxi-card-view-column>
 
         <dxi-card-view-column caption="" [calculateFieldValue]="getCardData" fieldValueTemplate="cardBodyTemplate"
@@ -67,11 +68,22 @@
           </div>
           <div class="card-email-row">
             <span class="card-email">{{ params.field.value?.email }}</span>
+            <div class="card-email-row">
+              <span class="card-emp-number">
+                <i class="dx-icon dx-icon-card"></i>
+                {{ params.field.value?.employeeNumber || '—' }}
+              </span>
+            </div>
           </div>
+
           <div class="card-divider"></div>
           <div class="card-actions">
             <button class="action-btn edit-btn" (click)="openEdit(params.field.value); $event.stopPropagation()">
               <i class="dx-icon dx-icon-edit"></i> {{ 'USERS.EDIT' | translate }}
+            </button>
+            <button class="action-btn" (click)="resendCredentials(params.field.value); $event.stopPropagation()"
+              style="color: #3B8AB2; border-color: #3B8AB2;">
+              <i class="dx-icon dx-icon-email"></i> {{ 'USERS.RESEND' | translate }}
             </button>
             <button class="action-btn toggle-btn" (click)="toggleActive(params.field.value); $event.stopPropagation()">
               @if (params.field.value?.isActive) {
@@ -128,7 +140,7 @@
           @if (isEditMode) {
           <div class="form-field">
             <label>{{ 'USERS.EMPLOYEE_NUMBER' | translate }}</label>
-            <dx-text-box [value]="selectedUser.employeeNumber" [readOnly]="true" [disabled]="true">
+            <dx-text-box [value]="selectedUser.employeeNumber" [readOnly]="false" [disabled]="false">
             </dx-text-box>
           </div>
           }
@@ -142,18 +154,6 @@
               </dx-validator>
             </dx-text-box>
           </div>
-
-          @if (!isEditMode) {
-          <div class="form-field">
-            <label>{{ 'AUTH.PASSWORD' | translate }}</label>
-            <dx-text-box [(value)]="selectedUser.password" mode="password" [placeholder]="'AUTH.PASSWORD' | translate"
-              [disabled]="isSaving">
-              <dx-validator>
-                <dxi-validation-rule type="required" message="Password is required"></dxi-validation-rule>
-              </dx-validator>
-            </dx-text-box>
-          </div>
-          }
 
           <div class="form-field">
             <label>{{ 'USERS.ROLE' | translate }}</label>

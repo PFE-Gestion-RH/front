@@ -31,7 +31,7 @@ export class Settings implements OnInit {
     currentPassword: '',
     newPassword: '',
     confirmPassword: '',
-    profilePictureBase64: null as string | null
+    profilePictureBase64: null as string | null, employeeNumber: '',
   };
 
   viewMode = 'grid';
@@ -57,19 +57,35 @@ export class Settings implements OnInit {
     const l = this.profile.lastName?.[0] || '';
     return (f + l).toUpperCase() || 'U';
   }
-
   ngOnInit(): void {
     const user = JSON.parse(localStorage.getItem('user') || '{}');
-    this.profile.firstName = user.firstName || '';
-    this.profile.lastName = user.lastName || '';
-    this.profile.email = user.email || '';
-
     const userId = this.getUserId();
     this.language = localStorage.getItem(`language_${userId}`) || 'en';
-
-    // Lire la préférence sauvegardée pour afficher le bon état dans l'UI
     const saved = localStorage.getItem(`view_${userId}`);
     this.viewMode = saved || 'grid';
+
+    // Charger le profil depuis l'API (source de vérité)
+    const token = this.sharedService.getToken();
+    this.http.get(`${environment.apiUrl}/profile`, {
+      headers: { Authorization: `Bearer ${token}` }
+    }).subscribe({
+      next: (res: any) => {
+        const data = res.data;
+        this.profile.firstName = data.firstName || '';
+        this.profile.lastName = data.lastName || '';
+        this.profile.email = data.email || '';
+        this.profile.employeeNumber = data.employeeNumber || '';
+        this.profile.profilePictureBase64 = data.profilePicture || user.profilePicture || null;
+        this.cdr.detectChanges();
+      },
+      error: () => {
+        // Fallback localStorage si API échoue
+        this.profile.firstName = user.firstName || '';
+        this.profile.lastName = user.lastName || '';
+        this.profile.email = user.email || '';
+        this.profile.employeeNumber = user.employeeNumber || '';
+      }
+    });
 
     setTimeout(() => {
       this.profile.newPassword = '';
@@ -101,7 +117,8 @@ export class Settings implements OnInit {
       currentPassword: '',
       newPassword: this.profile.newPassword,
       confirmPassword: this.profile.confirmPassword,
-      profilePictureBase64: this.profile.profilePictureBase64 ?? user.profilePicture ?? null
+      profilePictureBase64: this.profile.profilePictureBase64 ?? user.profilePicture ?? null,
+      employeeNumber: this.profile.employeeNumber
     };
 
     this.http.put(`${environment.apiUrl}/profile`, body, {
@@ -116,6 +133,7 @@ export class Settings implements OnInit {
           firstName: this.profile.firstName,
           lastName: this.profile.lastName,
           email: this.profile.email,
+          employeeNumber: this.profile.employeeNumber,
           profilePicture: this.profile.profilePictureBase64 ?? res.data ?? user.profilePicture
         };
         localStorage.setItem('user', JSON.stringify(updatedUser));

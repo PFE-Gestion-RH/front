@@ -59,6 +59,7 @@
     "CREATE_ACCOUNT": "Create an account"
   },
   "USERS": {
+    "RESEND": "Resend",
     "TITLE": "User Management",
     "EMPLOYEE_NUMBER": "Employee Number",
     "ADD": "+ Add User",
@@ -342,6 +343,17 @@
   },
   "TEAM_ABSENCES": {
     "TITLE": "Team Absences",
+    "SIMULATE": "Simulate",
+    "SIMULATE_TITLE": "Impact Simulation",
+    "SIMULATING": "Simulating...",
+    "SIMULATE_MULTI": "Simulate selection",
+    "SIMULATE_MULTI_TITLE": "Multi-request simulation",
+    "CONFLICTS": "Conflicts detected",
+    "DAILY_IMPACT": "Daily impact",
+    "SELECT": "Select",
+    "SIM_BEFORE": "Before",
+    "SIM_AFTER": "After",
+    "SIM_ABSENT": "absent(s)",
     "FOR_ME": "For me",
     "EMPLOYEE": "Employee",
     "LEAVE_TYPE": "Leave Type",
@@ -419,6 +431,7 @@
   },
   "SETTINGS": {
     "TITLE": "Settings",
+    "EMPLOYEE_NUMBER": "Employee Number",
     "PERSONAL_INFO": "PERSONAL INFO",
     "CHANGE_PHOTO": "Change photo",
     "FIRST_NAME": "First Name",

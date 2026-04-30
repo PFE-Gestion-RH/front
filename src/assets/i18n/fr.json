@@ -120,6 +120,7 @@
     "REJECT": "Refuser"
   },
   "USERS": {
+    "RESEND": "",
     "EMPLOYEE_NUMBER": "Numéro d'employé",
     "TITLE": "Gestion des utilisateurs",
     "ADD": "+ Ajouter un utilisateur",
@@ -342,6 +343,17 @@
   },
   "TEAM_ABSENCES": {
     "TITLE": "Absences de l'équipe",
+    "SIMULATE": "Simuler",
+    "SIMULATE_TITLE": "Simulation d'impact",
+    "SIMULATING": "Simulation en cours...",
+    "SIMULATE_MULTI": "Simuler la sélection",
+    "SIMULATE_MULTI_TITLE": "Simulation multi-demandes",
+    "CONFLICTS": "Conflits détectés",
+    "DAILY_IMPACT": "Impact journalier",
+    "SELECT": "Sélectionner",
+    "SIM_BEFORE": "Avant",
+    "SIM_AFTER": "Après",
+    "SIM_ABSENT": "absent(s)",
     "FOR_ME": "Pour moi",
     "EMPLOYEE": "Employé",
     "LEAVE_TYPE": "Type de congé",
@@ -419,6 +431,7 @@
   },
   "SETTINGS": {
     "TITLE": "Paramètres",
+    "EMPLOYEE_NUMBER": "Matricule",
     "PERSONAL_INFO": "INFORMATIONS PERSONNELLES",
     "CHANGE_PHOTO": "Changer la photo",
     "FIRST_NAME": "Prénom",

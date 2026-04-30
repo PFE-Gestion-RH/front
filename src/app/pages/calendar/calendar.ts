@@ -22,7 +22,7 @@ export class CalendarComponent implements OnInit {
   currentView: string = 'month';
   views = ['month', 'week', 'day', 'agenda'];
   loading = false;
-
+  analysis: any[] = [];
   showEventPopup = false;
   selectedEvent: CalendarEvent | null = null;
 
@@ -44,12 +44,18 @@ export class CalendarComponent implements OnInit {
     private sharedService: SharedService,
     private cdr: ChangeDetectorRef,
     private translate: TranslateService
-  ) {}
+  ) { }
 
   ngOnInit(): void {
     this.role = this.sharedService.getConnectedRole();
     this.loadEvents();
+
+    // ← ajouter ici
+    if (this.role?.toUpperCase() === 'TEAMLEAD') {
+      this.loadAnalysis();
+    }
   }
+
 
   loadEvents(): void {
     this.loading = true;
@@ -70,8 +76,16 @@ export class CalendarComponent implements OnInit {
       }
     });
   }
-
-  onOptionChanged(e: any): void {}
+  loadAnalysis(): void {
+    this.calendarService.getAnalysis().subscribe({
+      next: (data) => {
+        this.analysis = data;
+        this.cdr.detectChanges();
+      },
+      error: (err) => console.error(err)
+    });
+  }
+  onOptionChanged(e: any): void { }
 
   onAppointmentRendered(e: any): void {
     const type = e.appointmentData?.type ?? 'absence';

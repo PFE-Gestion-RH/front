@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy, ChangeDetectorRef, ViewEncapsulation, ViewChild } from '@angular/core';
+import { Component, OnInit, OnDestroy, ChangeDetectorRef, ViewEncapsulation, ViewChild, effect } from '@angular/core';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -13,7 +13,6 @@ import {
   DxTextBoxModule, DxLoadIndicatorModule, DxLoadPanelModule, DxValidatorModule,
   DxValidationGroupComponent
 } from 'devextreme-angular';
-import { effect } from '@angular/core';
 import { DxCardViewComponent } from 'devextreme-angular';
 import { SignalRService } from '../../../services/signalr.service';
 import {
@@ -99,14 +98,9 @@ export class MyAbsences implements OnInit, OnDestroy {
   ) {
     effect(() => {
       const view = this.sharedService.viewMode();
-      // Mobile/tablette (< 1024px) → toujours card
-      // Desktop (>= 1024px) → respecte le signal
-      if (window.innerWidth < 1024) {
-        this.activeView = 'card';
-      } else {
+      if (window.innerWidth >= 1024) {
         this.activeView = view;
       }
-      this.cdr.detectChanges();
     });
   }
 
@@ -160,6 +154,27 @@ export class MyAbsences implements OnInit, OnDestroy {
 
   getHeaders() {
     return new HttpHeaders({ Authorization: `Bearer ${this.sharedService.getToken()}` });
+  }
+
+  // ── Helpers ───────────────────────────────────────────────────────────────
+  private isLongueCategory(selected?: LeaveCategory): boolean {
+    if (!selected) return false;
+    return selected.name.toLowerCase().includes('longue') ||
+      selected.name.toLowerCase().includes('long');
+  }
+
+  private isMaladieCategory(selected?: LeaveCategory): boolean {
+    if (!selected) return false;
+    return selected.name.toLowerCase().includes('maladie') ||
+      selected.name.toLowerCase().includes('sick');
+  }
+
+  private computeRequiresDocument(selected?: LeaveCategory, numberOfDays?: number): boolean {
+    const isLongue = this.isLongueCategory(selected);
+    const isMaladie = this.isMaladieCategory(selected);
+    // Longue durée → toujours obligatoire
+    // Maladie → obligatoire si > 3 jours
+    return isLongue || (!!isMaladie && (numberOfDays ?? 0) > 3);
   }
 
   // ── Calendar Occupation ───────────────────────────────────────────────────
@@ -235,6 +250,20 @@ export class MyAbsences implements OnInit, OnDestroy {
         totalMembers = day.totalMembers;
         count++;
       }
+    }
+
+    if (count === 0) {
+      this.geminiMessage = '📊 Taux : 0% — Aucune équipe assignée, analyse non disponible.';
+      this.geminiLoading = false;
+      this.cdr.detectChanges();
+      return;
+    }
+
+    if (totalMembers === -1) {
+      this.geminiMessage = '📊 Vous êtes le seul membre de votre équipe — aucun impact sur l\'équipe.';
+      this.geminiLoading = false;
+      this.cdr.detectChanges();
+      return;
     }
 
     const avgRate = count > 0 ? totalRate / count : 0;
@@ -343,6 +372,7 @@ export class MyAbsences implements OnInit, OnDestroy {
         next: (res) => {
           if (res.isSuccess && res.data) {
             this.leaveCategories = Array.isArray(res.data) ? res.data : (res.data as any).items ?? [];
+            this.cdr.detectChanges();
           }
         }
       });
@@ -352,7 +382,12 @@ export class MyAbsences implements OnInit, OnDestroy {
     this.http.get<ApiResponse<LeaveBalanceDto[]>>(
       `${environment.apiUrl}/demande/my/balance`, { headers: this.getHeaders() })
       .subscribe({
-        next: (res) => { if (res.isSuccess && res.data) this.balances = res.data; }
+        next: (res) => {
+          if (res.isSuccess && res.data) {
+            this.balances = res.data;
+            this.cdr.detectChanges();
+          }
+        }
       });
   }
 
@@ -360,8 +395,10 @@ export class MyAbsences implements OnInit, OnDestroy {
     const selected = this.leaveCategories.find(c => c.id == this.newAbsence.leaveCategoryId);
     if (selected) {
       this.maxDaysAllowed = selected.maxDays || 0;
-      this.requiresDocument = selected.name.toLowerCase().includes('sick') ||
-        selected.name.toLowerCase().includes('maladie');
+      // Longue durée → document obligatoire dès la sélection de la catégorie
+      this.requiresDocument = this.isLongueCategory(selected);
+    } else {
+      this.requiresDocument = false;
     }
     this.newAbsence.document = null;
     this.newAbsence.startDate = '';
@@ -424,6 +461,7 @@ export class MyAbsences implements OnInit, OnDestroy {
     const [ey, em, ed] = this.newAbsence.endDate.split('-').map(Number);
     const start = new Date(sy, sm - 1, sd);
     const end = new Date(ey, em - 1, ed);
+
     if (end < start) {
       this.sharedService.showToastMessage(ToastType.Error, 'End date must be after start date');
       this.newAbsence.endDate = '';
@@ -431,10 +469,13 @@ export class MyAbsences implements OnInit, OnDestroy {
       this.absenceDateRange.endDate = null;
       this.geminiMessage = '';
       this.alternatives = [];
+      this.requiresDocument = false;
       this.cdr.detectChanges();
       return;
     }
+
     const diff = Math.round((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)) + 1;
+
     if (this.maxDaysAllowed > 0 && diff > this.maxDaysAllowed) {
       this.sharedService.showToastMessage(ToastType.Error, `Maximum ${this.maxDaysAllowed} days allowed`);
       this.newAbsence.endDate = '';
@@ -442,10 +483,16 @@ export class MyAbsences implements OnInit, OnDestroy {
       this.absenceDateRange.endDate = null;
       this.geminiMessage = '';
       this.alternatives = [];
+      this.requiresDocument = false;
       this.cdr.detectChanges();
       return;
     }
+
     this.newAbsence.numberOfDays = diff;
+
+    const selected = this.leaveCategories.find(c => c.id == this.newAbsence.leaveCategoryId);
+    this.requiresDocument = this.computeRequiresDocument(selected, diff);
+
     this.cdr.detectChanges();
   }
 
@@ -459,6 +506,10 @@ export class MyAbsences implements OnInit, OnDestroy {
     start.setDate(start.getDate() + this.newAbsence.numberOfDays - 1);
     this.newAbsence.endDate = start.toISOString().split('T')[0];
     this.absenceDateRange.endDate = new Date(this.newAbsence.endDate);
+
+    const selected = this.leaveCategories.find(c => c.id == this.newAbsence.leaveCategoryId);
+    this.requiresDocument = this.computeRequiresDocument(selected, this.newAbsence.numberOfDays);
+
     this.alternatives = [];
     this.computeOccupationBadge();
     this.cdr.detectChanges();
@@ -504,6 +555,10 @@ export class MyAbsences implements OnInit, OnDestroy {
     this.newAbsence.startDate = this.toKey(start);
     this.newAbsence.endDate = this.toKey(end);
     this.newAbsence.numberOfDays = Math.round((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)) + 1;
+
+    const selected = this.leaveCategories.find(c => c.id == this.newAbsence.leaveCategoryId);
+    this.requiresDocument = this.computeRequiresDocument(selected, this.newAbsence.numberOfDays);
+
     this.alternatives = [];
     this.computeOccupationBadge();
     this.cdr.detectChanges();
@@ -513,6 +568,12 @@ export class MyAbsences implements OnInit, OnDestroy {
     const result = validationGroup.instance.validate();
     if (!result.isValid) {
       this.sharedService.showToastMessage(ToastType.Error, 'Please fill all required fields');
+      return;
+    }
+
+    if (this.requiresDocument && !this.newAbsence.document) {
+      this.sharedService.showToastMessage(ToastType.Error,
+        'Un document médical est obligatoire pour cette catégorie de congé');
       return;
     }
 
@@ -589,7 +650,7 @@ export class MyAbsences implements OnInit, OnDestroy {
             this.cardDataSource.reload();
             this.loadBalance();
           } else {
-            this.sharedService.showToastMessage(ToastType.Error, res.error || 'Failed');
+            this.sharedService.showToastMessage(ToastType.Error, res.error || res.message || 'Failed');
           }
           this.isSaving = false;
           this.cdr.detectChanges();

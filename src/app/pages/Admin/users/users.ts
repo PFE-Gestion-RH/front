@@ -59,8 +59,9 @@ export class Users implements OnInit, OnDestroy {
   showTogglePopup = false;
   userToToggle: User | null = null;
 
+  // password supprimé
   selectedUser: UserForm = {
-    firstName: '', lastName: '', employeeNumber: '', email: '', role: 'Employee', password: ''
+    firstName: '', lastName: '', employeeNumber: '', email: '', role: 'Employee'
   };
 
   getCardData = (rowData: any) => rowData;
@@ -85,7 +86,6 @@ export class Users implements OnInit, OnDestroy {
   ngOnInit(): void {
     this.applyView();
     window.addEventListener('resize', this.onResize);
-
     this.buildColumns();
     this.initSharedDataSource();
     this.translate.onLangChange.subscribe(() => {
@@ -136,7 +136,7 @@ export class Users implements OnInit, OnDestroy {
       },
       {
         caption: this.translate.instant('USERS.ACTIONS'),
-        minWidth: 400,
+        minWidth: 450,
         cellTemplate: (container: any, options: any) => {
           const data = options.data;
 
@@ -144,6 +144,13 @@ export class Users implements OnInit, OnDestroy {
           editBtn.className = 'action-btn edit-btn';
           editBtn.innerHTML = `<i class="dx-icon dx-icon-edit"></i> ${this.translate.instant('USERS.EDIT')}`;
           editBtn.onclick = () => this.openEdit(data);
+
+          const resendBtn = document.createElement('button');
+          resendBtn.className = 'action-btn';
+          resendBtn.style.color = '#3B8AB2';
+          resendBtn.style.borderColor = '#3B8AB2';
+          resendBtn.innerHTML = `<i class="dx-icon dx-icon-email"></i> ${this.translate.instant('USERS.RESEND')}`;
+          resendBtn.onclick = () => this.resendCredentials(data);
 
           const toggleBtn = document.createElement('button');
           toggleBtn.className = 'action-btn toggle-btn';
@@ -157,7 +164,7 @@ export class Users implements OnInit, OnDestroy {
           deleteBtn.innerHTML = `<i class="dx-icon dx-icon-trash"></i> ${this.translate.instant('USERS.DELETE')}`;
           deleteBtn.onclick = () => this.deleteUser(data);
 
-          container.append(editBtn, toggleBtn, deleteBtn);
+          container.append(editBtn, resendBtn, toggleBtn, deleteBtn);
         }
       }
     ];
@@ -195,7 +202,8 @@ export class Users implements OnInit, OnDestroy {
 
   openAdd(): void {
     this.isEditMode = false;
-    this.selectedUser = { firstName: '', lastName: '', employeeNumber: '', email: '', role: 'Employee', password: '' };
+    // password supprimé
+    this.selectedUser = { firstName: '', lastName: '', employeeNumber: '', email: '', role: 'Employee' };
     this.showPopup = true;
     this.cdr.detectChanges();
     setTimeout(() => { this.validationGroupRef?.instance?.reset(); }, 0);
@@ -203,10 +211,10 @@ export class Users implements OnInit, OnDestroy {
 
   openEdit(user: User): void {
     this.isEditMode = true;
+    // password supprimé
     this.selectedUser = {
       ...user,
-      employeeNumber: user.employeeNumber ?? '',
-      password: ''
+      employeeNumber: user.employeeNumber ?? ''
     };
     this.showPopup = true;
     this.cdr.detectChanges();
@@ -245,7 +253,7 @@ export class Users implements OnInit, OnDestroy {
         .subscribe({
           next: (res) => {
             if (res.isSuccess) {
-              this.sharedService.showToastMessage(ToastType.Success, 'User added successfully');
+              this.sharedService.showToastMessage(ToastType.Success, 'User added successfully. Credentials sent by email.');
               this.showPopup = false;
               this.sharedDataSource.reload();
             } else {
@@ -257,6 +265,23 @@ export class Users implements OnInit, OnDestroy {
           error: () => { this.isSaving = false; this.cdr.detectChanges(); }
         });
     }
+  }
+
+  // ── Renvoyer les identifiants ─────────────────────────────────────────────
+  resendCredentials(user: User): void {
+    this.http.post<ApiResponse<string>>(
+      `${environment.apiUrl}/users/${user.id}/resend-credentials`, {}
+    ).subscribe({
+      next: (res) => {
+        if (res.isSuccess) {
+          this.sharedService.showToastMessage(ToastType.Success, 'Credentials resent successfully');
+        } else {
+          this.sharedService.showToastMessage(ToastType.Error, res.error || 'Failed');
+        }
+        this.cdr.detectChanges();
+      },
+      error: () => { this.cdr.detectChanges(); }
+    });
   }
 
   deleteUser(user: User): void {
