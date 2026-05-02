@@ -28,6 +28,7 @@ export class Settings implements OnInit {
     firstName: '',
     lastName: '',
     email: '',
+    employeeNumber: '',        // ← ajouté
     currentPassword: '',
     newPassword: '',
     confirmPassword: '',
@@ -60,16 +61,38 @@ export class Settings implements OnInit {
 
   ngOnInit(): void {
     const user = JSON.parse(localStorage.getItem('user') || '{}');
+    const userId = this.getUserId();
+    this.language = localStorage.getItem(`language_${userId}`) || 'en';
+    this.translate.use(this.language);
+    const saved = localStorage.getItem(`view_${userId}`);
+    this.viewMode = saved || 'grid';
+
+    // Charger depuis localStorage en fallback
     this.profile.firstName = user.firstName || '';
     this.profile.lastName = user.lastName || '';
     this.profile.email = user.email || '';
+    this.profile.employeeNumber = user.employeeNumber || '';
 
-    const userId = this.getUserId();
-    this.language = localStorage.getItem(`language_${userId}`) || 'en';
-
-    // Lire la préférence sauvegardée pour afficher le bon état dans l'UI
-    const saved = localStorage.getItem(`view_${userId}`);
-    this.viewMode = saved || 'grid';
+    // Charger depuis l'API (source de vérité)
+    const token = this.sharedService.getToken();
+    if (token) {
+      this.http.get(`${environment.apiUrl}/profile`, {
+        headers: { Authorization: `Bearer ${token}` }
+      }).subscribe({
+        next: (res: any) => {
+          const data = res.data;
+          this.profile.firstName = data.firstName || '';
+          this.profile.lastName = data.lastName || '';
+          this.profile.email = data.email || '';
+          this.profile.employeeNumber = data.employeeNumber || '';
+          this.profile.profilePictureBase64 = data.profilePicture || user.profilePicture || null;
+          this.cdr.detectChanges();
+        },
+        error: () => {
+          // Fallback localStorage si API échoue — déjà chargé au-dessus
+        }
+      });
+    }
 
     setTimeout(() => {
       this.profile.newPassword = '';
@@ -102,6 +125,7 @@ export class Settings implements OnInit {
       newPassword: this.profile.newPassword,
       confirmPassword: this.profile.confirmPassword,
       profilePictureBase64: this.profile.profilePictureBase64 ?? user.profilePicture ?? null
+      // employeeNumber non envoyé → immuable
     };
 
     this.http.put(`${environment.apiUrl}/profile`, body, {
@@ -116,6 +140,7 @@ export class Settings implements OnInit {
           firstName: this.profile.firstName,
           lastName: this.profile.lastName,
           email: this.profile.email,
+          employeeNumber: this.profile.employeeNumber, // ← conserver dans localStorage
           profilePicture: this.profile.profilePictureBase64 ?? res.data ?? user.profilePicture
         };
         localStorage.setItem('user', JSON.stringify(updatedUser));
@@ -134,15 +159,10 @@ export class Settings implements OnInit {
 
   saveUISettings(): void {
     const userId = this.getUserId();
-    // Toujours sauvegarder la préférence en localStorage
     localStorage.setItem(`view_${userId}`, this.viewMode);
-
-    // Appliquer le signal UNIQUEMENT sur desktop (>= 1024px)
-    // Sur mobile/tablette, MyAbsences force toujours 'card' via son effect()
     if (window.innerWidth >= 1024) {
       this.sharedService.viewMode.set(this.viewMode as 'grid' | 'card');
     }
-
     this.sharedService.showToastMessage(ToastType.Success, 'View settings saved!');
   }
 

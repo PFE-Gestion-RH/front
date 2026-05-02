@@ -24,36 +24,41 @@
       <div class="form-row">
         <div class="form-field">
           <label>{{ 'SETTINGS.FIRST_NAME' | translate }}</label>
-          <input [(ngModel)]="profile.firstName" class="form-input" [placeholder]="'SETTINGS.FIRST_NAME' | translate"
-            disabled />
+          <input [(ngModel)]="profile.firstName" class="form-input"
+            [placeholder]="'SETTINGS.FIRST_NAME' | translate" disabled />
         </div>
         <div class="form-field">
           <label>{{ 'SETTINGS.LAST_NAME' | translate }}</label>
-          <input [(ngModel)]="profile.lastName" class="form-input" [placeholder]="'SETTINGS.LAST_NAME' | translate"
-            disabled />
+          <input [(ngModel)]="profile.lastName" class="form-input"
+            [placeholder]="'SETTINGS.LAST_NAME' | translate" disabled />
         </div>
       </div>
 
       <div class="form-field">
         <label>{{ 'SETTINGS.EMAIL' | translate }}</label>
-        <input [(ngModel)]="profile.email" class="form-input" type="email" [placeholder]="'SETTINGS.EMAIL' | translate"
-          disabled />
+        <input [(ngModel)]="profile.email" class="form-input" type="email"
+          [placeholder]="'SETTINGS.EMAIL' | translate" disabled />
+      </div>
+
+      <!-- ← Matricule -->
+      <div class="form-field">
+        <label>{{ 'SETTINGS.EMPLOYEE_NUMBER' | translate }}</label>
+        <input [(ngModel)]="profile.employeeNumber" class="form-input"
+          [placeholder]="'SETTINGS.EMPLOYEE_NUMBER' | translate" disabled />
       </div>
 
       <div class="section-title">{{ 'SETTINGS.CHANGE_PASSWORD' | translate }}</div>
 
-
-
       <div class="form-field">
         <label>{{ 'SETTINGS.NEW_PASSWORD' | translate }}</label>
-        <input [(ngModel)]="profile.newPassword" class="form-input" type="password" autocomplete="new-password"
-          [placeholder]="'SETTINGS.NEW_PASSWORD' | translate" />
+        <input [(ngModel)]="profile.newPassword" class="form-input" type="password"
+          autocomplete="new-password" [placeholder]="'SETTINGS.NEW_PASSWORD' | translate" />
       </div>
 
       <div class="form-field">
         <label>{{ 'SETTINGS.CONFIRM_PASSWORD' | translate }}</label>
-        <input [(ngModel)]="profile.confirmPassword" class="form-input" type="password" autocomplete="new-password"
-          [placeholder]="'SETTINGS.CONFIRM_PASSWORD' | translate" />
+        <input [(ngModel)]="profile.confirmPassword" class="form-input" type="password"
+          autocomplete="new-password" [placeholder]="'SETTINGS.CONFIRM_PASSWORD' | translate" />
       </div>
 
       <div class="form-actions">
@@ -85,7 +90,8 @@
 
       <div class="language-list">
         @for (lang of languages; track lang.value) {
-        <div class="language-item" [class.selected]="language === lang.value" (click)="language = lang.value">
+        <div class="language-item" [class.selected]="language === lang.value"
+          (click)="language = lang.value">
           <span class="lang-flag">{{ lang.value === 'fr' ? '🇫🇷' : '🇬🇧' }}</span>
           <span class="lang-label">{{ lang.label }}</span>
           @if (language === lang.value) {

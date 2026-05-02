@@ -21,6 +21,7 @@
     "FIRST_NAME": "First Name",
     "LAST_NAME": "Last Name",
     "EMAIL": "Email",
+    "EMPLOYEE_NUMBER": "Employee Number",
     "CHANGE_PASSWORD": "CHANGE PASSWORD",
     "CURRENT_PASSWORD": "Current Password",
     "NEW_PASSWORD": "New Password",

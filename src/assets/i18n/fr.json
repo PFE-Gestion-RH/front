@@ -21,6 +21,7 @@
     "FIRST_NAME": "Prénom",
     "LAST_NAME": "Nom",
     "EMAIL": "Email",
+        "EMPLOYEE_NUMBER": "Matricule",
     "CHANGE_PASSWORD": "CHANGER LE MOT DE PASSE",
     "CURRENT_PASSWORD": "Mot de passe actuel",
     "NEW_PASSWORD": "Nouveau mot de passe",
