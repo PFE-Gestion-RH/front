@@ -23,6 +23,7 @@ export class CalendarService {
       Authorization: `Bearer ${this.sharedService.getToken()}`
     });
   }
+
   getAnalysis(): Observable<any[]> {
     return this.http.get<{ isSuccess: boolean; data: any[] }>(
       `${environment.apiUrl}/calendar/analysis`,
@@ -32,15 +33,14 @@ export class CalendarService {
       catchError(() => of([]))
     );
   }
+
   getEvents(role: UserRole | undefined): Observable<CalendarEvent[]> {
     const key = role?.toUpperCase() ?? 'UNKNOWN';
 
     if (this.cache.has(key)) {
-      console.log(`📦 Cache hit: ${key}`);
       return of(this.cache.get(key)!);
     }
 
-    console.log(`🌐 API call: ${key}`);
     const r = role?.toUpperCase();
     let events$: Observable<CalendarEvent[]>;
 
@@ -48,7 +48,9 @@ export class CalendarService {
     else if (r === 'TEAMLEAD') events$ = this.getTeamEvents();
     else events$ = this.getMyEvents();
 
-    return events$.pipe(
+    // ← Combiner avec les jours fériés
+    return forkJoin([events$, this.getHolidays()]).pipe(
+      map(([events, holidays]) => [...events, ...holidays]),
       tap(events => this.cache.set(key, events))
     );
   }
@@ -56,6 +58,38 @@ export class CalendarService {
   clearCache(): void {
     this.cache.clear();
     console.log('🗑️ Cache cleared');
+  }
+
+  private getHolidays(): Observable<CalendarEvent[]> {
+    const year = new Date().getFullYear();
+    return this.http.get<ApiResponse<any>>(
+      `${environment.apiUrl}/public-holidays?year=${year}`,
+      { headers: this.getHeaders() }
+    ).pipe(
+      map(res => {
+        if (!res.isSuccess) return [];
+        const data = Array.isArray(res.data) ? res.data : [];
+        // Dédoublonner par date+name
+        const seen = new Set<string>();
+        return data
+          .filter((h: any) => {
+            const key = `${h.date}_${h.name}`;
+            if (seen.has(key)) return false;
+            seen.add(key);
+            return true;
+          })
+          .map((h: any) => ({
+            id: h.id + 200000,
+            text: ` ${h.name}`,
+            startDate: new Date(h.date),
+            endDate: new Date(h.date),
+            type: 'holiday' as const,
+            description: h.nameAr ?? '',
+            allDay: true,
+          }));
+      }),
+      catchError(() => of([]))
+    );
   }
 
   private getAllEvents(): Observable<CalendarEvent[]> {
@@ -99,34 +133,57 @@ export class CalendarService {
   }
 
   private getMyEvents(): Observable<CalendarEvent[]> {
-    const absences$ = this.http.get<ApiResponse<any>>(
+    const absencesAccepted$ = this.http.get<ApiResponse<any>>(
+      `${environment.apiUrl}/demande/my/absences/accepted`,
+      { headers: this.getHeaders() }
+    ).pipe(catchError(() => of({ isSuccess: false, data: [] } as any)));
+
+    const absencesPending$ = this.http.get<ApiResponse<any>>(
       `${environment.apiUrl}/demande/my/absences?page=1&pageSize=1000`,
       { headers: this.getHeaders() }
     ).pipe(catchError(() => of({ isSuccess: false, data: [] } as any)));
 
-    const permissions$ = this.http.get<ApiResponse<any>>(
+    const permissionsAccepted$ = this.http.get<ApiResponse<any>>(
+      `${environment.apiUrl}/demande/my/permissions/accepted`,
+      { headers: this.getHeaders() }
+    ).pipe(catchError(() => of({ isSuccess: false, data: [] } as any)));
+
+    const permissionsPending$ = this.http.get<ApiResponse<any>>(
       `${environment.apiUrl}/demande/my/permissions?page=1&pageSize=1000`,
       { headers: this.getHeaders() }
     ).pipe(catchError(() => of({ isSuccess: false, data: [] } as any)));
 
-    return forkJoin([absences$, permissions$]).pipe(
-      map(([absRes, permRes]) => {
-        const absences = this.extractArray(absRes).map(a => this.mapAbsence(a, false));
-        const permissions = this.extractArray(permRes).map(p => this.mapPermission(p, false));
-        return [...absences, ...permissions];
+    return forkJoin([absencesAccepted$, absencesPending$, permissionsAccepted$, permissionsPending$]).pipe(
+      map(([absAccRes, absPendRes, permAccRes, permPendRes]) => {
+        const absAccepted = this.extractArray(absAccRes)
+          .map(a => this.mapAbsence(a, false, false));
+
+        const absPending = this.extractArray(absPendRes)
+          .filter(a => a.status === 'PendingTeamLead' || a.status === 'PendingAdministration')
+          .map(a => this.mapAbsence(a, false, true));
+
+        const permAccepted = this.extractArray(permAccRes)
+          .map(p => this.mapPermission(p, false, false));
+
+        const permPending = this.extractArray(permPendRes)
+          .filter(p => p.status === 'PendingTeamLead' || p.status === 'PendingAdministration')
+          .map(p => this.mapPermission(p, false, true));
+
+        return [...absAccepted, ...absPending, ...permAccepted, ...permPending];
       })
     );
   }
 
-  private mapAbsence(a: any, showEmployeeName = false): CalendarEvent {
+  private mapAbsence(a: any, showEmployeeName = false, isPending = false): CalendarEvent {
     const name = a.employeeName ?? a.userName ?? '';
     const displayName = showEmployeeName && name ? ` — ${name}` : '';
     return {
       id: a.id,
-      text: ` Absence${displayName}`,
+      text: isPending ? ` Absence${displayName}` : `Absence${displayName}`,
       startDate: new Date(a.startDate),
       endDate: new Date(a.endDate),
       type: 'absence',
+      isPending: isPending,
       employeeId: a.employeeId,
       employeeName: name,
       description: a.leaveCategoryName ?? a.reason ?? '',
@@ -134,16 +191,17 @@ export class CalendarService {
     };
   }
 
-  private mapPermission(p: any, showEmployeeName = false): CalendarEvent {
+  private mapPermission(p: any, showEmployeeName = false, isPending = false): CalendarEvent {
     const name = p.employeeName ?? p.userName ?? '';
     const displayName = showEmployeeName && name ? ` — ${name}` : '';
     const date = new Date(p.startDate);
     return {
       id: p.id + 100000,
-      text: ` Permission${displayName}`,
+      text: isPending ? `Permission${displayName}` : `Permission${displayName}`,
       startDate: date,
       endDate: date,
       type: 'permission',
+      isPending: isPending,
       employeeId: p.employeeId,
       employeeName: name,
       description: p.reason ?? '',

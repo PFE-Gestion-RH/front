@@ -10,7 +10,7 @@ import { SignalRService } from '../../../services/signalr.service';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import {
   DxDataGridModule, DxTemplateModule, DxPopupComponent, DxButtonComponent,
-  DxLoadIndicatorModule, DxLoadPanelModule, DxCheckBoxComponent
+  DxLoadIndicatorModule, DxLoadPanelModule, DxCheckBoxComponent, DxSelectBoxModule
 } from 'devextreme-angular';
 import { DxCardViewComponent } from 'devextreme-angular';
 import {
@@ -30,7 +30,7 @@ import { environment } from '../../../environments/environment';
     DxoCardViewSearchPanelComponent, DxoCardViewPagerComponent,
     DxTemplateModule, DxPopupComponent, DxButtonComponent,
     DxLoadIndicatorModule, DxLoadPanelModule, DxCheckBoxComponent,
-    TranslateModule
+    DxSelectBoxModule, TranslateModule
   ],
   templateUrl: './admin-absences.html',
   styleUrls: ['./admin-absences.scss'],
@@ -52,6 +52,13 @@ export class AdminAbsences implements OnInit, OnDestroy {
   selectedRequest: any = null;
   rejectionReason = '';
   pendingOnly = false;
+  showDecisionPopup = false;
+  isLoadingDecision = false;
+  decisionSupport: any = null;
+
+  // ✅ FILTRE CATÉGORIE
+  categories: any[] = [];
+  selectedCategoryId: number | null = null;
 
   private newRequestSub!: Subscription;
 
@@ -76,8 +83,8 @@ export class AdminAbsences implements OnInit, OnDestroy {
   ngOnInit(): void {
     this.applyView();
     window.addEventListener('resize', this.onResize);
-
     this.buildColumns();
+    this.loadCategories();
     this.initSharedDataSource();
     this.translate.onLangChange.subscribe(() => {
       this.buildColumns();
@@ -116,6 +123,30 @@ export class AdminAbsences implements OnInit, OnDestroy {
     return new HttpHeaders({ Authorization: `Bearer ${this.sharedService.getToken()}` });
   }
 
+  // ✅ Charger les catégories depuis l'API
+  loadCategories(): void {
+    this.http.get<ApiResponse<any>>(
+      `${environment.apiUrl}/leave-categories`,
+      { headers: this.getHeaders() }
+    ).subscribe({
+      next: (res) => {
+        if (res.isSuccess) {
+          const data = res.data;
+          this.categories = [
+            { id: null, name: 'Toutes les catégories' },
+            ...(Array.isArray(data) ? data : data.items ?? [])
+          ];
+          this.cdr.detectChanges();
+        }
+      }
+    });
+  }
+
+  // ✅ Quand l'utilisateur change la catégorie
+  onCategoryChange(): void {
+    this.onFilterChange();
+  }
+
   buildColumns(): void {
     this.columns = [
       { dataField: 'employeeName', caption: this.translate.instant('ADMIN_ABSENCES.EMPLOYEE'), allowFiltering: true },
@@ -143,7 +174,7 @@ export class AdminAbsences implements OnInit, OnDestroy {
       },
       {
         caption: this.translate.instant('ADMIN_ABSENCES.ACTIONS'),
-        minWidth: 220,
+        minWidth: 350,
         cellTemplate: (container: any, options: any) => {
           const data = options.data;
 
@@ -155,6 +186,11 @@ export class AdminAbsences implements OnInit, OnDestroy {
             return;
           }
 
+          const analyseBtn = document.createElement('button');
+          analyseBtn.className = 'action-btn simulate-btn';
+          analyseBtn.innerHTML = `<i class="dx-icon dx-icon-chart"></i> Analyse`;
+          analyseBtn.onclick = () => this.openDecisionSupport(data);
+
           const approveBtn = document.createElement('button');
           approveBtn.className = 'action-btn approve-btn';
           approveBtn.innerHTML = `<i class="dx-icon dx-icon-check"></i> ${this.translate.instant('ADMIN_ABSENCES.APPROVE')}`;
@@ -165,10 +201,39 @@ export class AdminAbsences implements OnInit, OnDestroy {
           rejectBtn.innerHTML = `<i class="dx-icon dx-icon-close"></i> ${this.translate.instant('ADMIN_ABSENCES.REJECT')}`;
           rejectBtn.onclick = () => this.rejectRequest(data);
 
-          container.append(approveBtn, rejectBtn);
+          container.append(analyseBtn, approveBtn, rejectBtn);
         }
       }
     ];
+  }
+
+  openDecisionSupport(request: any): void {
+    this.selectedRequest = request;
+    this.decisionSupport = null;
+    this.showDecisionPopup = true;
+    this.isLoadingDecision = true;
+    this.cdr.detectChanges();
+
+    this.http.get<any>(
+      `${environment.apiUrl}/demande/${request.id}/decision-support`,
+      { headers: this.getHeaders() }
+    ).subscribe({
+      next: (res) => {
+        this.decisionSupport = res.data ?? res;
+        this.isLoadingDecision = false;
+        this.cdr.detectChanges();
+      },
+      error: () => {
+        this.isLoadingDecision = false;
+        this.cdr.detectChanges();
+      }
+    });
+  }
+
+  getPriorityClass(score: number): string {
+    if (score >= 20) return 'badge-priority-high';
+    if (score >= 10) return 'badge-priority-medium';
+    return 'badge-priority-low';
   }
 
   onFilterChange(): void {
@@ -204,14 +269,21 @@ export class AdminAbsences implements OnInit, OnDestroy {
         const take = (loadOptions.take && loadOptions.take > 0) ? loadOptions.take : this.pageSize;
         const skip = loadOptions.skip ?? 0;
         const page = Math.floor(skip / take) + 1;
+
+        // ✅ Construire l'URL avec les filtres
         let url = `${environment.apiUrl}/demande/all/absences?page=${page}&pageSize=${take}`;
         if (this.pendingOnly) url += '&status=PendingAdministration';
+        if (this.selectedCategoryId) url += `&categoryId=${this.selectedCategoryId}`;
+
         return firstValueFrom(
           this.http.get<ApiResponse<any>>(url, { headers: this.getHeaders() })
         ).then(res => {
           if (res.isSuccess) {
             const data = res.data;
-            return { data: Array.isArray(data) ? data : data.items ?? [], totalCount: Array.isArray(data) ? data.length : data.totalCount ?? 0 };
+            return {
+              data: Array.isArray(data) ? data : data.items ?? [],
+              totalCount: Array.isArray(data) ? data.length : data.totalCount ?? 0
+            };
           }
           return { data: [], totalCount: 0 };
         });

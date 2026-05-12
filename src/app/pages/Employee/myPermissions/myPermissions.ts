@@ -55,6 +55,11 @@ export class MyPermissions implements OnInit, OnDestroy {
   isSaving = false;
   showPopup = false;
 
+  // ✅ Annulation permission
+  showCancelPopup = false;
+  isCancelling = false;
+  requestToCancel: any = null;
+
   permissionDate: Date | null = null;
   permissionStartTime: Date | null = null;
   permissionEndTime: Date | null = null;
@@ -66,7 +71,6 @@ export class MyPermissions implements OnInit, OnDestroy {
   getCardData = (rowData: any) => rowData;
 
   constructor(
-
     private http: HttpClient,
     private sharedService: SharedService,
     private cdr: ChangeDetectorRef,
@@ -85,7 +89,6 @@ export class MyPermissions implements OnInit, OnDestroy {
   ngOnInit(): void {
     this.applyView();
     window.addEventListener('resize', this.onResize);
-
     this.buildColumns();
     this.initSharedDataSource();
     this.translate.onLangChange.subscribe(() => {
@@ -100,13 +103,13 @@ export class MyPermissions implements OnInit, OnDestroy {
       }
     });
   }
+
   ngOnDestroy(): void {
     this.statusSub?.unsubscribe();
-    window.removeEventListener('resize', this.onResize); // ← ajoute
+    window.removeEventListener('resize', this.onResize);
   }
-  private onResize = (): void => {
-    this.applyView();
-  }
+
+  private onResize = (): void => { this.applyView(); }
 
   private applyView(): void {
     const user = JSON.parse(localStorage.getItem('user') || '{}');
@@ -123,6 +126,48 @@ export class MyPermissions implements OnInit, OnDestroy {
 
   getHeaders() {
     return new HttpHeaders({ Authorization: `Bearer ${this.sharedService.getToken()}` });
+  }
+
+  // ✅ Vérifier si la permission peut être annulée
+  canCancel(status: string): boolean {
+    return status === 'PendingTeamLead' || status === 'PendingAdministration';
+  }
+
+  // ✅ Ouvrir popup confirmation annulation
+  cancelRequest(request: any): void {
+    this.requestToCancel = request;
+    this.showCancelPopup = true;
+    this.cdr.detectChanges();
+  }
+
+  // ✅ Confirmer l'annulation
+  confirmCancel(): void {
+    if (!this.requestToCancel || this.isCancelling) return;
+    this.isCancelling = true;
+    this.cdr.detectChanges();
+
+    this.http.delete<ApiResponse<string>>(
+      `${environment.apiUrl}/demande/${this.requestToCancel.id}/cancel`,
+      { headers: this.getHeaders() }
+    ).subscribe({
+      next: (res) => {
+        if (res.isSuccess) {
+          this.sharedService.showToastMessage(ToastType.Success, 'Permission annulée avec succès');
+          this.sharedDataSource.reload();
+          this.cardDataSource.reload();
+        } else {
+          this.sharedService.showToastMessage(ToastType.Error, res.error || 'Annulation échouée');
+        }
+        this.showCancelPopup = false;
+        this.requestToCancel = null;
+        this.isCancelling = false;
+        this.cdr.detectChanges();
+      },
+      error: () => {
+        this.isCancelling = false;
+        this.cdr.detectChanges();
+      }
+    });
   }
 
   buildColumns(): void {
@@ -144,6 +189,24 @@ export class MyPermissions implements OnInit, OnDestroy {
           span.textContent = this.getStatusLabel(status);
           span.className = `badge ${this.getStatusClass(status)}`;
           container.append(span);
+        }
+      },
+      {
+        caption: 'Actions',
+        cellTemplate: (container: any, options: any) => {
+          const data = options.data;
+          if (!this.canCancel(data.status)) {
+            const span = document.createElement('span');
+            span.textContent = 'N/A';
+            span.className = 'na-value';
+            container.append(span);
+            return;
+          }
+          const cancelBtn = document.createElement('button');
+          cancelBtn.className = 'action-btn delete-btn';
+          cancelBtn.innerHTML = `<i class="dx-icon dx-icon-close"></i> Annuler`;
+          cancelBtn.onclick = () => this.cancelRequest(data);
+          container.append(cancelBtn);
         }
       }
     ];
@@ -183,7 +246,10 @@ export class MyPermissions implements OnInit, OnDestroy {
         ).then(res => {
           if (res.isSuccess) {
             const data = res.data;
-            return { data: Array.isArray(data) ? data : data.items ?? [], totalCount: Array.isArray(data) ? data.length : data.totalCount ?? 0 };
+            return {
+              data: Array.isArray(data) ? data : data.items ?? [],
+              totalCount: Array.isArray(data) ? data.length : data.totalCount ?? 0
+            };
           }
           return { data: [], totalCount: 0 };
         });

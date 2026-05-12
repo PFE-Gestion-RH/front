@@ -270,6 +270,66 @@
   display: none !important;
 }
 
+.team-analysis-block {
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  padding: 10px 12px;
+  margin-bottom: 8px;
+  background: #f9fafb;
+
+  &.critical {
+    border-color: #fca5a5;
+    background: #fff5f5;
+  }
+}
+
+.team-analysis-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 6px;
+}
+
+.team-analysis-name {
+  font-weight: 600;
+  font-size: 13px;
+  color: var(--color-text-primary);
+}
+
+.team-analysis-message {
+  font-size: 13px;
+  color: var(--color-text-secondary);
+  margin-bottom: 8px;
+}
+
+.alternatives-section {
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px solid #e5e7eb;
+}
+
+.alternative-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 6px 10px;
+  border-radius: 6px;
+  background: #f0fdf4;
+  border: 1px solid #bbf7d0;
+  margin-bottom: 4px;
+  font-size: 12px;
+  transition: background 0.2s;
+
+  &:hover {
+    background: #dcfce7;
+  }
+}
+
+.alt-reason {
+  color: #166534;
+  font-size: 11px;
+}
+
 // ── Gemini / IA message ───────────────────────────────────────────────────────
 .gemini-message {
   margin-top: 10px;

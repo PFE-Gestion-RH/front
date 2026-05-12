@@ -8,7 +8,10 @@ import { ToastType } from '../../../components/toast/toast';
 import { ApiResponse } from '../../../models/auth/api-response.model';
 import { SignalRService } from '../../../services/signalr.service';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
-import { DxDataGridModule, DxTemplateModule, DxPopupComponent, DxButtonComponent, DxLoadIndicatorModule, DxLoadPanelModule, DxCheckBoxComponent } from 'devextreme-angular';
+import {
+  DxDataGridModule, DxTemplateModule, DxPopupComponent, DxButtonComponent,
+  DxLoadIndicatorModule, DxLoadPanelModule, DxCheckBoxComponent
+} from 'devextreme-angular';
 import { DxCardViewComponent } from 'devextreme-angular';
 import {
   DxiCardViewColumnComponent, DxoCardViewPagingComponent,
@@ -50,6 +53,11 @@ export class TeamPermissions implements OnInit, OnDestroy {
   rejectionReason = '';
   pendingOnly = false;
 
+  // ✅ Simulation permission
+  showSimulatePopup = false;
+  isSimulating = false;
+  simulationResult: any = null;
+
   tooltipVisible = false;
   tooltipX = 0;
   tooltipY = 0;
@@ -77,7 +85,6 @@ export class TeamPermissions implements OnInit, OnDestroy {
   ngOnInit(): void {
     this.applyView();
     window.addEventListener('resize', this.onResize);
-
     this.buildColumns();
     this.initSharedDataSource();
     this.translate.onLangChange.subscribe(() => {
@@ -96,9 +103,7 @@ export class TeamPermissions implements OnInit, OnDestroy {
     window.removeEventListener('resize', this.onResize);
   }
 
-  private onResize = (): void => {
-    this.applyView();
-  }
+  private onResize = (): void => { this.applyView(); }
 
   private applyView(): void {
     const user = JSON.parse(localStorage.getItem('user') || '{}');
@@ -111,10 +116,9 @@ export class TeamPermissions implements OnInit, OnDestroy {
       this.sharedService.viewMode.set(saved);
     }
     this.cdr.detectChanges();
-  }
-
+  } 
   showTooltip(event: MouseEvent, data: any): void {
-    const rect = (event.target as HTMLElement).getBoundingClientRect();
+    const rect = (event.currentTarget as HTMLElement).getBoundingClientRect();
     this.tooltipData = data;
     this.tooltipX = rect.left + rect.width / 2 - 90;
     this.tooltipY = rect.top - 70;
@@ -131,6 +135,35 @@ export class TeamPermissions implements OnInit, OnDestroy {
     return new HttpHeaders({ Authorization: `Bearer ${this.sharedService.getToken()}` });
   }
 
+  // ✅ Simuler l'impact d'une permission
+  simulateRequest(request: any): void {
+    this.selectedRequest = request;
+    this.simulationResult = null;
+    this.isSimulating = true;
+    this.showSimulatePopup = true;
+    this.cdr.detectChanges();
+
+    this.http.get<ApiResponse<any>>(
+      `${environment.apiUrl}/demande/${request.id}/simulate-permission`,
+      { headers: this.getHeaders() }
+    ).subscribe({
+      next: (res) => {
+        if (res.isSuccess) {
+          this.simulationResult = res.data;
+        } else {
+          this.sharedService.showToastMessage(ToastType.Error, res.error || 'Simulation failed');
+          this.showSimulatePopup = false;
+        }
+        this.isSimulating = false;
+        this.cdr.detectChanges();
+      },
+      error: () => {
+        this.isSimulating = false;
+        this.showSimulatePopup = false;
+        this.cdr.detectChanges();
+      }
+    });
+  }
   buildColumns(): void {
     this.columns = [
       {
@@ -139,7 +172,12 @@ export class TeamPermissions implements OnInit, OnDestroy {
         cellTemplate: 'employeeTooltipTemplate'
       },
       { dataField: 'reason', caption: this.translate.instant('TEAM_PERMISSIONS.REASON') },
-      { dataField: 'startDate', caption: this.translate.instant('TEAM_PERMISSIONS.DATE'), dataType: 'date' as any, format: 'dd/MM/yyyy' },
+      {
+        dataField: 'startDate',
+        caption: this.translate.instant('TEAM_PERMISSIONS.DATE'),
+        dataType: 'date' as any,
+        format: 'dd/MM/yyyy'
+      },
       {
         caption: this.translate.instant('TEAM_PERMISSIONS.TIME'),
         calculateCellValue: (row: any) => {
@@ -159,7 +197,7 @@ export class TeamPermissions implements OnInit, OnDestroy {
       },
       {
         caption: this.translate.instant('TEAM_PERMISSIONS.ACTIONS'),
-        minWidth: 220,
+        minWidth: 350,
         cellTemplate: (container: any, options: any) => {
           const data = options.data;
 
@@ -171,6 +209,12 @@ export class TeamPermissions implements OnInit, OnDestroy {
             return;
           }
 
+          // ✅ Bouton Simuler
+          const simulateBtn = document.createElement('button');
+          simulateBtn.className = 'action-btn simulate-btn';
+          simulateBtn.innerHTML = `<i class="dx-icon dx-icon-chart"></i> Simuler`;
+          simulateBtn.onclick = () => this.simulateRequest(data);
+
           const approveBtn = document.createElement('button');
           approveBtn.className = 'action-btn approve-btn';
           approveBtn.innerHTML = `<i class="dx-icon dx-icon-check"></i> ${this.translate.instant('TEAM_PERMISSIONS.APPROVE')}`;
@@ -181,7 +225,7 @@ export class TeamPermissions implements OnInit, OnDestroy {
           rejectBtn.innerHTML = `<i class="dx-icon dx-icon-close"></i> ${this.translate.instant('TEAM_PERMISSIONS.REJECT')}`;
           rejectBtn.onclick = () => this.rejectRequest(data);
 
-          container.append(approveBtn, rejectBtn);
+          container.append(simulateBtn, approveBtn, rejectBtn);
         }
       }
     ];
@@ -224,7 +268,10 @@ export class TeamPermissions implements OnInit, OnDestroy {
         ).then(res => {
           if (res.isSuccess) {
             const data = res.data;
-            return { data: Array.isArray(data) ? data : data.items ?? [], totalCount: Array.isArray(data) ? data.length : data.totalCount ?? 0 };
+            return {
+              data: Array.isArray(data) ? data : data.items ?? [],
+              totalCount: Array.isArray(data) ? data.length : data.totalCount ?? 0
+            };
           }
           return { data: [], totalCount: 0 };
         });

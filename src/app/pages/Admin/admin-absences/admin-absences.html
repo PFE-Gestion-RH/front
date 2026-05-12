@@ -8,14 +8,25 @@
 
     <div class="app-page-header">
       <h2 class="page-title">{{ 'ADMIN_ABSENCES.TITLE' | translate }}</h2>
-      <dx-check-box [(value)]="pendingOnly" [text]="'ADMIN_ABSENCES.FOR_ME' | translate"
-        (onValueChanged)="onFilterChange()">
-      </dx-check-box>
+
+      <div style="display:flex; align-items:center; gap:12px;">
+
+        <dx-select-box [dataSource]="categories" displayExpr="name" valueExpr="id" [(value)]="selectedCategoryId"
+          placeholder="Toutes les catégories" [width]="100" [showClearButton]="true"
+          (onValueChanged)="onCategoryChange()">
+        </dx-select-box>
+
+        <dx-check-box [(value)]="pendingOnly" [text]="'ADMIN_ABSENCES.FOR_ME' | translate"
+          (onValueChanged)="onFilterChange()" style="white-space: nowrap;">
+        </dx-check-box>
+
+      </div>
     </div>
 
-    <div class="table-view" *ngIf="activeView === 'grid'"> <dx-data-grid [dataSource]="sharedDataSource"
-        [columns]="columns" [showBorders]="false" [showRowLines]="true" [showColumnLines]="false"
-        [hoverStateEnabled]="true" keyExpr="id" [remoteOperations]="{ paging: true, filtering: false, sorting: false }">
+    <div class="table-view" *ngIf="activeView === 'grid'">
+      <dx-data-grid [dataSource]="sharedDataSource" [columns]="columns" [showBorders]="false" [showRowLines]="true"
+        [showColumnLines]="false" [hoverStateEnabled]="true" keyExpr="id"
+        [remoteOperations]="{ paging: true, filtering: false, sorting: false }">
         <dxo-load-panel [enabled]="false"></dxo-load-panel>
         <dxo-search-panel [visible]="true" [placeholder]="'ADMIN_ABSENCES.SEARCH' | translate"></dxo-search-panel>
         <dxo-selection mode="none"></dxo-selection>
@@ -27,8 +38,8 @@
       </dx-data-grid>
     </div>
 
-    <div class="cards-view" [class.is-loading]="isLoading" *ngIf="activeView === 'card'"> <dx-card-view
-        [dataSource]="cardDataSource" keyExpr="id" [cardMinWidth]="280" cardsPerRow="auto"
+    <div class="cards-view" [class.is-loading]="isLoading" *ngIf="activeView === 'card'">
+      <dx-card-view [dataSource]="cardDataSource" keyExpr="id" [cardMinWidth]="280" cardsPerRow="auto"
         [remoteOperations]="{ paging: true }">
         <dxo-card-view-search-panel [visible]="true"
           [placeholder]="'ADMIN_ABSENCES.SEARCH' | translate"></dxo-card-view-search-panel>
@@ -38,7 +49,6 @@
         </dxo-card-view-pager>
         <dxi-card-view-column dataField="employeeName" [visible]="false" [allowSearch]="true"></dxi-card-view-column>
         <dxi-card-view-column dataField="teamName" [visible]="false" [allowSearch]="true"></dxi-card-view-column>
-
         <dxi-card-view-column dataField="leaveCategoryName" [visible]="false"
           [allowSearch]="true"></dxi-card-view-column>
         <dxi-card-view-column dataField="startDate" [visible]="false" [allowSearch]="true"></dxi-card-view-column>
@@ -53,7 +63,6 @@
               <ng-template #initials>
                 {{ params.field.value?.employeeName?.[0] | uppercase }}
               </ng-template>
-
             </div>
             <div class="card-info">
               <h4 class="card-name">{{ params.field.value?.employeeName }}</h4>
@@ -61,7 +70,6 @@
                 <i class="dx-icon dx-icon-user"></i>
                 {{ params.field.value?.employeeRole === 'TeamLead' ? 'Team Lead' : params.field.value?.employeeRole }}
               </span>
-
               <span class="card-team">
                 <i class="dx-icon dx-icon-group"></i>
                 {{ params.field.value?.teamName }}
@@ -81,6 +89,10 @@
           <div class="card-divider"></div>
           <div class="card-actions">
             @if (params.field.value?.status === 'PendingAdministration') {
+            <button class="action-btn simulate-btn"
+              (click)="openDecisionSupport(params.field.value); $event.stopPropagation()">
+              <i class="dx-icon dx-icon-chart"></i> Analyse
+            </button>
             <button class="action-btn approve-btn"
               (click)="approveRequest(params.field.value); $event.stopPropagation()">
               <i class="dx-icon dx-icon-check"></i> {{ 'ADMIN_ABSENCES.APPROVE' | translate }}
@@ -94,6 +106,100 @@
       </dx-card-view>
     </div>
   </div>
+
+  <!-- Popup Aide à la décision -->
+  <dx-popup [(visible)]="showDecisionPopup" [width]="480" [height]="'auto'" [maxHeight]="'90vh'"
+    title="Aide à la décision" [showCloseButton]="true">
+    <div *dxTemplate="let data of 'content'" class="profile-form">
+      <div class="form-section">
+
+        @if (isLoadingDecision) {
+        <div style="display:flex; align-items:center; gap:12px; padding:16px 0;">
+          <dx-load-indicator [visible]="true" height="24" width="24"></dx-load-indicator>
+          <span style="color:var(--color-text-secondary); font-size:14px;">Analyse en cours...</span>
+        </div>
+        }
+
+        @if (!isLoadingDecision && decisionSupport) {
+
+        <!-- Employé & Période -->
+        <div style="margin-bottom:16px;">
+          <p style="font-size:14px; font-weight:500; color:var(--color-text-primary); margin-bottom:6px;">
+            <strong>{{ decisionSupport.employeeName }}</strong> —
+            {{ decisionSupport.startDate }} → {{ decisionSupport.endDate }}
+          </p>
+          <span class="badge pending">{{ decisionSupport.caseType }}</span>
+        </div>
+
+        <!-- Taux d'occupation -->
+        <div class="sim-card" style="margin-bottom:12px; padding:12px 16px;">
+          <span class="sim-label">Taux d'occupation de l'équipe</span>
+          <span class="sim-value" [style.color]="decisionSupport.occupationRate >= 50 ? '#EF4444' :
+                           decisionSupport.occupationRate >= 30 ? '#F59E0B' : '#10B981'">
+            {{ decisionSupport.occupationRate }}%
+          </span>
+          <span class="sim-sub">{{ decisionSupport.extraInfo }}</span>
+        </div>
+
+        <!-- Score de priorité -->
+        <div class="sim-card" style="margin-bottom:12px; padding:12px 16px;">
+          <span class="sim-label">Score de priorité</span>
+          <span class="badge {{ getPriorityClass(decisionSupport.priorityScore) }}"
+            style="margin-top:4px; display:inline-block;">
+            {{ decisionSupport.priorityScore }}/24
+          </span>
+          <span class="sim-sub" style="margin-top:4px;">{{ decisionSupport.priorityReason }}</span>
+        </div>
+
+        <!-- Analyse dossier médical -->
+        @if (decisionSupport.hasDocument) {
+        <div class="sim-card" style="margin-bottom:12px; padding:12px 16px; border-left: 3px solid #3B8AB2;">
+          <span class="sim-label" style="display:flex; align-items:center; gap:6px; margin-bottom:8px;">
+            <i class="dx-icon dx-icon-doc" style="color:#3B8AB2;"></i>
+            Analyse du dossier médical
+            <span class="badge approved" style="font-size:11px; padding:2px 8px;">Dossier fourni</span>
+          </span>
+          @if (decisionSupport.medicalAnalysis) {
+          <span class="sim-sub" style="white-space: pre-line; line-height:1.6;">
+            {{ decisionSupport.medicalAnalysis }}
+          </span>
+          } @else {
+          <span class="sim-sub" style="color:var(--color-text-secondary);">Analyse en cours...</span>
+          }
+        </div>
+        }
+
+        @if (!decisionSupport.hasDocument && decisionSupport.caseType === 'Congé de longue durée') {
+        <div class="sim-card" style="margin-bottom:12px; padding:12px 16px; border-left: 3px solid #EF4444;">
+          <span class="sim-label" style="display:flex; align-items:center; gap:6px;">
+            <i class="dx-icon dx-icon-warning" style="color:#EF4444;"></i>
+            Dossier médical manquant
+          </span>
+          <span class="sim-sub" style="color:#EF4444; margin-top:4px;">
+            Aucun document fourni pour ce congé de longue durée.
+          </span>
+        </div>
+        }
+
+        <!-- Recommandation GroqAI -->
+        <div class="simulation-message" [class.alert]="decisionSupport.occupationRate >= 50" style="margin-top:4px;">
+          {{ decisionSupport.groqRecommendation }}
+        </div>
+        }
+
+      </div>
+      <div class="form-actions">
+        <dx-button text="Fermer" (onClick)="showDecisionPopup = false"></dx-button>
+        @if (!isLoadingDecision && decisionSupport) {
+        <dx-button text="Rejeter" type="danger" (onClick)="showDecisionPopup = false; rejectRequest(selectedRequest)">
+        </dx-button>
+        <dx-button text="Approuver" type="default"
+          (onClick)="showDecisionPopup = false; approveRequest(selectedRequest)">
+        </dx-button>
+        }
+      </div>
+    </div>
+  </dx-popup>
 
   <!-- Popup Approve -->
   <dx-popup [(visible)]="showApprovePopup" [width]="400" [height]="'auto'" [maxHeight]="'80vh'"
@@ -133,7 +239,7 @@
         <dx-button [text]="'ADMIN_ABSENCES.CANCEL' | translate" [disabled]="isProcessing"
           (onClick)="showRejectPopup = false"></dx-button>
         <dx-button [text]="'ADMIN_ABSENCES.CONFIRM' | translate" type="danger" [disabled]="isProcessing"
-          (onClick)="openReasonPopup()  "></dx-button>
+          (onClick)="openReasonPopup()"></dx-button>
       </div>
     </div>
   </dx-popup>
@@ -161,4 +267,5 @@
       </div>
     </div>
   </dx-popup>
+
 </div>

@@ -26,7 +26,8 @@ import { LeaveCategory } from '../../../models/leave-category.model';
 import { environment } from '../../../environments/environment';
 import { CalendarService } from '../../../services/calendar.service';
 import { DayOccupation } from '../../../models/calendar.model';
-import { GeminiService } from '../../../services/gemini.service';
+import { TeamAnalysis } from '../../../models/TeamAnalysis ';
+import { DeepSeekService } from '../../../services/DeepSeekService';
 
 @Component({
   selector: 'app-my-absences',
@@ -55,20 +56,25 @@ export class MyAbsences implements OnInit, OnDestroy {
   balances: LeaveBalanceDto[] = [];
   pageSize = 10;
   columns: any[] = [];
+  teamAnalyses: TeamAnalysis[] = [];
+
   private occupationMap = new Map<string, DayOccupation>();
   today: Date = new Date();
   private statusSub!: Subscription;
   private teamId = 0;
 
-  // Groq AI
   geminiMessage = '';
   geminiLoading = false;
   alternatives: { startDate: string; endDate: string; reason: string }[] = [];
   loadingAlternatives = false;
 
-  // Warning popup
   showWarningPopup = false;
   warningMessage = '';
+
+  // ✅ Annulation de demande
+  showCancelPopup = false;
+  isCancelling = false;
+  requestToCancel: any = null;
 
   isLoading = false;
   isSaving = false;
@@ -94,7 +100,7 @@ export class MyAbsences implements OnInit, OnDestroy {
     private signalRService: SignalRService,
     private translate: TranslateService,
     private calendarService: CalendarService,
-    private geminiService: GeminiService
+    private deepSeekService: DeepSeekService
   ) {
     effect(() => {
       const view = this.sharedService.viewMode();
@@ -135,9 +141,7 @@ export class MyAbsences implements OnInit, OnDestroy {
     window.removeEventListener('resize', this.onResize);
   }
 
-  private onResize = (): void => {
-    this.applyView();
-  }
+  private onResize = (): void => { this.applyView(); }
 
   private applyView(): void {
     const user = JSON.parse(localStorage.getItem('user') || '{}');
@@ -156,7 +160,48 @@ export class MyAbsences implements OnInit, OnDestroy {
     return new HttpHeaders({ Authorization: `Bearer ${this.sharedService.getToken()}` });
   }
 
-  // ── Helpers ───────────────────────────────────────────────────────────────
+  // ✅ Vérifier si la demande peut être annulée
+  canCancel(status: string): boolean {
+    return status === 'PendingTeamLead' || status === 'PendingAdministration';
+  }
+
+  // ✅ Ouvrir popup confirmation annulation
+  cancelRequest(request: any): void {
+    this.requestToCancel = request;
+    this.showCancelPopup = true;
+    this.cdr.detectChanges();
+  }
+
+  // ✅ Confirmer l'annulation — appel DELETE
+  confirmCancel(): void {
+    if (!this.requestToCancel || this.isCancelling) return;
+    this.isCancelling = true;
+    this.cdr.detectChanges();
+
+    this.http.delete<ApiResponse<string>>(
+      `${environment.apiUrl}/demande/${this.requestToCancel.id}/cancel`,
+      { headers: this.getHeaders() }
+    ).subscribe({
+      next: (res) => {
+        if (res.isSuccess) {
+          this.sharedService.showToastMessage(ToastType.Success, 'Demande annulée avec succès');
+          this.sharedDataSource.reload();
+          this.cardDataSource.reload();
+        } else {
+          this.sharedService.showToastMessage(ToastType.Error, res.error || 'Annulation échouée');
+        }
+        this.showCancelPopup = false;
+        this.requestToCancel = null;
+        this.isCancelling = false;
+        this.cdr.detectChanges();
+      },
+      error: () => {
+        this.isCancelling = false;
+        this.cdr.detectChanges();
+      }
+    });
+  }
+
   private isLongueCategory(selected?: LeaveCategory): boolean {
     if (!selected) return false;
     return selected.name.toLowerCase().includes('longue') ||
@@ -172,12 +217,9 @@ export class MyAbsences implements OnInit, OnDestroy {
   private computeRequiresDocument(selected?: LeaveCategory, numberOfDays?: number): boolean {
     const isLongue = this.isLongueCategory(selected);
     const isMaladie = this.isMaladieCategory(selected);
-    // Longue durée → toujours obligatoire
-    // Maladie → obligatoire si > 3 jours
     return isLongue || (!!isMaladie && (numberOfDays ?? 0) > 3);
   }
 
-  // ── Calendar Occupation ───────────────────────────────────────────────────
   loadCalendarOccupation(year?: number, month?: number): void {
     const now = new Date();
     const y = year ?? now.getFullYear();
@@ -194,101 +236,37 @@ export class MyAbsences implements OnInit, OnDestroy {
     return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
   }
 
-  private computeAvgRate(): number {
-    if (!this.absenceDateRange.startDate || !this.absenceDateRange.endDate) return 0;
-    const start = new Date(this.absenceDateRange.startDate);
-    const end = new Date(this.absenceDateRange.endDate);
-    let totalRate = 0;
-    let count = 0;
-    for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
-      const key = this.toKey(new Date(d));
-      const day = this.occupationMap.get(key);
-      if (day) { totalRate += day.occupationRate; count++; }
-    }
-    return count > 0 ? totalRate / count : 0;
-  }
-
-  private computeMaxAbsent(): number {
-    if (!this.absenceDateRange.startDate || !this.absenceDateRange.endDate) return 0;
-    const start = new Date(this.absenceDateRange.startDate);
-    const end = new Date(this.absenceDateRange.endDate);
-    let maxAbsent = 0;
-    for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
-      const key = this.toKey(new Date(d));
-      const day = this.occupationMap.get(key);
-      if (day) maxAbsent = Math.max(maxAbsent, day.absentCount);
-    }
-    return maxAbsent;
-  }
-
-  private computeTotalMembers(): number {
-    const first = this.occupationMap.values().next().value;
-    return first?.totalMembers ?? 0;
-  }
-
   computeOccupationBadge(): void {
     if (!this.absenceDateRange.startDate || !this.absenceDateRange.endDate) {
       this.geminiMessage = '';
       this.geminiLoading = false;
+      this.teamAnalyses = [];
       return;
     }
-
-    const start = new Date(this.absenceDateRange.startDate);
-    const end = new Date(this.absenceDateRange.endDate);
-
-    let totalRate = 0;
-    let maxAbsent = 0;
-    let totalMembers = 0;
-    let count = 0;
-
-    for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
-      const key = this.toKey(new Date(d));
-      const day = this.occupationMap.get(key);
-      if (day) {
-        totalRate += day.occupationRate;
-        maxAbsent = Math.max(maxAbsent, day.absentCount);
-        totalMembers = day.totalMembers;
-        count++;
-      }
-    }
-
-    if (count === 0) {
-      this.geminiMessage = '📊 Taux : 0% — Aucune équipe assignée, analyse non disponible.';
-      this.geminiLoading = false;
-      this.cdr.detectChanges();
-      return;
-    }
-
-    if (totalMembers === -1) {
-      this.geminiMessage = '📊 Vous êtes le seul membre de votre équipe — aucun impact sur l\'équipe.';
-      this.geminiLoading = false;
-      this.cdr.detectChanges();
-      return;
-    }
-
-    const avgRate = count > 0 ? totalRate / count : 0;
 
     this.geminiLoading = true;
     this.geminiMessage = '';
+    this.teamAnalyses = [];
     this.alternatives = [];
     this.cdr.detectChanges();
 
-    this.geminiService.getRecommendation(
-      avgRate, maxAbsent, totalMembers,
+    this.deepSeekService.getTeamAnalysis(
       this.newAbsence.startDate,
-      this.newAbsence.endDate
-    ).then(msg => {
-      this.geminiMessage = msg;
+      this.newAbsence.endDate,
+      0, 0, 0
+    ).then(res => {
+      this.teamAnalyses = res.analyses ?? [];
+      if (this.teamAnalyses.length === 0) {
+        this.geminiMessage = "📊 Vous êtes le seul membre de votre équipe — aucun impact.";
+      }
       this.geminiLoading = false;
       this.cdr.detectChanges();
     }).catch(() => {
-      this.geminiMessage = '';
       this.geminiLoading = false;
       this.cdr.detectChanges();
     });
   }
 
-  // ── Columns ───────────────────────────────────────────────────────────────
   buildColumns(): void {
     this.columns = [
       { dataField: 'leaveCategoryName', caption: this.translate.instant('MY_ABSENCES.LEAVE_TYPE') },
@@ -303,6 +281,25 @@ export class MyAbsences implements OnInit, OnDestroy {
           span.textContent = this.getStatusLabel(status);
           span.className = `badge ${this.getStatusClass(status)}`;
           container.append(span);
+        }
+      },
+      // ✅ Colonne Actions avec bouton Annuler
+      {
+        caption: this.translate.instant('MY_ABSENCES.ACTIONS') || 'Actions',
+        cellTemplate: (container: any, options: any) => {
+          const data = options.data;
+          if (!this.canCancel(data.status)) {
+            const span = document.createElement('span');
+            span.textContent = 'N/A';
+            span.className = 'na-value';
+            container.append(span);
+            return;
+          }
+          const cancelBtn = document.createElement('button');
+          cancelBtn.className = 'action-btn delete-btn';
+          cancelBtn.innerHTML = `<i class="dx-icon dx-icon-close"></i> Annuler`;
+          cancelBtn.onclick = () => this.cancelRequest(data);
+          container.append(cancelBtn);
         }
       }
     ];
@@ -327,7 +324,6 @@ export class MyAbsences implements OnInit, OnDestroy {
     return classes[status] ?? '';
   }
 
-  // ── DataSource ────────────────────────────────────────────────────────────
   initSharedDataSource(): void {
     const storeConfig = {
       key: 'id',
@@ -395,7 +391,6 @@ export class MyAbsences implements OnInit, OnDestroy {
     const selected = this.leaveCategories.find(c => c.id == this.newAbsence.leaveCategoryId);
     if (selected) {
       this.maxDaysAllowed = selected.maxDays || 0;
-      // Longue durée → document obligatoire dès la sélection de la catégorie
       this.requiresDocument = this.isLongueCategory(selected);
     } else {
       this.requiresDocument = false;
@@ -407,6 +402,7 @@ export class MyAbsences implements OnInit, OnDestroy {
     this.absenceDateRange = { startDate: null, endDate: null };
     this.geminiMessage = '';
     this.geminiLoading = false;
+    this.teamAnalyses = [];
     this.alternatives = [];
     this.loadingAlternatives = false;
     this.cdr.detectChanges();
@@ -451,6 +447,7 @@ export class MyAbsences implements OnInit, OnDestroy {
     } else {
       this.geminiMessage = '';
       this.geminiLoading = false;
+      this.teamAnalyses = [];
       this.alternatives = [];
     }
   }
@@ -468,6 +465,7 @@ export class MyAbsences implements OnInit, OnDestroy {
       this.newAbsence.numberOfDays = 0;
       this.absenceDateRange.endDate = null;
       this.geminiMessage = '';
+      this.teamAnalyses = [];
       this.alternatives = [];
       this.requiresDocument = false;
       this.cdr.detectChanges();
@@ -482,6 +480,7 @@ export class MyAbsences implements OnInit, OnDestroy {
       this.newAbsence.numberOfDays = 0;
       this.absenceDateRange.endDate = null;
       this.geminiMessage = '';
+      this.teamAnalyses = [];
       this.alternatives = [];
       this.requiresDocument = false;
       this.cdr.detectChanges();
@@ -489,10 +488,8 @@ export class MyAbsences implements OnInit, OnDestroy {
     }
 
     this.newAbsence.numberOfDays = diff;
-
     const selected = this.leaveCategories.find(c => c.id == this.newAbsence.leaveCategoryId);
     this.requiresDocument = this.computeRequiresDocument(selected, diff);
-
     this.cdr.detectChanges();
   }
 
@@ -510,6 +507,7 @@ export class MyAbsences implements OnInit, OnDestroy {
     const selected = this.leaveCategories.find(c => c.id == this.newAbsence.leaveCategoryId);
     this.requiresDocument = this.computeRequiresDocument(selected, this.newAbsence.numberOfDays);
 
+    this.teamAnalyses = [];
     this.alternatives = [];
     this.computeOccupationBadge();
     this.cdr.detectChanges();
@@ -527,6 +525,7 @@ export class MyAbsences implements OnInit, OnDestroy {
     this.geminiLoading = false;
     this.showWarningPopup = false;
     this.warningMessage = '';
+    this.teamAnalyses = [];
     this.alternatives = [];
     this.loadingAlternatives = false;
     this.occupationMap.clear();
@@ -554,11 +553,13 @@ export class MyAbsences implements OnInit, OnDestroy {
     this.absenceDateRange = { startDate: start, endDate: end };
     this.newAbsence.startDate = this.toKey(start);
     this.newAbsence.endDate = this.toKey(end);
-    this.newAbsence.numberOfDays = Math.round((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)) + 1;
+    this.newAbsence.numberOfDays = Math.round(
+      (end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)) + 1;
 
     const selected = this.leaveCategories.find(c => c.id == this.newAbsence.leaveCategoryId);
     this.requiresDocument = this.computeRequiresDocument(selected, this.newAbsence.numberOfDays);
 
+    this.teamAnalyses = [];
     this.alternatives = [];
     this.computeOccupationBadge();
     this.cdr.detectChanges();
@@ -584,12 +585,14 @@ export class MyAbsences implements OnInit, OnDestroy {
       return;
     }
 
-    const avgRate = this.computeAvgRate();
-    const maxAbsent = this.computeMaxAbsent();
-    const totalMembers = this.computeTotalMembers();
+    const hasCritical = this.teamAnalyses.some(t => t.isCritical);
 
-    if (avgRate >= 0.50) {
-      this.warningMessage = `⚠️ ${maxAbsent} collègue(s) absent(s) sur ${totalMembers} (${Math.round(avgRate * 100)}%). Voulez-vous continuer ?`;
+    if (hasCritical) {
+      const criticalTeams = this.teamAnalyses
+        .filter(t => t.isCritical)
+        .map(t => t.teamName)
+        .join(', ');
+      this.warningMessage = `⚠️ Période critique pour : ${criticalTeams}. Voulez-vous continuer ?`;
       this.showWarningPopup = true;
       this.cdr.detectChanges();
       return;
@@ -605,26 +608,11 @@ export class MyAbsences implements OnInit, OnDestroy {
 
   cancelWarning(): void {
     this.showWarningPopup = false;
-    this.loadingAlternatives = true;
-    this.alternatives = [];
+    const criticalTeam = this.teamAnalyses.find(t => t.isCritical);
+    if (criticalTeam && criticalTeam.alternatives.length > 0) {
+      this.alternatives = criticalTeam.alternatives;
+    }
     this.cdr.detectChanges();
-
-    const avgRate = this.computeAvgRate();
-    const maxAbsent = this.computeMaxAbsent();
-    const totalMembers = this.computeTotalMembers();
-
-    this.geminiService.getAlternatives(
-      avgRate, maxAbsent, totalMembers,
-      this.newAbsence.startDate,
-      this.newAbsence.endDate
-    ).then(alts => {
-      this.alternatives = alts;
-      this.loadingAlternatives = false;
-      this.cdr.detectChanges();
-    }).catch(() => {
-      this.loadingAlternatives = false;
-      this.cdr.detectChanges();
-    });
   }
 
   get popupWidth(): number | string {
@@ -659,3 +647,4 @@ export class MyAbsences implements OnInit, OnDestroy {
       });
   }
 }
+

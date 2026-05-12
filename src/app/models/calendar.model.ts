@@ -1,4 +1,3 @@
-// shared/models/calendar.model.ts
 export interface DayOccupation {
     date: string;           // "2025-07-10"
     absentCount: number;

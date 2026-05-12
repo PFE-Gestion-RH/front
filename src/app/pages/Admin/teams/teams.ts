@@ -48,28 +48,16 @@ export class Teams implements OnInit, OnDestroy {
   sharedDataSource!: DataSource;
 
   // ─── Utilisateurs ────────────────────────────────────────────────────────────
-  // Signal gardé uniquement pour usage interne
   allUsers = signal<User[]>([]);
-
-  // ✅ FIX 1 : Propriétés stables calculées une seule fois dans loadUsers()
-  //            Remplacent les getters teamLeads / employees qui étaient recalculés
-  //            à chaque cycle de détection → nouvel array → DxSelectBox recharge → stack overflow
   teamLeadsList: any[] = [];
   employeesList: User[] = [];
 
-  // ✅ FIX 2 : Map précalculée pour getMemberNameById()
-  //            Évite de lire le signal allUsers() pendant la détection de changement → NG0100
   private memberNameMap = new Map<number, string>();
 
-  // ✅ FIX 3 : Set stable pour gérer la sélection des membres
-  //            Remplace teamForm.memberIds comme source de vérité pour isMemberSelected()
-  //            → toggleMember ne touche plus au DOM via detectChanges() → pas de boucle
+  // Set stable pour gérer la sélection des membres — IDs toujours en number
   selectedMemberIds = new Set<number>();
 
   // ─── Règles de validation ────────────────────────────────────────────────────
-  // ✅ FIX 4 : Tableaux déclarés comme propriétés stables
-  //            Évite [validationRules]="[{...}]" inline dans le template qui crée
-  //            un nouvel array à chaque cycle → DxValidator ngDoCheck boucle → stack overflow
   nameValidationRules: any[] = [];
   teamLeadValidationRules: any[] = [];
 
@@ -98,12 +86,7 @@ export class Teams implements OnInit, OnDestroy {
     private cdr: ChangeDetectorRef,
     private translate: TranslateService,
     private injector: Injector
-  ) {
-    // ✅ FIX 5 : effect() retiré du constructeur
-    //            L'ancien effect() appelait cdr.detectChanges() ce qui déclenchait
-    //            NG0100 (true→false) pendant la phase d'initialisation de la vue
-    //            La vue responsive est désormais gérée uniquement par applyView() + resize event
-  }
+  ) { }
 
   ngOnInit(): void {
     this.applyView();
@@ -143,7 +126,6 @@ export class Teams implements OnInit, OnDestroy {
     }
   }
 
-  // ✅ FIX 4 : Règles construites une seule fois (et à chaque changement de langue)
   buildValidationRules(): void {
     this.nameValidationRules = [
       { type: 'required', message: this.translate.instant('TEAMS.VALIDATION.NAME_REQUIRED') }
@@ -236,16 +218,16 @@ export class Teams implements OnInit, OnDestroy {
               const data = res.data;
               const users: User[] = Array.isArray(data) ? data : data.items ?? [];
 
-              // ✅ FIX 1 : Calculé une seule fois ici, jamais dans un getter
               this.teamLeadsList = users
                 .filter(u => u.role === UserRole.TeamLead)
-                .map(u => ({ ...u, fullName: `${u.firstName} ${u.lastName}` }));
+                .map(u => ({ ...u, id: +u.id, fullName: `${u.firstName} ${u.lastName}` }));
 
-              this.employeesList = users.filter(u => u.role === UserRole.Employee);
+              this.employeesList = users
+                .filter(u => u.role === UserRole.Employee)
+                .map(u => ({ ...u, id: +u.id }));
 
-              // ✅ FIX 2 : Map précalculée O(1)
               this.memberNameMap = new Map(
-                users.map(u => [u.id, `${u.firstName} ${u.lastName}`])
+                users.map(u => [+u.id, `${u.firstName} ${u.lastName}`])
               );
 
               this.allUsers.set(users);
@@ -256,38 +238,42 @@ export class Teams implements OnInit, OnDestroy {
       });
   }
 
-  // ✅ FIX 2 : Lookup stable via Map, plus de lecture du signal pendant le check
   getMemberNameById(id: number): string {
-    return this.memberNameMap.get(id) ?? '';
+    return this.memberNameMap.get(+id) ?? '';
   }
 
-  // ✅ FIX 3 : isMemberSelected lit le Set stable, pas teamForm.memberIds directement
-  //            → pas de re-création d'array à chaque appel
   isMemberSelected(userId: number): boolean {
-    return this.selectedMemberIds.has(userId);
+    return this.selectedMemberIds.has(+userId);
   }
 
-  // ✅ FIX 3 + FIX 6 : toggleMember sans detectChanges()
-  //            L'ancien code appelait cdr.detectChanges() ce qui re-rendait DxCheckBox
-  //            → onValueChanged se déclenchait → toggleMember → boucle infinie (stack overflow)
-  //            Solution : on met à jour le Set et teamForm.memberIds, Angular détecte
-  //            la mutation lors du prochain cycle naturel (pas besoin de forcer)
+  // ✅ FIX : detectChanges() ajouté pour forcer Angular à rafraîchir
+  //          le [value] du DxCheckBox et la liste des badges immédiatement
   toggleMember(userId: number): void {
-    if (this.selectedMemberIds.has(userId)) {
-      this.selectedMemberIds.delete(userId);
+    const id = +userId;
+
+    console.log('🔵 toggleMember:', id);
+    console.log('🔵 BEFORE:', Array.from(this.selectedMemberIds));
+
+    if (this.selectedMemberIds.has(id)) {
+      this.selectedMemberIds.delete(id);
     } else {
-      this.selectedMemberIds.add(userId);
+      this.selectedMemberIds.add(id);
     }
-    // Sync vers teamForm pour le save — on crée un nouveau tableau pour que
-    // le @for du template détecte le changement par référence
+
+    // Nouveau tableau pour que le @for du template détecte le changement
     this.teamForm.memberIds = Array.from(this.selectedMemberIds);
+
+    console.log('🔵 AFTER:', Array.from(this.selectedMemberIds));
+    console.log('🔵 teamForm.memberIds:', this.teamForm.memberIds);
+
+    // Forcer le refresh de DxCheckBox [value] et des badges
+    this.cdr.detectChanges();
   }
 
   openAdd(): void {
     this.isEditMode = false;
     this.editingTeamId = null;
     this.teamForm = { name: '', teamLeadId: null, memberIds: [] };
-    // ✅ Reset du Set à l'ouverture
     this.selectedMemberIds = new Set<number>();
     this.showPopup = true;
     this.cdr.detectChanges();
@@ -295,15 +281,24 @@ export class Teams implements OnInit, OnDestroy {
   }
 
   openEdit(team: Team): void {
+    console.log('🟢 openEdit team:', team);
+    console.log('🟢 team.members:', team.members);
+
     this.isEditMode = true;
-    this.editingTeamId = team.id;
-    // ✅ Init du Set depuis les membres existants
-    this.selectedMemberIds = new Set<number>(team.members.map(m => m.id));
+    this.editingTeamId = +team.id;
+
+    // Cast en number pour assurer que has() fonctionne
+    this.selectedMemberIds = new Set<number>(team.members.map(m => +m.id));
+
     this.teamForm = {
       name: team.name,
-      teamLeadId: team.teamLeadId,
+      teamLeadId: team.teamLeadId ? +team.teamLeadId : null,
       memberIds: Array.from(this.selectedMemberIds)
     };
+
+    console.log('🟢 selectedMemberIds initialisé:', Array.from(this.selectedMemberIds));
+    console.log('🟢 teamForm:', this.teamForm);
+
     this.showPopup = true;
     this.cdr.detectChanges();
   }
@@ -317,6 +312,11 @@ export class Teams implements OnInit, OnDestroy {
     if (this.isSaving) return;
     this.isSaving = true;
     this.cdr.detectChanges();
+
+    // Sync final pour être absolument sûr que memberIds est à jour avant l'envoi
+    this.teamForm.memberIds = Array.from(this.selectedMemberIds);
+
+    console.log('💾 SAVE - payload envoyé:', JSON.stringify(this.teamForm));
 
     if (this.isEditMode && this.editingTeamId) {
       this.http.put<ApiResponse<string>>(

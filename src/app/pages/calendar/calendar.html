@@ -18,6 +18,7 @@
       </span>
       }
     </div>
+
     @if (role?.toUpperCase() === 'TEAMLEAD' && analysis.length > 0) {
     <div style="margin-bottom: 12px;">
       <div style="display: flex; flex-wrap: wrap; gap: 8px;">
@@ -35,14 +36,14 @@
     </div>
     }
 
+    <!-- ✅ [height]="schedulerHeight" — calculé dynamiquement dans le TS -->
     <dx-scheduler [dataSource]="events" [currentDate]="currentDate" (onOptionChanged)="onOptionChanged($event)"
       [(currentView)]="currentView" [views]="views" startDateExpr="startDate" endDateExpr="endDate" textExpr="text"
-      allDayExpr="allDay" [showAllDayPanel]="true" [firstDayOfWeek]="1" [height]="600" [editing]="editingConfig"
-      (onAppointmentRendered)="onAppointmentRendered($event)" (onAppointmentClick)="onAppointmentClick($event)"
-      (onAppointmentDblClick)="onAppointmentDblClick($event)"
+      allDayExpr="allDay" [showAllDayPanel]="true" [firstDayOfWeek]="1" [height]="schedulerHeight"
+      [editing]="editingConfig" (onAppointmentRendered)="onAppointmentRendered($event)"
+      (onAppointmentClick)="onAppointmentClick($event)" (onAppointmentDblClick)="onAppointmentDblClick($event)"
       (onAppointmentFormOpening)="onAppointmentFormOpening($event)">
     </dx-scheduler>
-
 
   </div>
 
@@ -50,6 +51,7 @@
   <dx-popup [(visible)]="showEventPopup" [width]="420" [height]="'auto'" [title]="popupTitle" [showCloseButton]="true">
     <div *dxTemplate="let data of 'content'" class="profile-form">
       <div class="form-section">
+
         <div class="form-field">
           <label>{{ 'CALENDAR.TYPE' | translate }}</label>
           <span class="badge" [class]="selectedEvent?.type">
@@ -102,6 +104,5 @@
     </div>
   </dx-popup>
   }
-
 
 </div>

@@ -13,7 +13,8 @@
     background: var(--color-bg-white);
     border-radius: 12px;
     box-shadow: 0 2px 12px rgba(26, 58, 92, 0.08);
-    overflow: hidden;
+    // ✅ overflow: auto permet au scheduler de s'afficher complètement
+    overflow: auto;
     width: 100%;
     display: flex;
     flex-direction: column;
@@ -23,7 +24,7 @@
     box-sizing: border-box;
   }
 
-  //  Legend 
+  // Legend
   .calendar-legend {
     display: flex;
     gap: 20px;
@@ -51,7 +52,7 @@
     flex-shrink: 0;
   }
 
-  //  Responsive 
+  // Responsive
   @media (max-width: 1024px) {
     padding: 16px;
 
@@ -120,8 +121,7 @@
   }
 }
 
-//  SCHEDULER 
-
+// ✅ SCHEDULER — un seul ::ng-deep, pas imbriqué
 ::ng-deep {
 
   .dx-scheduler {
@@ -198,6 +198,10 @@
     }
   }
 
+  .dx-scheduler .dx-button .dx-icon {
+    color: #fff !important;
+  }
+
   @media (max-width: 768px) {
     .dx-scheduler-header-panel-cell {
       font-size: 10px;
@@ -209,16 +213,7 @@
   }
 }
 
-::ng-deep {
-  .dx-scheduler {
-    .dx-button .dx-icon {
-      color: #fff !important;
-    }
-  }
-}
-
 // CUSTOM TOOLTIP
-
 .custom-tooltip {
   padding: 12px 14px;
   min-width: 190px;

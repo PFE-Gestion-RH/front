@@ -9,6 +9,7 @@ import { ApiResponse } from '../../../models/auth/api-response.model';
 import { UserForm } from '../../../models/user-form.model';
 import { User } from '../../../models/auth/user.model';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
+import * as XLSX from 'xlsx';
 import {
   DxDataGridModule, DxTemplateModule, DxButtonComponent, DxPopupComponent,
   DxLoadIndicatorModule, DxLoadPanelModule, DxTextBoxModule, DxSelectBoxModule,
@@ -59,13 +60,32 @@ export class Users implements OnInit, OnDestroy {
   showTogglePopup = false;
   userToToggle: User | null = null;
 
-  // password supprimé
+  // Import Excel
+  showImportPopup = false;
+  isImporting = false;
+  importPreview: any[] = [];
+  importErrors: string[] = [];
+  importFile: File | null = null;
+
   selectedUser: UserForm = {
     firstName: '', lastName: '', employeeNumber: '', email: '', role: 'Employee'
   };
 
   getCardData = (rowData: any) => rowData;
   roles = ['Employee', 'TeamLead', 'Admin'];
+
+  // ✅ Getters pour éviter les arrow functions dans le template (interdit par Angular)
+  get validImportCount(): number {
+    return this.importPreview.filter(r => r.valid).length;
+  }
+
+  get invalidImportCount(): number {
+    return this.importPreview.filter(r => !r.valid).length;
+  }
+
+  get canImport(): boolean {
+    return !this.isImporting && this.validImportCount > 0;
+  }
 
   constructor(
     private http: HttpClient,
@@ -113,6 +133,146 @@ export class Users implements OnInit, OnDestroy {
       this.sharedService.viewMode.set(saved);
     }
     this.cdr.detectChanges();
+  }
+
+  // ✅ EXPORT EXCEL
+  exportToExcel(): void {
+    this.http.get<ApiResponse<any>>(
+      `${environment.apiUrl}/users?page=1&pageSize=1000`
+    ).subscribe({
+      next: (res) => {
+        if (!res.isSuccess) return;
+        const users = res.data.items ?? res.data;
+
+        const exportData = users.map((u: any) => ({
+          'Employee Number': u.employeeNumber ?? '',
+          'First Name': u.firstName ?? '',
+          'Last Name': u.lastName ?? '',
+          'Email': u.email ?? '',
+          'Role': u.role ?? 'Employee',
+          'Active': u.isActive ? 'Yes' : 'No'
+        }));
+
+        const ws = XLSX.utils.json_to_sheet(exportData);
+        ws['!cols'] = [
+          { wch: 18 }, { wch: 16 }, { wch: 16 },
+          { wch: 30 }, { wch: 12 }, { wch: 10 }
+        ];
+
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, 'Users');
+        XLSX.writeFile(wb, `users_${new Date().toISOString().slice(0, 10)}.xlsx`);
+        this.sharedService.showToastMessage(ToastType.Success, 'Export Excel réussi');
+      }
+    });
+  }
+
+  // ✅ TÉLÉCHARGER TEMPLATE EXCEL
+  downloadTemplate(): void {
+    const template = [
+      {
+        'Employee Number': 'EMP-0001',
+        'First Name': 'Ahmed',
+        'Last Name': 'Ben Ali',
+        'Email': 'ahmed.benali@example.com',
+        'Role': 'Employee'
+      }
+    ];
+
+    const ws = XLSX.utils.json_to_sheet(template);
+    ws['!cols'] = [{ wch: 18 }, { wch: 16 }, { wch: 16 }, { wch: 30 }, { wch: 12 }];
+
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Users');
+    XLSX.writeFile(wb, 'users_template.xlsx');
+  }
+
+  // ✅ IMPORT EXCEL — sélection du fichier
+  onImportFileSelected(event: any): void {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    this.importFile = file;
+    this.importErrors = [];
+    this.importPreview = [];
+
+    const reader = new FileReader();
+    reader.onload = (e: any) => {
+      try {
+        const wb = XLSX.read(e.target.result, { type: 'binary' });
+        const ws = wb.Sheets[wb.SheetNames[0]];
+        const rows: any[] = XLSX.utils.sheet_to_json(ws);
+
+        const validRoles = ['Employee', 'TeamLead', 'Admin'];
+        const errors: string[] = [];
+        const preview: any[] = [];
+
+        rows.forEach((row, i) => {
+          const lineNum = i + 2;
+          const fn = (row['First Name'] ?? '').toString().trim();
+          const ln = (row['Last Name'] ?? '').toString().trim();
+          const email = (row['Email'] ?? '').toString().trim();
+          const empNum = (row['Employee Number'] ?? '').toString().trim();
+          const role = (row['Role'] ?? 'Employee').toString().trim();
+
+          if (!fn) errors.push(`Ligne ${lineNum} : First Name manquant`);
+          if (!ln) errors.push(`Ligne ${lineNum} : Last Name manquant`);
+          if (!email || !email.includes('@')) errors.push(`Ligne ${lineNum} : Email invalide`);
+          if (!empNum) errors.push(`Ligne ${lineNum} : Employee Number manquant`);
+          if (!validRoles.includes(role)) errors.push(`Ligne ${lineNum} : Role invalide (${role})`);
+
+          preview.push({
+            employeeNumber: empNum,
+            firstName: fn,
+            lastName: ln,
+            email: email,
+            role: validRoles.includes(role) ? role : 'Employee',
+            valid: !errors.some(e => e.startsWith(`Ligne ${lineNum}`))
+          });
+        });
+
+        this.importPreview = preview;
+        this.importErrors = errors;
+        this.cdr.detectChanges();
+      } catch (err) {
+        this.importErrors = ['Fichier Excel invalide'];
+        this.cdr.detectChanges();
+      }
+    };
+    reader.readAsBinaryString(file);
+    event.target.value = '';
+  }
+
+  // ✅ CONFIRMER L'IMPORT
+  confirmImport(): void {
+    const validRows = this.importPreview.filter(r => r.valid);
+    if (!validRows.length) return;
+
+    this.isImporting = true;
+    this.cdr.detectChanges();
+
+    this.http.post<ApiResponse<any>>(
+      `${environment.apiUrl}/users/import`, validRows
+    ).subscribe({
+      next: (res) => {
+        if (res.isSuccess) {
+          this.sharedService.showToastMessage(
+            ToastType.Success,
+            `${validRows.length} utilisateur(s) importé(s) avec succès`
+          );
+          this.showImportPopup = false;
+          this.importPreview = [];
+          this.importErrors = [];
+          this.importFile = null;
+          this.sharedDataSource.reload();
+        } else {
+          this.sharedService.showToastMessage(ToastType.Error, res.error || 'Import échoué');
+        }
+        this.isImporting = false;
+        this.cdr.detectChanges();
+      },
+      error: () => { this.isImporting = false; this.cdr.detectChanges(); }
+    });
   }
 
   buildColumns(): void {
@@ -202,7 +362,6 @@ export class Users implements OnInit, OnDestroy {
 
   openAdd(): void {
     this.isEditMode = false;
-    // password supprimé
     this.selectedUser = { firstName: '', lastName: '', employeeNumber: '', email: '', role: 'Employee' };
     this.showPopup = true;
     this.cdr.detectChanges();
@@ -211,11 +370,7 @@ export class Users implements OnInit, OnDestroy {
 
   openEdit(user: User): void {
     this.isEditMode = true;
-    // password supprimé
-    this.selectedUser = {
-      ...user,
-      employeeNumber: user.employeeNumber ?? ''
-    };
+    this.selectedUser = { ...user, employeeNumber: user.employeeNumber ?? '' };
     this.showPopup = true;
     this.cdr.detectChanges();
   }
@@ -267,7 +422,6 @@ export class Users implements OnInit, OnDestroy {
     }
   }
 
-  // ── Renvoyer les identifiants ─────────────────────────────────────────────
   resendCredentials(user: User): void {
     this.http.post<ApiResponse<string>>(
       `${environment.apiUrl}/users/${user.id}/resend-credentials`, {}

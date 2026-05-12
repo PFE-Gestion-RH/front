@@ -221,6 +221,7 @@
     "SEED_BTN": "🇹🇳 Seed Tunisia"
   },
   "MY_ABSENCES": {
+    "ACTIONS":"Actions",
     "TITLE": "My Absences",
     "ADD": "+ New Absence",
     "LEAVE_TYPE": "Leave Type",
@@ -344,6 +345,7 @@
   "TEAM_ABSENCES": {
     "TITLE": "Team Absences",
     "SIMULATE": "Simulate",
+    "PRIORITY_SCORE": "Priority Score",
     "SIMULATE_TITLE": "Impact Simulation",
     "SIMULATING": "Simulating...",
     "SIMULATE_MULTI": "Simulate selection",

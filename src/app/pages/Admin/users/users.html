@@ -7,14 +7,22 @@
 
     <div class="app-page-header">
       <h2 class="page-title">{{ 'USERS.TITLE' | translate }}</h2>
-      <button class="add-btn" (click)="openAdd()">{{ 'USERS.ADD' | translate }}</button>
+
+      <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
+        <button class="action-btn" style="color:#10B981; border-color:#10B981;" (click)="exportToExcel()">
+          <i class="dx-icon dx-icon-export"></i> Export Excel
+        </button>
+        <button class="action-btn" style="color:#F59E0B; border-color:#F59E0B;" (click)="showImportPopup = true">
+          <i class="dx-icon dx-icon-import"></i> Import Excel
+        </button>
+        <button class="add-btn" (click)="openAdd()">{{ 'USERS.ADD' | translate }}</button>
+      </div>
     </div>
 
     <!-- TABLE desktop -->
-    <div class="table-view" *ngIf="activeView === 'grid'"> <dx-data-grid [dataSource]="sharedDataSource"
-        [columns]="columns" [showBorders]="false" [showRowLines]="true" [showColumnLines]="false"
-        [hoverStateEnabled]="true" keyExpr="id" [remoteOperations]="true">
-
+    <div class="table-view" *ngIf="activeView === 'grid'">
+      <dx-data-grid [dataSource]="sharedDataSource" [columns]="columns" [showBorders]="false" [showRowLines]="true"
+        [showColumnLines]="false" [hoverStateEnabled]="true" keyExpr="id" [remoteOperations]="true">
         <dxo-load-panel [enabled]="false"></dxo-load-panel>
         <dxo-search-panel [visible]="true" [placeholder]="'USERS.SEARCH' | translate"></dxo-search-panel>
         <dxo-selection mode="none"></dxo-selection>
@@ -27,26 +35,22 @@
     </div>
 
     <!-- CARDS tablette/mobile -->
-    <div class="cards-view" [class.is-loading]="isLoading" *ngIf="activeView === 'card'"> <dx-card-view
-        [dataSource]="sharedDataSource" keyExpr="id" [cardMinWidth]="280" cardsPerRow="auto">
-
+    <div class="cards-view" [class.is-loading]="isLoading" *ngIf="activeView === 'card'">
+      <dx-card-view [dataSource]="sharedDataSource" keyExpr="id" [cardMinWidth]="280" cardsPerRow="auto">
         <dxo-card-view-search-panel [visible]="true"
           [placeholder]="'USERS.SEARCH' | translate"></dxo-card-view-search-panel>
         <dxo-card-view-paging [enabled]="true" [pageSize]="pageSize"></dxo-card-view-paging>
         <dxo-card-view-pager [visible]="true" [showNavigationButtons]="true" [showInfo]="true"
           [infoText]="'USERS.USERS_INFO' | translate">
         </dxo-card-view-pager>
-
         <dxi-card-view-column dataField="firstName" [visible]="false" [allowSearch]="true"></dxi-card-view-column>
         <dxi-card-view-column dataField="lastName" [visible]="false" [allowSearch]="true"></dxi-card-view-column>
         <dxi-card-view-column dataField="email" [visible]="false" [allowSearch]="true"></dxi-card-view-column>
         <dxi-card-view-column dataField="employeeNumber" [visible]="false" [allowSearch]="true"></dxi-card-view-column>
         <dxi-card-view-column dataField="role" [visible]="false" [allowSearch]="true"></dxi-card-view-column>
-
         <dxi-card-view-column caption="" [calculateFieldValue]="getCardData" fieldValueTemplate="cardBodyTemplate"
           [allowSorting]="false" [allowSearch]="false" [allowFiltering]="false">
         </dxi-card-view-column>
-
         <div *dxTemplate="let params of 'cardBodyTemplate'" class="card-body-template">
           <div class="card-top">
             <div class="card-avatar">
@@ -75,7 +79,6 @@
               </span>
             </div>
           </div>
-
           <div class="card-divider"></div>
           <div class="card-actions">
             <button class="action-btn edit-btn" (click)="openEdit(params.field.value); $event.stopPropagation()">
@@ -116,7 +119,6 @@
               </dx-validator>
             </dx-text-box>
           </div>
-
           <div class="form-field">
             <label>{{ 'USERS.LAST_NAME' | translate }}</label>
             <dx-text-box [(value)]="selectedUser.lastName" [placeholder]="'USERS.LAST_NAME' | translate"
@@ -144,7 +146,6 @@
             </dx-text-box>
           </div>
           }
-
           <div class="form-field">
             <label>{{ 'USERS.EMAIL' | translate }}</label>
             <dx-text-box [(value)]="selectedUser.email" [placeholder]="'USERS.EMAIL' | translate" [disabled]="isSaving">
@@ -154,7 +155,6 @@
               </dx-validator>
             </dx-text-box>
           </div>
-
           <div class="form-field">
             <label>{{ 'USERS.ROLE' | translate }}</label>
             <dx-select-box [(value)]="selectedUser.role" [dataSource]="roles" [disabled]="isSaving">
@@ -164,20 +164,120 @@
             </dx-select-box>
           </div>
         </div>
-
         <div class="form-actions">
           <dx-button [text]="'USERS.CANCEL' | translate" [disabled]="isSaving"
             (onClick)="showPopup = false"></dx-button>
           <dx-button [disabled]="isSaving" type="default" (onClick)="save(validationGroup)">
             <div *dxTemplate="let data of 'content'" style="display:flex;align-items:center;gap:8px;">
               <dx-load-indicator [visible]="isSaving" height="16" width="16"></dx-load-indicator>
-              @if (!isSaving) {
-              <span>{{ 'USERS.SAVE' | translate }}</span>
-              }
+              @if (!isSaving) { <span>{{ 'USERS.SAVE' | translate }}</span> }
             </div>
           </dx-button>
         </div>
       </dx-validation-group>
+    </div>
+  </dx-popup>
+
+  <!-- ✅ Popup Import Excel -->
+  <dx-popup [(visible)]="showImportPopup" [width]="620" [height]="'auto'" [maxHeight]="'85vh'"
+    title="Import utilisateurs via Excel" [showCloseButton]="!isImporting">
+    <div *dxTemplate="let data of 'content'" class="profile-form">
+      <div class="form-section">
+
+        <!-- Instructions -->
+        <div style="background:#f0f9ff; border:1px solid #3B8AB2; border-radius:8px; padding:12px; margin-bottom:16px;">
+          <p style="font-size:13px; color:#1a3a5c; margin:0 0 8px 0; font-weight:500;">
+            Format requis — colonnes obligatoires :
+          </p>
+          <code style="font-size:12px; color:#3B8AB2;">
+            Employee Number | First Name | Last Name | Email | Role
+          </code>
+          <p style="font-size:12px; color:#666; margin:8px 0 0 0;">
+            Rôles acceptés : Employee, TeamLead, Admin
+          </p>
+        </div>
+
+        <!-- Boutons -->
+        <div style="display:flex; gap:10px; margin-bottom:16px; flex-wrap:wrap;">
+          <button class="action-btn" style="color:#3B8AB2; border-color:#3B8AB2;" (click)="downloadTemplate()">
+            <i class="dx-icon dx-icon-download"></i> Télécharger le template
+          </button>
+          <label class="add-btn" style="cursor:pointer; margin:0;">
+            <i class="dx-icon dx-icon-folder"></i> Choisir un fichier Excel
+            <input type="file" accept=".xlsx,.xls" (change)="onImportFileSelected($event)" style="display:none;">
+          </label>
+        </div>
+
+        <!-- Erreurs -->
+        @if (importErrors.length > 0) {
+        <div style="background:#fef2f2; border:1px solid #EF4444; border-radius:8px; padding:12px; margin-bottom:12px;">
+          <p style="font-size:13px; color:#EF4444; font-weight:500; margin:0 0 6px 0;">
+            {{ importErrors.length }} erreur(s) détectée(s) :
+          </p>
+          @for (err of importErrors; track err) {
+          <p style="font-size:12px; color:#EF4444; margin:2px 0;">• {{ err }}</p>
+          }
+        </div>
+        }
+
+        <!-- Prévisualisation -->
+        @if (importPreview.length > 0) {
+        <div style="margin-bottom:12px;">
+          <p style="font-size:13px; font-weight:500; color:#1a3a5c; margin-bottom:8px;">
+            Prévisualisation — {{ importPreview.length }} ligne(s) :
+          </p>
+          <div style="max-height:250px; overflow-y:auto; border:1px solid #e5e7eb; border-radius:8px;">
+            <table style="width:100%; border-collapse:collapse; font-size:12px;">
+              <thead>
+                <tr style="background:#f8fafc; position:sticky; top:0;">
+                  <th style="padding:8px; text-align:left; border-bottom:1px solid #e5e7eb;">N°</th>
+                  <th style="padding:8px; text-align:left; border-bottom:1px solid #e5e7eb;">Prénom</th>
+                  <th style="padding:8px; text-align:left; border-bottom:1px solid #e5e7eb;">Nom</th>
+                  <th style="padding:8px; text-align:left; border-bottom:1px solid #e5e7eb;">Email</th>
+                  <th style="padding:8px; text-align:left; border-bottom:1px solid #e5e7eb;">Rôle</th>
+                  <th style="padding:8px; text-align:center; border-bottom:1px solid #e5e7eb;">Statut</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (row of importPreview; track row.email) {
+                <tr [style.background]="row.valid ? 'white' : '#fef2f2'">
+                  <td style="padding:6px 8px; border-bottom:1px solid #f0f0f0;">{{ row.employeeNumber }}</td>
+                  <td style="padding:6px 8px; border-bottom:1px solid #f0f0f0;">{{ row.firstName }}</td>
+                  <td style="padding:6px 8px; border-bottom:1px solid #f0f0f0;">{{ row.lastName }}</td>
+                  <td style="padding:6px 8px; border-bottom:1px solid #f0f0f0;">{{ row.email }}</td>
+                  <td style="padding:6px 8px; border-bottom:1px solid #f0f0f0;">{{ row.role }}</td>
+                  <td style="padding:6px 8px; border-bottom:1px solid #f0f0f0; text-align:center;">
+                    <!-- ✅ isRowValid(row) remplace row.valid (pas d'arrow function dans le template) -->
+                    <span [style.color]="row.valid ? '#10B981' : '#EF4444'">
+                      {{ row.valid ? '✓' : '✗' }}
+                    </span>
+                  </td>
+                </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+          <!-- ✅ Getters validImportCount / invalidImportCount au lieu de filter() -->
+          <p style="font-size:12px; color:#666; margin-top:6px;">
+            {{ validImportCount }} valide(s) /
+            {{ invalidImportCount }} invalide(s) — seules les lignes valides seront importées
+          </p>
+        </div>
+        }
+
+      </div>
+      <div class="form-actions">
+        <dx-button text="Annuler" [disabled]="isImporting" (onClick)="showImportPopup = false"></dx-button>
+        <!-- ✅ canImport getter + validImportCount getter -->
+        <dx-button type="default" [disabled]="!canImport" (onClick)="confirmImport()">
+          <div *dxTemplate="let data of 'content'" style="display:flex;align-items:center;gap:8px;">
+            <dx-load-indicator [visible]="isImporting" height="16" width="16"></dx-load-indicator>
+            @if (!isImporting) {
+            <span>Importer {{ validImportCount }} utilisateur(s)</span>
+            }
+          </div>
+        </dx-button>
+      </div>
     </div>
   </dx-popup>
 
@@ -198,9 +298,7 @@
         <dx-button [disabled]="isDeleting" type="danger" (onClick)="confirmDelete()">
           <div *dxTemplate="let data of 'content'" style="display:flex;align-items:center;gap:8px;">
             <dx-load-indicator [visible]="isDeleting" height="16" width="16"></dx-load-indicator>
-            @if (!isDeleting) {
-            <span>{{ 'USERS.DELETE' | translate }}</span>
-            }
+            @if (!isDeleting) { <span>{{ 'USERS.DELETE' | translate }}</span> }
           </div>
         </dx-button>
       </div>
@@ -225,12 +323,11 @@
         <dx-button [disabled]="isToggling" type="default" (onClick)="confirmToggle()">
           <div *dxTemplate="let data of 'content'" style="display:flex;align-items:center;gap:8px;">
             <dx-load-indicator [visible]="isToggling" height="16" width="16"></dx-load-indicator>
-            @if (!isToggling) {
-            <span>{{ 'USERS.CONFIRM' | translate }}</span>
-            }
+            @if (!isToggling) { <span>{{ 'USERS.CONFIRM' | translate }}</span> }
           </div>
         </dx-button>
       </div>
     </div>
   </dx-popup>
+
 </div>

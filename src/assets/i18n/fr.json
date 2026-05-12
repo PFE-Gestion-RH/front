@@ -221,6 +221,7 @@
     "SEED_BTN": "🇹🇳 Seed Tunisie"
   },
   "MY_ABSENCES": {
+    "ACTIONS": "Actions",
     "TITLE": "Mes Absences",
     "ADD": "+ Nouvelle Absence",
     "LEAVE_TYPE": "Type de congé",

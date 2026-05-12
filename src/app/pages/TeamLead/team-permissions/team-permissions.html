@@ -13,9 +13,11 @@
       </dx-check-box>
     </div>
 
-    <div class="table-view" *ngIf="activeView === 'grid'"> <dx-data-grid [dataSource]="sharedDataSource"
-        [columns]="columns" [showBorders]="false" [showRowLines]="true" [showColumnLines]="false"
-        [hoverStateEnabled]="true" keyExpr="id" [remoteOperations]="{ paging: true, filtering: false, sorting: false }">
+    <!-- TABLE desktop -->
+    <div class="table-view" *ngIf="activeView === 'grid'">
+      <dx-data-grid [dataSource]="sharedDataSource" [columns]="columns" [showBorders]="false" [showRowLines]="true"
+        [showColumnLines]="false" [hoverStateEnabled]="true" keyExpr="id"
+        [remoteOperations]="{ paging: true, filtering: false, sorting: false }">
         <dxo-load-panel [enabled]="false"></dxo-load-panel>
         <dxo-search-panel [visible]="true" [placeholder]="'TEAM_PERMISSIONS.SEARCH' | translate"></dxo-search-panel>
         <dxo-selection mode="none"></dxo-selection>
@@ -36,8 +38,9 @@
       </dx-data-grid>
     </div>
 
-    <div class="cards-view" [class.is-loading]="isLoading" *ngIf="activeView === 'card'"> <dx-card-view
-        [dataSource]="cardDataSource" keyExpr="id" [cardMinWidth]="280" cardsPerRow="auto"
+    <!-- CARDS tablette/mobile -->
+    <div class="cards-view" [class.is-loading]="isLoading" *ngIf="activeView === 'card'">
+      <dx-card-view [dataSource]="cardDataSource" keyExpr="id" [cardMinWidth]="280" cardsPerRow="auto"
         [remoteOperations]="{ paging: true }">
         <dxo-card-view-search-panel [visible]="true"
           [placeholder]="'TEAM_PERMISSIONS.SEARCH' | translate"></dxo-card-view-search-panel>
@@ -82,19 +85,29 @@
           <div class="card-divider"></div>
           <div class="card-actions">
             @if (params.field.value?.status === 'PendingTeamLead') {
-            <button class="action-btn approve-btn"
-              (click)="approveRequest(params.field.value); $event.stopPropagation()">
-              <i class="dx-icon dx-icon-check"></i> {{ 'TEAM_PERMISSIONS.APPROVE' | translate }}
-            </button>
-            <button class="action-btn reject-btn" (click)="rejectRequest(params.field.value); $event.stopPropagation()">
-              <i class="dx-icon dx-icon-close"></i> {{ 'TEAM_PERMISSIONS.REJECT' | translate }}
-            </button>
+            <div style="display:flex; align-items:center; gap:6px; flex-wrap:wrap;">
+              <!-- ✅ Bouton Simuler dans les cards -->
+              <button class="action-btn simulate-btn"
+                (click)="simulateRequest(params.field.value); $event.stopPropagation()">
+                <i class="dx-icon dx-icon-chart"></i> Simuler
+              </button>
+              <button class="action-btn approve-btn"
+                (click)="approveRequest(params.field.value); $event.stopPropagation()">
+                <i class="dx-icon dx-icon-check"></i> {{ 'TEAM_PERMISSIONS.APPROVE' | translate }}
+              </button>
+              <button class="action-btn reject-btn"
+                (click)="rejectRequest(params.field.value); $event.stopPropagation()">
+                <i class="dx-icon dx-icon-close"></i> {{ 'TEAM_PERMISSIONS.REJECT' | translate }}
+              </button>
+            </div>
             }
           </div>
         </div>
       </dx-card-view>
     </div>
   </div>
+
+  <!-- Tooltip équipe -->
   <div class="team-tooltip-box" [class.visible]="tooltipVisible" [style.top.px]="tooltipY" [style.left.px]="tooltipX">
     <span class="tooltip-row">
       <i class="dx-icon dx-icon-group"></i>
@@ -105,6 +118,118 @@
       {{ tooltipData?.teamLeaderName }}
     </span>
   </div>
+
+  <!-- ✅ Popup Simulation Permission -->
+  <dx-popup [(visible)]="showSimulatePopup" [width]="480" [height]="'auto'" [maxHeight]="'85vh'"
+    title="Simulation d'approbation — Permission" [showCloseButton]="true">
+    <div *dxTemplate="let data of 'content'" class="profile-form">
+      <div class="form-section">
+
+        @if (isSimulating) {
+        <div style="display:flex; align-items:center; gap:12px; padding:16px 0;">
+          <dx-load-indicator [visible]="true" height="24" width="24"></dx-load-indicator>
+          <span style="color:var(--color-text-secondary); font-size:14px;">Analyse en cours...</span>
+        </div>
+        }
+
+        @if (!isSimulating && simulationResult) {
+        <div class="simulation-result">
+
+          <!-- Employé + période -->
+          <p class="simulation-employee">
+            <strong>{{ selectedRequest?.employeeName }}</strong> —
+            {{ selectedRequest?.startDate | date:'dd/MM/yyyy' }}
+            {{ selectedRequest?.startTime?.substring(0,5) }} → {{ selectedRequest?.endTime?.substring(0,5) }}
+          </p>
+
+          <!-- ✅ Alerte conflit horaire -->
+          @if (simulationResult.hasHourlyConflict) {
+          <div style="background:#fef2f2; border:1px solid #EF4444; border-radius:8px;
+                      padding:10px 14px; margin-bottom:12px;">
+            <p style="font-size:13px; font-weight:600; color:#EF4444; margin:0 0 4px 0;">
+              ⚠️ Conflit horaire détecté
+            </p>
+            <p style="font-size:12px; color:#EF4444; margin:0;">
+              {{ simulationResult.conflictDetail }}
+            </p>
+          </div>
+          }
+
+          <!-- Avant / Après -->
+          <div class="simulation-comparison">
+            <div class="sim-card before">
+              <span class="sim-label">Avant</span>
+              <span class="sim-value"
+                [style.color]="simulationResult.rateBefore >= 50 ? '#EF4444' : simulationResult.rateBefore >= 30 ? '#F59E0B' : '#10B981'">
+                {{ simulationResult.rateBefore }}%
+              </span>
+              <span class="sim-sub">
+                {{ simulationResult.unavailableBefore }} / {{ simulationResult.totalMembers }} indisponible(s)
+              </span>
+            </div>
+            <div class="sim-arrow">→</div>
+            <div class="sim-card after" [class.alert]="simulationResult.alert">
+              <span class="sim-label">Après</span>
+              <span class="sim-value"
+                [style.color]="simulationResult.rateAfter >= 50 ? '#EF4444' : simulationResult.rateAfter >= 30 ? '#F59E0B' : '#10B981'">
+                {{ simulationResult.rateAfter }}%
+              </span>
+              <span class="sim-sub">
+                {{ simulationResult.unavailableAfter }} / {{ simulationResult.totalMembers }} indisponible(s)
+              </span>
+            </div>
+          </div>
+
+          <!-- ✅ Absents ce jour -->
+          @if (simulationResult.absentEmployeeNames) {
+          <div class="sim-card" style="margin-top:10px; padding:10px 14px; border-left:3px solid #EF4444;">
+            <span class="sim-label">Absents ce jour</span>
+            <span class="sim-sub" style="color:#EF4444; margin-top:4px;">
+              {{ simulationResult.absentEmployeeNames }}
+            </span>
+          </div>
+          }
+
+          <!-- ✅ Déjà en permission ce jour -->
+          @if (simulationResult.permissionEmployeeNames) {
+          <div class="sim-card" style="margin-top:10px; padding:10px 14px; border-left:3px solid #F59E0B;">
+            <span class="sim-label">Déjà en permission ce jour</span>
+            <span class="sim-sub" style="color:#F59E0B; margin-top:4px;">
+              {{ simulationResult.permissionEmployeeNames }}
+            </span>
+          </div>
+          }
+
+          @if (!simulationResult.absentEmployeeNames && !simulationResult.permissionEmployeeNames) {
+          <div class="sim-card" style="margin-top:10px; padding:10px 14px; border-left:3px solid #10B981;">
+            <span class="sim-label">Disponibilité équipe</span>
+            <span class="sim-sub" style="color:#10B981; margin-top:4px;">
+              Aucun autre membre absent ou en permission ce jour
+            </span>
+          </div>
+          }
+
+          <!-- Message Groq -->
+          <div class="simulation-message" [class.alert]="simulationResult.alert" style="margin-top:10px;">
+            {{ simulationResult.message }}
+          </div>
+
+        </div>
+        }
+      </div>
+      <div class="form-actions">
+        <dx-button text="Fermer" (onClick)="showSimulatePopup = false"></dx-button>
+        @if (!isSimulating && simulationResult) {
+        <dx-button text="Rejeter" type="danger"
+          (onClick)="showSimulatePopup = false; rejectRequest(selectedRequest)"></dx-button>
+        <dx-button text="Approuver" type="default"
+          (onClick)="showSimulatePopup = false; approveRequest(selectedRequest)"></dx-button>
+        }
+      </div>
+    </div>
+  </dx-popup>
+
+  <!-- Popup Approve -->
   <dx-popup [(visible)]="showApprovePopup" [width]="400" [height]="'auto'" [maxHeight]="'80vh'"
     [title]="'TEAM_PERMISSIONS.APPROVE_TITLE' | translate" [showCloseButton]="!isProcessing">
     <div *dxTemplate="let data of 'content'" class="profile-form">
@@ -128,6 +253,7 @@
     </div>
   </dx-popup>
 
+  <!-- Popup Reject -->
   <dx-popup [(visible)]="showRejectPopup" [width]="400" [height]="'auto'" [maxHeight]="'80vh'"
     [title]="'TEAM_PERMISSIONS.REJECT_TITLE' | translate" [showCloseButton]="!isProcessing">
     <div *dxTemplate="let data of 'content'" class="profile-form">
@@ -146,6 +272,7 @@
     </div>
   </dx-popup>
 
+  <!-- Popup Reason -->
   <dx-popup [(visible)]="showReasonPopup" [width]="400" [height]="'auto'" [maxHeight]="'80vh'"
     [title]="'TEAM_PERMISSIONS.REASON_TITLE' | translate" [showCloseButton]="!isProcessing">
     <div *dxTemplate="let data of 'content'" class="profile-form">
@@ -168,4 +295,5 @@
       </div>
     </div>
   </dx-popup>
+
 </div>

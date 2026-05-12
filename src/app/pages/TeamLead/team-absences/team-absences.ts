@@ -8,7 +8,7 @@ import { ToastType } from '../../../components/toast/toast';
 import { ApiResponse } from '../../../models/auth/api-response.model';
 import { SignalRService } from '../../../services/signalr.service';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
-import { DxDataGridModule, DxTemplateModule, DxPopupComponent, DxButtonComponent, DxLoadIndicatorModule, DxLoadPanelModule, DxCheckBoxComponent, DxTooltipComponent } from 'devextreme-angular';
+import { DxDataGridModule, DxTemplateModule, DxPopupComponent, DxButtonComponent, DxLoadIndicatorModule, DxLoadPanelModule, DxCheckBoxComponent, DxTooltipComponent, DxSelectBoxModule } from 'devextreme-angular';
 import { DxCardViewComponent } from 'devextreme-angular';
 import {
   DxiCardViewColumnComponent, DxoCardViewPagingComponent,
@@ -27,8 +27,7 @@ import { environment } from '../../../environments/environment';
     DxoCardViewSearchPanelComponent, DxoCardViewPagerComponent,
     DxTemplateModule, DxPopupComponent, DxButtonComponent,
     DxLoadIndicatorModule, DxLoadPanelModule, DxCheckBoxComponent,
-    TranslateModule,
-    DxTooltipComponent
+    DxSelectBoxModule, TranslateModule, DxTooltipComponent
   ],
   templateUrl: './team-absences.html',
   styleUrls: ['./team-absences.scss'],
@@ -53,11 +52,13 @@ export class TeamAbsences implements OnInit, OnDestroy {
   rejectionReason = '';
   pendingOnly = false;
 
-  // Simulation simple
+  // ✅ FILTRE CATÉGORIE
+  categories: any[] = [];
+  selectedCategoryId: number | null = null;
+
   simulationResult: any = null;
   isSimulating = false;
 
-  // Simulation multi
   multiSimulationResult: any = null;
   isMultiSimulating = false;
   selectedIds: Set<number> = new Set();
@@ -90,6 +91,7 @@ export class TeamAbsences implements OnInit, OnDestroy {
     this.applyView();
     window.addEventListener('resize', this.onResize);
     this.buildColumns();
+    this.loadCategories();
     this.initSharedDataSource();
     this.translate.onLangChange.subscribe(() => {
       this.buildColumns();
@@ -124,7 +126,31 @@ export class TeamAbsences implements OnInit, OnDestroy {
     this.cdr.detectChanges();
   }
 
-  // ── Checkbox sélection ────────────────────────────────────────────────────
+  // ✅ Charger les catégories
+  loadCategories(): void {
+    this.http.get<ApiResponse<any>>(
+      `${environment.apiUrl}/leave-categories`,
+      { headers: this.getHeaders() }
+    ).subscribe({
+      next: (res) => {
+        if (res.isSuccess) {
+          const data = res.data;
+          this.categories = [
+            { id: null, name: 'Toutes les catégories' },
+            ...(Array.isArray(data) ? data : data.items ?? [])
+          ];
+          this.cdr.detectChanges();
+        }
+      }
+    });
+  }
+
+  // ✅ Quand catégorie change
+  onCategoryChange(): void {
+    this.selectedIds.clear();
+    this.initSharedDataSource();
+  }
+
   toggleSelection(id: number): void {
     if (this.selectedIds.has(id)) {
       this.selectedIds.delete(id);
@@ -142,13 +168,11 @@ export class TeamAbsences implements OnInit, OnDestroy {
     return this.selectedIds.size;
   }
 
-  // ── Simulation multi ──────────────────────────────────────────────────────
   simulateSelected(): void {
     if (this.selectedIds.size < 2) {
       this.sharedService.showToastMessage(ToastType.Error, 'Sélectionnez au moins 2 demandes');
       return;
     }
-
     this.multiSimulationResult = null;
     this.isMultiSimulating = true;
     this.showMultiSimulatePopup = true;
@@ -195,20 +219,24 @@ export class TeamAbsences implements OnInit, OnDestroy {
     return new HttpHeaders({ Authorization: `Bearer ${this.sharedService.getToken()}` });
   }
 
+  getPriorityClass(score: number): string {
+    if (score > 20) return 'priority-high';
+    if (score >= 10) return 'priority-medium';
+    return 'priority-low';
+  }
+
   buildColumns(): void {
     this.columns = [
       {
         caption: '',
-        width: 40,
+        width: 30,
         cellTemplate: (container: any, options: any) => {
           const data = options.data;
           if (data.status !== 'PendingTeamLead') return;
-
           const wrapper = document.createElement('div');
           wrapper.style.display = 'flex';
           wrapper.style.justifyContent = 'center';
           wrapper.style.alignItems = 'center';
-
           const checkbox = document.createElement('input');
           checkbox.type = 'checkbox';
           checkbox.checked = this.isSelected(data.id);
@@ -218,7 +246,6 @@ export class TeamAbsences implements OnInit, OnDestroy {
             this.toggleSelection(data.id);
             this.cdr.detectChanges();
           });
-
           wrapper.appendChild(checkbox);
           container.appendChild(wrapper);
         }
@@ -243,11 +270,24 @@ export class TeamAbsences implements OnInit, OnDestroy {
         }
       },
       {
+        caption: this.translate.instant('TEAM_ABSENCES.PRIORITY_SCORE'),
+        dataField: 'priorityScore',
+        width: 140,
+        cellTemplate: (container: any, options: any) => {
+          const score = options.data.priorityScore ?? 0;
+          const reason = options.data.priorityReason ?? '';
+          const span = document.createElement('span');
+          span.textContent = ` ${score}/24`;
+          span.title = reason;
+          span.className = `badge ${this.getPriorityClass(score)}`;
+          container.append(span);
+        }
+      },
+      {
         caption: this.translate.instant('TEAM_ABSENCES.ACTIONS'),
         minWidth: 320,
         cellTemplate: (container: any, options: any) => {
           const data = options.data;
-
           if (data.status !== 'PendingTeamLead') {
             const span = document.createElement('span');
             span.textContent = 'N/A';
@@ -255,7 +295,6 @@ export class TeamAbsences implements OnInit, OnDestroy {
             container.append(span);
             return;
           }
-
           const simulateBtn = document.createElement('button');
           simulateBtn.className = 'action-btn simulate-btn';
           simulateBtn.innerHTML = `<i class="dx-icon dx-icon-chart"></i> ${this.translate.instant('TEAM_ABSENCES.SIMULATE')}`;
@@ -281,6 +320,7 @@ export class TeamAbsences implements OnInit, OnDestroy {
     this.selectedIds.clear();
     this.initSharedDataSource();
   }
+
   get maxRate(): number {
     if (!this.multiSimulationResult?.dailyImpacts?.length) return 0;
     return Math.max(...this.multiSimulationResult.dailyImpacts.map((d: any) => d.rate));
@@ -321,8 +361,12 @@ export class TeamAbsences implements OnInit, OnDestroy {
         const take = (loadOptions.take && loadOptions.take > 0) ? loadOptions.take : this.pageSize;
         const skip = loadOptions.skip ?? 0;
         const page = Math.floor(skip / take) + 1;
+
+        // ✅ URL avec filtres catégorie + pending
         let url = `${environment.apiUrl}/demande/team/absences?page=${page}&pageSize=${take}`;
         if (this.pendingOnly) url += '&status=PendingTeamLead';
+        if (this.selectedCategoryId) url += `&categoryId=${this.selectedCategoryId}`;
+
         return firstValueFrom(
           this.http.get<ApiResponse<any>>(url, { headers: this.getHeaders() })
         ).then(res => {
@@ -347,7 +391,6 @@ export class TeamAbsences implements OnInit, OnDestroy {
     });
   }
 
-  // ── Simulation simple ─────────────────────────────────────────────────────
   simulateRequest(request: any): void {
     this.selectedRequest = request;
     this.simulationResult = null;

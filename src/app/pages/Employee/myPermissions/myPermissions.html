@@ -26,8 +26,8 @@
       </dx-data-grid>
     </div>
 
-    <div class="cards-view" [class.is-loading]="isLoading" *ngIf="activeView === 'card'"> <dx-card-view
-        [dataSource]="cardDataSource" keyExpr="id" [cardMinWidth]="280" cardsPerRow="auto"
+    <div class="cards-view" [class.is-loading]="isLoading" *ngIf="activeView === 'card'">
+      <dx-card-view [dataSource]="cardDataSource" keyExpr="id" [cardMinWidth]="280" cardsPerRow="auto"
         [remoteOperations]="{ paging: true }">
         <dxo-card-view-search-panel [visible]="true"
           [placeholder]="'MY_PERMISSIONS.SEARCH' | translate"></dxo-card-view-search-panel>
@@ -55,16 +55,24 @@
             </div>
           </div>
           <div class="card-divider"></div>
-          <div class="card-statuses">
+          <div class="card-statuses" style="display:flex; align-items:center; justify-content:space-between;">
             <span class="badge" [class]="getStatusClass(params.field.value?.status)">
               {{ getStatusLabel(params.field.value?.status) }}
             </span>
+            <!-- ✅ Bouton Annuler dans la card view -->
+            @if (canCancel(params.field.value?.status)) {
+            <button class="action-btn delete-btn" style="font-size:12px; padding:4px 10px;"
+              (click)="cancelRequest(params.field.value); $event.stopPropagation()">
+              <i class="dx-icon dx-icon-close"></i> Annuler
+            </button>
+            }
           </div>
         </div>
       </dx-card-view>
     </div>
   </div>
 
+  <!-- Popup formulaire nouvelle permission -->
   <dx-popup [(visible)]="showPopup" [width]="500" [height]="'auto'" [title]="'MY_PERMISSIONS.NEW_TITLE' | translate"
     [showCloseButton]="!isSaving">
     <div *dxTemplate="let data of 'content'" class="profile-form">
@@ -123,4 +131,33 @@
       </dx-validation-group>
     </div>
   </dx-popup>
+
+  <!-- ✅ Popup confirmation annulation permission -->
+  <dx-popup [(visible)]="showCancelPopup" [width]="420" [height]="'auto'" title="Annuler la permission"
+    [showCloseButton]="!isCancelling">
+    <div *dxTemplate="let data of 'content'" class="profile-form">
+      <div class="form-section">
+        <p class="delete-message">
+          Voulez-vous annuler votre demande de permission du
+          <strong>{{ requestToCancel?.startDate | date:'dd/MM/yyyy' }}</strong>
+          de <strong>{{ requestToCancel?.startTime?.substring(0,5) }}</strong>
+          à <strong>{{ requestToCancel?.endTime?.substring(0,5) }}</strong> ?
+          <br><br>
+          <span style="color:#6E8597; font-size:13px;">
+            Cette action est irréversible. La demande sera supprimée.
+          </span>
+        </p>
+      </div>
+      <div class="form-actions">
+        <dx-button text="Retour" [disabled]="isCancelling" (onClick)="showCancelPopup = false"></dx-button>
+        <dx-button type="danger" [disabled]="isCancelling" (onClick)="confirmCancel()">
+          <div *dxTemplate="let data of 'content'" style="display:flex;align-items:center;gap:8px;">
+            <dx-load-indicator [visible]="isCancelling" height="16" width="16"></dx-load-indicator>
+            @if (!isCancelling) { <span>Confirmer l'annulation</span> }
+          </div>
+        </dx-button>
+      </div>
+    </div>
+  </dx-popup>
+
 </div>

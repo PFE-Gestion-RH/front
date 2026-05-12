@@ -34,8 +34,7 @@
         <dxo-card-view-pager [visible]="true" [showNavigationButtons]="true" [showInfo]="true"
           [infoText]="'MY_ABSENCES.INFO' | translate">
         </dxo-card-view-pager>
-        <dxi-card-view-column dataField="leaveCategoryName" [visible]="false"
-          [allowSearch]="true"></dxi-card-view-column>
+        <dxi-card-view-column dataField="leaveCategoryName" [visible]="false" [allowSearch]="true"></dxi-card-view-column>
         <dxi-card-view-column dataField="startDate" [visible]="false" [allowSearch]="true"></dxi-card-view-column>
         <dxi-card-view-column dataField="endDate" [visible]="false" [allowSearch]="true"></dxi-card-view-column>
         <dxi-card-view-column dataField="numberOfDays" [visible]="false" [allowSearch]="true"></dxi-card-view-column>
@@ -55,17 +54,24 @@
             <span class="badge days-badge">{{ params.field.value?.numberOfDays }}d</span>
           </div>
           <div class="card-divider"></div>
-          <div class="card-statuses">
+          <div class="card-statuses" style="display:flex; align-items:center; justify-content:space-between;">
             <span class="badge" [class]="getStatusClass(params.field.value?.status)">
               {{ getStatusLabel(params.field.value?.status) }}
             </span>
+            <!-- ✅ Bouton Annuler dans la card view -->
+            @if (canCancel(params.field.value?.status)) {
+            <button class="action-btn delete-btn" style="font-size:12px; padding:4px 10px;"
+              (click)="cancelRequest(params.field.value); $event.stopPropagation()">
+              <i class="dx-icon dx-icon-close"></i> Annuler
+            </button>
+            }
           </div>
         </div>
       </dx-card-view>
     </div>
   </div>
 
-  <!-- Popup formulaire -->
+  <!-- Popup formulaire nouvelle absence -->
   <dx-popup [(visible)]="showPopup" [width]="popupWidth" [height]="'auto'" [maxHeight]="popupMaxHeight"
     [title]="'MY_ABSENCES.NEW_TITLE' | translate" [showCloseButton]="!isSaving">
     <div *dxTemplate="let data of 'content'" class="profile-form">
@@ -114,18 +120,45 @@
               </dx-validator>
             </dx-date-range-box>
 
-            <!-- Message Groq AI — masqué si alternatives visibles -->
-            <div class="gemini-message loading" *ngIf="geminiLoading && alternatives.length === 0">
+            <div class="gemini-message loading" *ngIf="geminiLoading">
               🤖 Analyse en cours...
             </div>
-            <div class="gemini-message" *ngIf="geminiMessage && !geminiLoading && alternatives.length === 0">
-              <div *ngFor="let line of geminiMessage.split('\n')">{{ line }}</div>
+
+            <div class="gemini-message" *ngIf="geminiMessage && !geminiLoading">
+              {{ geminiMessage }}
             </div>
-            <!-- Alternatives IA -->
+
+            <div *ngIf="!geminiLoading && teamAnalyses.length > 0">
+              <div *ngFor="let team of teamAnalyses" class="team-analysis-block" [class.critical]="team.isCritical">
+                <div class="team-analysis-header">
+                  <span class="team-analysis-name">
+                    <i class="dx-icon dx-icon-group"></i> {{ team.teamName }}
+                  </span>
+                  <span class="badge" [class.rejected]="team.isCritical" [class.approved]="!team.isCritical">
+                    {{ team.isCritical ? '⚠️ Critique' : '✅ OK' }}
+                  </span>
+                </div>
+                <div class="team-analysis-message">{{ team.groqMessage }}</div>
+                <div *ngIf="team.isCritical && team.alternatives.length > 0" class="alternatives-section">
+                  <p style="font-size:12px; font-weight:600; margin-bottom:6px; color:var(--color-text-primary);">
+                    📅 Périodes disponibles pour {{ team.teamName }} :
+                  </p>
+                  <div *ngFor="let alt of team.alternatives" class="alternative-item" (click)="selectAlternative(alt)">
+                    <span class="alt-icon">✅</span>
+                    <span class="alt-dates">
+                      {{ alt.startDate | date:'dd/MM' }} → {{ alt.endDate | date:'dd/MM/yyyy' }}
+                    </span>
+                    <span class="alt-reason">{{ alt.reason }}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
             <div class="alternatives-loading" *ngIf="loadingAlternatives">
               🤖 Recherche d'alternatives en cours...
             </div>
-            <div class="alternatives" *ngIf="alternatives.length > 0 && !loadingAlternatives">
+            <div class="alternatives"
+              *ngIf="alternatives.length > 0 && !loadingAlternatives && teamAnalyses.length === 0">
               <p class="alternatives-title">📅 Dates alternatives suggérées par l'IA :</p>
               <div class="alternative-item" *ngFor="let alt of alternatives" (click)="selectAlternative(alt)">
                 <span class="alt-icon">✅</span>
@@ -183,19 +216,43 @@
     </div>
   </dx-popup>
 
-  <!-- Popup avertissement -->
-  <dx-popup [(visible)]="showWarningPopup" [width]="420" [height]="'auto'" [showTitle]="false" [showCloseButton]="false"
-    [dragEnabled]="false">
+  <!-- Popup avertissement période critique -->
+  <dx-popup [(visible)]="showWarningPopup" [width]="420" [height]="'auto'" [showTitle]="false"
+    [showCloseButton]="false" [dragEnabled]="false">
     <div *dxTemplate="let data of 'content'" class="warning-popup">
       <h3 class="warning-title">Période chargée</h3>
       <p class="warning-text">{{ warningMessage }}</p>
       <div class="warning-actions">
-        <button class="btn-secondary" (click)="cancelWarning()">
-          Choisir d'autres dates
-        </button>
-        <button class="btn-primary" (click)="confirmSubmit()">
-          Soumettre quand même
-        </button>
+        <button class="btn-secondary" (click)="cancelWarning()">Choisir d'autres dates</button>
+        <button class="btn-primary" (click)="confirmSubmit()">Soumettre quand même</button>
+      </div>
+    </div>
+  </dx-popup>
+
+  <!-- ✅ Popup confirmation annulation demande -->
+  <dx-popup [(visible)]="showCancelPopup" [width]="420" [height]="'auto'" title="Annuler la demande"
+    [showCloseButton]="!isCancelling">
+    <div *dxTemplate="let data of 'content'" class="profile-form">
+      <div class="form-section">
+        <p class="delete-message">
+          Voulez-vous annuler votre demande de
+          <strong>{{ requestToCancel?.leaveCategoryName }}</strong>
+          du <strong>{{ requestToCancel?.startDate | date:'dd/MM/yyyy' }}</strong>
+          au <strong>{{ requestToCancel?.endDate | date:'dd/MM/yyyy' }}</strong> ?
+          <br><br>
+          <span style="color:#6E8597; font-size:13px;">
+            Cette action est irréversible. La demande sera supprimée.
+          </span>
+        </p>
+      </div>
+      <div class="form-actions">
+        <dx-button text="Retour" [disabled]="isCancelling" (onClick)="showCancelPopup = false"></dx-button>
+        <dx-button type="danger" [disabled]="isCancelling" (onClick)="confirmCancel()">
+          <div *dxTemplate="let data of 'content'" style="display:flex;align-items:center;gap:8px;">
+            <dx-load-indicator [visible]="isCancelling" height="16" width="16"></dx-load-indicator>
+            @if (!isCancelling) { <span>Confirmer l'annulation</span> }
+          </div>
+        </dx-button>
       </div>
     </div>
   </dx-popup>

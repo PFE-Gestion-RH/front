@@ -3,11 +3,13 @@ export interface CalendarEvent {
     text: string;
     startDate: Date;
     endDate: Date;
-    type: 'absence' | 'permission';
+    type: 'absence' | 'permission' | 'holiday';
     employeeId?: number;
     employeeName?: string;
+    isPending?: boolean;
+
     description?: string;
     allDay?: boolean;
-    startTime?: string;   // ← ajoute
-    endTime?: string;     // ← ajoute
+    startTime?: string;   
+    endTime?: string;    
 }

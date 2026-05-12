@@ -179,7 +179,25 @@
     }
 }
 
-.groq-analysis,
+.priority-high {
+    background-color: #dcfce7;
+    color: #166534;
+    border: 1px solid #bbf7d0;
+}
+
+.priority-medium {
+    background-color: #fff7ed;
+    color: #9a3412;
+    border: 1px solid #fed7aa;
+}
+
+.priority-low {
+    background-color: #fef2f2;
+    color: #991b1b;
+    border: 1px solid #fecaca;
+}
+
+.deepseek-analysis,
 .simulation-message {
     padding: 10px 14px;
     border-radius: 8px;
@@ -210,4 +228,10 @@
 .simulate-btn {
     color: #3B8AB2 !important;
     border-color: #3B8AB2 !important;
+}
+
+.team-absences-page {
+    .dx-checkbox-text {
+        white-space: nowrap !important;
+    }
 }
