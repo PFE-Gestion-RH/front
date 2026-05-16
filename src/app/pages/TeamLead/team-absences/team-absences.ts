@@ -2,6 +2,7 @@ import { Component, OnInit, OnDestroy, ChangeDetectorRef, ViewEncapsulation, eff
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import { firstValueFrom, Subscription } from 'rxjs';
 import { SharedService } from '../../../services/shared.service';
 import { ToastType } from '../../../components/toast/toast';
@@ -52,7 +53,12 @@ export class TeamAbsences implements OnInit, OnDestroy {
   rejectionReason = '';
   pendingOnly = false;
 
-  // ✅ FILTRE CATÉGORIE
+  // ✅ Document viewer
+  showDocumentPopup = false;
+  documentUrl: SafeResourceUrl | null = null;
+  documentType: 'pdf' | 'image' | null = null;
+  currentDocumentBase64 = '';
+
   categories: any[] = [];
   selectedCategoryId: number | null = null;
 
@@ -76,7 +82,8 @@ export class TeamAbsences implements OnInit, OnDestroy {
     private sharedService: SharedService,
     private cdr: ChangeDetectorRef,
     private signalRService: SignalRService,
-    private translate: TranslateService
+    private translate: TranslateService,
+    private sanitizer: DomSanitizer
   ) {
     effect(() => {
       const view = this.sharedService.viewMode();
@@ -126,7 +133,6 @@ export class TeamAbsences implements OnInit, OnDestroy {
     this.cdr.detectChanges();
   }
 
-  // ✅ Charger les catégories
   loadCategories(): void {
     this.http.get<ApiResponse<any>>(
       `${environment.apiUrl}/leave-categories`,
@@ -145,10 +151,41 @@ export class TeamAbsences implements OnInit, OnDestroy {
     });
   }
 
-  // ✅ Quand catégorie change
   onCategoryChange(): void {
     this.selectedIds.clear();
     this.initSharedDataSource();
+  }
+
+  // ✅ Ouvre le document dans la popup
+  openDocumentViewer(documentBase64: string): void {
+    if (!documentBase64) return;
+
+    this.currentDocumentBase64 = documentBase64;
+
+    if (documentBase64.includes('application/pdf')) {
+      this.documentType = 'pdf';
+    } else if (documentBase64.includes('image/')) {
+      this.documentType = 'image';
+    } else {
+      this.documentType = 'image';
+    }
+
+    this.documentUrl = this.sanitizer.bypassSecurityTrustResourceUrl(documentBase64);
+    this.showDocumentPopup = true;
+    this.cdr.detectChanges();
+  }
+
+  // ✅ Télécharge le document
+  downloadDocument(): void {
+    if (!this.currentDocumentBase64) return;
+
+    const extension = this.documentType === 'pdf' ? 'pdf' : 'png';
+    const link = document.createElement('a');
+    link.href = this.currentDocumentBase64;
+    link.download = `document_medical_${Date.now()}.${extension}`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
   }
 
   toggleSelection(id: number): void {
@@ -259,6 +296,33 @@ export class TeamAbsences implements OnInit, OnDestroy {
       { dataField: 'startDate', caption: this.translate.instant('TEAM_ABSENCES.START_DATE'), dataType: 'date' as any, format: 'dd/MM/yyyy' },
       { dataField: 'endDate', caption: this.translate.instant('TEAM_ABSENCES.END_DATE'), dataType: 'date' as any, format: 'dd/MM/yyyy' },
       { dataField: 'numberOfDays', caption: this.translate.instant('TEAM_ABSENCES.DAYS') },
+
+      // ✅ Colonne Document
+      {
+        caption: 'Document',
+        allowFiltering: false,
+        allowSorting: false,
+        width: 110,
+        cellTemplate: (container: any, options: any) => {
+          const doc = options.data.document;
+          if (doc) {
+            const btn = document.createElement('button');
+            btn.className = 'doc-link-btn';
+            btn.innerHTML = `<i class="dx-icon dx-icon-doc"></i> Voir`;
+            btn.onclick = (e) => {
+              e.stopPropagation();
+              this.openDocumentViewer(doc);
+            };
+            container.append(btn);
+          } else {
+            const span = document.createElement('span');
+            span.textContent = '—';
+            span.style.color = '#9CA3AF';
+            container.append(span);
+          }
+        }
+      },
+
       {
         caption: this.translate.instant('TEAM_ABSENCES.STATUS'),
         cellTemplate: (container: any, options: any) => {
@@ -362,7 +426,6 @@ export class TeamAbsences implements OnInit, OnDestroy {
         const skip = loadOptions.skip ?? 0;
         const page = Math.floor(skip / take) + 1;
 
-        // ✅ URL avec filtres catégorie + pending
         let url = `${environment.apiUrl}/demande/team/absences?page=${page}&pageSize=${take}`;
         if (this.pendingOnly) url += '&status=PendingTeamLead';
         if (this.selectedCategoryId) url += `&categoryId=${this.selectedCategoryId}`;

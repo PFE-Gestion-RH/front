@@ -36,6 +36,7 @@
                     </span>
                 </span>
             </div>
+
             <div class="kpi-card kpi-card--date">
                 <span class="kpi-label">{{ 'EMPLOYEE_DASHBOARD.NEXT_LEAVE' | translate }}</span>
                 <span class="kpi-value-date">{{ data.kpi.nextLeaveDate || data.kpi.todayDate }}</span>
@@ -84,6 +85,7 @@
 
         <div class="table-card">
             <h3 class="table-title">{{ 'EMPLOYEE_DASHBOARD.RECENT_REQUESTS' | translate }}</h3>
+
             <div *ngIf="data.myRequests.length === 0" class="empty-state">
                 {{ 'EMPLOYEE_DASHBOARD.NO_REQUESTS' | translate }}
             </div>
@@ -92,13 +94,25 @@
             <dx-data-grid *ngIf="data.myRequests.length > 0" class="table-view" [dataSource]="data.myRequests"
                 [showBorders]="true" [showRowLines]="true" [showColumnLines]="true" [hoverStateEnabled]="true"
                 [columnAutoWidth]="true">
-                <dxi-column dataField="type" [caption]="'EMPLOYEE_DASHBOARD.TYPE_COL' | translate"
-                    [minWidth]="100"></dxi-column>
-                <dxi-column [caption]="'EMPLOYEE_DASHBOARD.DATES' | translate" [minWidth]="140"
-                    cellTemplate="datesTpl"></dxi-column>
+
+                <dxi-column dataField="type" [caption]="'EMPLOYEE_DASHBOARD.TYPE_COL' | translate" [minWidth]="100">
+                </dxi-column>
+
+                <dxi-column [caption]="'EMPLOYEE_DASHBOARD.DATES' | translate" [minWidth]="140" cellTemplate="datesTpl">
+                </dxi-column>
+
                 <dxi-column [caption]="'EMPLOYEE_DASHBOARD.STATUS' | translate" [minWidth]="110"
-                    cellTemplate="statusTpl"></dxi-column>
-                <div *dxTemplate="let cell of 'datesTpl'">{{ cell.data.startDate }} → {{ cell.data.endDate }}</div>
+                    cellTemplate="statusTpl">
+                </dxi-column>
+
+                <dxi-column [caption]="'EMPLOYEE_DASHBOARD.ACTIONS' | translate" [minWidth]="120"
+                    cellTemplate="actionsTpl">
+                </dxi-column>
+
+                <div *dxTemplate="let cell of 'datesTpl'">
+                    {{ cell.data.startDate }} → {{ cell.data.endDate }}
+                </div>
+
                 <div *dxTemplate="let cell of 'statusTpl'">
                     <span class="badge" [class.badge-warn]="getStatusConfig(cell.data.status).cssClass === 'badge-warn'"
                         [class.badge-ok]="getStatusConfig(cell.data.status).cssClass === 'badge-ok'"
@@ -107,6 +121,21 @@
                         {{ getStatusConfig(cell.data.status).label }}
                     </span>
                 </div>
+
+                <div *dxTemplate="let cell of 'actionsTpl'">
+                    @if (cell.data.status === 'PendingTeamLead' || cell.data.status === 'PendingAdministration') {
+                    <button class="cancel-btn" [disabled]="cancellingId === cell.data.id" (click)="onCancel(cell.data)">
+                        <dx-load-indicator *ngIf="cancellingId === cell.data.id" height="14" width="14"
+                            [visible]="true">
+                        </dx-load-indicator>
+                        <span *ngIf="cancellingId !== cell.data.id">
+                            <i class="dx-icon dx-icon-close"></i>
+                            {{ 'EMPLOYEE_DASHBOARD.CANCEL' | translate }}
+                        </span>
+                    </button>
+                    }
+                </div>
+
                 <dxo-pager [showPageSizeSelector]="false" [showInfo]="false"></dxo-pager>
             </dx-data-grid>
 
@@ -123,6 +152,16 @@
                         </span>
                     </div>
                     <div class="request-dates">{{ req.startDate }} → {{ req.endDate }}</div>
+                    @if (req.status === 'PendingTeamLead' || req.status === 'PendingAdministration') {
+                    <button class="cancel-btn" [disabled]="cancellingId === req.id" (click)="onCancel(req)">
+                        <dx-load-indicator *ngIf="cancellingId === req.id" height="14" width="14" [visible]="true">
+                        </dx-load-indicator>
+                        <span *ngIf="cancellingId !== req.id">
+                            <i class="dx-icon dx-icon-close"></i>
+                            {{ 'EMPLOYEE_DASHBOARD.CANCEL' | translate }}
+                        </span>
+                    </button>
+                    }
                 </div>
             </div>
         </div>

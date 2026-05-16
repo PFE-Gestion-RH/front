@@ -119,105 +119,88 @@
     </span>
   </div>
 
-  <!-- ✅ Popup Simulation Permission -->
+  <!-- Popup Simulation Permission -->
   <dx-popup [(visible)]="showSimulatePopup" [width]="480" [height]="'auto'" [maxHeight]="'85vh'"
     title="Simulation d'approbation — Permission" [showCloseButton]="true">
-    <div *dxTemplate="let data of 'content'" class="profile-form">
-      <div class="form-section">
+    <div *dxTemplate="let data of 'content'" class="sim-popup-content">
 
-        @if (isSimulating) {
-        <div style="display:flex; align-items:center; gap:12px; padding:16px 0;">
-          <dx-load-indicator [visible]="true" height="24" width="24"></dx-load-indicator>
-          <span style="color:var(--color-text-secondary); font-size:14px;">Analyse en cours...</span>
-        </div>
-        }
-
-        @if (!isSimulating && simulationResult) {
-        <div class="simulation-result">
-
-          <!-- Employé + période -->
-          <p class="simulation-employee">
-            <strong>{{ selectedRequest?.employeeName }}</strong> —
-            {{ selectedRequest?.startDate | date:'dd/MM/yyyy' }}
-            {{ selectedRequest?.startTime?.substring(0,5) }} → {{ selectedRequest?.endTime?.substring(0,5) }}
-          </p>
-
-          <!-- ✅ Alerte conflit horaire -->
-          @if (simulationResult.hasHourlyConflict) {
-          <div style="background:#fef2f2; border:1px solid #EF4444; border-radius:8px;
-                      padding:10px 14px; margin-bottom:12px;">
-            <p style="font-size:13px; font-weight:600; color:#EF4444; margin:0 0 4px 0;">
-              ⚠️ Conflit horaire détecté
-            </p>
-            <p style="font-size:12px; color:#EF4444; margin:0;">
-              {{ simulationResult.conflictDetail }}
-            </p>
-          </div>
-          }
-
-          <!-- Avant / Après -->
-          <div class="simulation-comparison">
-            <div class="sim-card before">
-              <span class="sim-label">Avant</span>
-              <span class="sim-value"
-                [style.color]="simulationResult.rateBefore >= 50 ? '#EF4444' : simulationResult.rateBefore >= 30 ? '#F59E0B' : '#10B981'">
-                {{ simulationResult.rateBefore }}%
-              </span>
-              <span class="sim-sub">
-                {{ simulationResult.unavailableBefore }} / {{ simulationResult.totalMembers }} indisponible(s)
-              </span>
-            </div>
-            <div class="sim-arrow">→</div>
-            <div class="sim-card after" [class.alert]="simulationResult.alert">
-              <span class="sim-label">Après</span>
-              <span class="sim-value"
-                [style.color]="simulationResult.rateAfter >= 50 ? '#EF4444' : simulationResult.rateAfter >= 30 ? '#F59E0B' : '#10B981'">
-                {{ simulationResult.rateAfter }}%
-              </span>
-              <span class="sim-sub">
-                {{ simulationResult.unavailableAfter }} / {{ simulationResult.totalMembers }} indisponible(s)
-              </span>
-            </div>
-          </div>
-
-          <!-- ✅ Absents ce jour -->
-          @if (simulationResult.absentEmployeeNames) {
-          <div class="sim-card" style="margin-top:10px; padding:10px 14px; border-left:3px solid #EF4444;">
-            <span class="sim-label">Absents ce jour</span>
-            <span class="sim-sub" style="color:#EF4444; margin-top:4px;">
-              {{ simulationResult.absentEmployeeNames }}
-            </span>
-          </div>
-          }
-
-          <!-- ✅ Déjà en permission ce jour -->
-          @if (simulationResult.permissionEmployeeNames) {
-          <div class="sim-card" style="margin-top:10px; padding:10px 14px; border-left:3px solid #F59E0B;">
-            <span class="sim-label">Déjà en permission ce jour</span>
-            <span class="sim-sub" style="color:#F59E0B; margin-top:4px;">
-              {{ simulationResult.permissionEmployeeNames }}
-            </span>
-          </div>
-          }
-
-          @if (!simulationResult.absentEmployeeNames && !simulationResult.permissionEmployeeNames) {
-          <div class="sim-card" style="margin-top:10px; padding:10px 14px; border-left:3px solid #10B981;">
-            <span class="sim-label">Disponibilité équipe</span>
-            <span class="sim-sub" style="color:#10B981; margin-top:4px;">
-              Aucun autre membre absent ou en permission ce jour
-            </span>
-          </div>
-          }
-
-          <!-- Message Groq -->
-          <div class="simulation-message" [class.alert]="simulationResult.alert" style="margin-top:10px;">
-            {{ simulationResult.message }}
-          </div>
-
-        </div>
-        }
+      @if (isSimulating) {
+      <div class="sim-loading">
+        <dx-load-indicator [visible]="true" height="24" width="24"></dx-load-indicator>
+        <span>Analyse en cours...</span>
       </div>
-      <div class="form-actions">
+      }
+
+      @if (!isSimulating && simulationResult) {
+      <div class="sim-body">
+
+        <p class="sim-employee">
+          <strong>{{ selectedRequest?.employeeName }}</strong>
+          <span>{{ selectedRequest?.startDate | date:'dd/MM/yyyy' }} {{ selectedRequest?.startTime?.substring(0,5) }} →
+            {{ selectedRequest?.endTime?.substring(0,5) }}</span>
+        </p>
+
+        @if (simulationResult.hasHourlyConflict) {
+        <div class="sim-info sim-info--red">
+          <span class="sim-info__label">Conflit horaire détecté</span>
+          <span class="sim-info__value">{{ simulationResult.conflictDetail }}</span>
+        </div>
+        }
+
+        <div class="sim-comparison">
+          <div class="sim-card" [class.sim-card--alert]="simulationResult.rateBefore >= 50">
+            <span class="sim-card__label">Avant</span>
+            <span class="sim-card__value" [class.color-green]="simulationResult.rateBefore < 30"
+              [class.color-orange]="simulationResult.rateBefore >= 30 && simulationResult.rateBefore < 50"
+              [class.color-red]="simulationResult.rateBefore >= 50">
+              {{ simulationResult.rateBefore }}%
+            </span>
+            <span class="sim-card__sub">{{ simulationResult.unavailableBefore }} / {{ simulationResult.totalMembers }}
+              indisponible(s)</span>
+          </div>
+          <div class="sim-arrow">→</div>
+          <div class="sim-card" [class.sim-card--alert]="simulationResult.rateAfter >= 50">
+            <span class="sim-card__label">Après</span>
+            <span class="sim-card__value" [class.color-green]="simulationResult.rateAfter < 30"
+              [class.color-orange]="simulationResult.rateAfter >= 30 && simulationResult.rateAfter < 50"
+              [class.color-red]="simulationResult.rateAfter >= 50">
+              {{ simulationResult.rateAfter }}%
+            </span>
+            <span class="sim-card__sub">{{ simulationResult.unavailableAfter }} / {{ simulationResult.totalMembers }}
+              indisponible(s)</span>
+          </div>
+        </div>
+
+        @if (simulationResult.absentEmployeeNames) {
+        <div class="sim-info sim-info--red">
+          <span class="sim-info__label">Absents ce jour</span>
+          <span class="sim-info__value">{{ simulationResult.absentEmployeeNames }}</span>
+        </div>
+        }
+
+        @if (simulationResult.permissionEmployeeNames) {
+        <div class="sim-info sim-info--orange">
+          <span class="sim-info__label">Déjà en permission ce jour</span>
+          <span class="sim-info__value">{{ simulationResult.permissionEmployeeNames }}</span>
+        </div>
+        }
+
+        @if (!simulationResult.absentEmployeeNames && !simulationResult.permissionEmployeeNames) {
+        <div class="sim-info sim-info--green">
+          <span class="sim-info__label">Disponibilité équipe</span>
+          <span class="sim-info__value">Aucun autre membre absent ou en permission ce jour</span>
+        </div>
+        }
+
+        <div class="sim-message" [class.sim-message--warning]="simulationResult.alert"
+          [class.sim-message--success]="!simulationResult.alert">
+          {{ simulationResult.message }}
+        </div>
+
+      </div>
+      }
+
+      <div class="sim-footer">
         <dx-button text="Fermer" (onClick)="showSimulatePopup = false"></dx-button>
         @if (!isSimulating && simulationResult) {
         <dx-button text="Rejeter" type="danger"
@@ -228,7 +211,6 @@
       </div>
     </div>
   </dx-popup>
-
   <!-- Popup Approve -->
   <dx-popup [(visible)]="showApprovePopup" [width]="400" [height]="'auto'" [maxHeight]="'80vh'"
     [title]="'TEAM_PERMISSIONS.APPROVE_TITLE' | translate" [showCloseButton]="!isProcessing">

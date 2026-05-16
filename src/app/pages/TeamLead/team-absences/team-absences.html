@@ -111,6 +111,14 @@
             </span>
           </div>
 
+          <div class="card-document-row" *ngIf="params.field.value?.document">
+            <button class="card-document-link"
+              (click)="openDocumentViewer(params.field.value?.document); $event.stopPropagation()">
+              <i class="dx-icon dx-icon-doc"></i>
+              Voir document médical
+            </button>
+          </div>
+
           <div class="card-divider"></div>
           <div class="card-actions">
             @if (params.field.value?.status === 'PendingTeamLead') {
@@ -149,88 +157,122 @@
     </span>
   </div>
 
-  <!-- ✅ Popup Simulation Simple — avec dernière absence + absents -->
+  <!-- Popup Visualisation Document -->
+  <dx-popup [(visible)]="showDocumentPopup" [width]="'80%'" [height]="'90%'" title="Document médical"
+    [showCloseButton]="true">
+    <div *dxTemplate="let data of 'content'" class="document-viewer">
+      <div class="document-actions">
+        <dx-button text="Télécharger" type="default" icon="download" (onClick)="downloadDocument()">
+        </dx-button>
+      </div>
+      <div class="document-content">
+        <iframe *ngIf="documentType === 'pdf'" [src]="documentUrl" width="100%" height="100%" style="border: none;">
+        </iframe>
+        <img *ngIf="documentType === 'image'" [src]="documentUrl" alt="Document médical"
+          style="max-width: 100%; max-height: 100%; object-fit: contain;" />
+      </div>
+    </div>
+  </dx-popup>
+
+  <!-- Popup Simulation Simple -->
   <dx-popup [(visible)]="showSimulatePopup" [width]="480" [height]="'auto'" [maxHeight]="'85vh'"
     [title]="'TEAM_ABSENCES.SIMULATE_TITLE' | translate" [showCloseButton]="true">
-    <div *dxTemplate="let data of 'content'" class="profile-form">
-      <div class="form-section">
-        @if (isSimulating) {
-        <div style="display:flex; align-items:center; gap:12px; padding:16px 0;">
-          <dx-load-indicator [visible]="true" height="24" width="24"></dx-load-indicator>
-          <span style="color:var(--color-text-secondary); font-size:14px;">
-            {{ 'TEAM_ABSENCES.SIMULATING' | translate }}
-          </span>
-        </div>
-        }
+    <div *dxTemplate="let data of 'content'" class="sim-popup-content">
 
-        @if (!isSimulating && simulationResult) {
-        <div class="simulation-result">
-
-          <!-- Employé + période -->
-          <p class="simulation-employee">
-            <strong>{{ selectedRequest?.employeeName }}</strong> —
-            {{ selectedRequest?.startDate | date:'dd/MM/yyyy' }} →
-            {{ selectedRequest?.endDate | date:'dd/MM/yyyy' }}
-          </p>
-
-          <!-- Avant / Après -->
-          <div class="simulation-comparison">
-            <div class="sim-card before">
-              <span class="sim-label">{{ 'TEAM_ABSENCES.SIM_BEFORE' | translate }}</span>
-              <span class="sim-value"
-                [style.color]="simulationResult.rateBefore >= 50 ? '#EF4444' : simulationResult.rateBefore >= 30 ? '#F59E0B' : '#10B981'">
-                {{ simulationResult.rateBefore }}%
-              </span>
-              <span class="sim-sub">{{ simulationResult.absentBefore }} / {{ simulationResult.totalMembers }}
-                {{ 'TEAM_ABSENCES.SIM_ABSENT' | translate }}</span>
-            </div>
-            <div class="sim-arrow">→</div>
-            <div class="sim-card after" [class.alert]="simulationResult.alert">
-              <span class="sim-label">{{ 'TEAM_ABSENCES.SIM_AFTER' | translate }}</span>
-              <span class="sim-value"
-                [style.color]="simulationResult.rateAfter >= 50 ? '#EF4444' : simulationResult.rateAfter >= 30 ? '#F59E0B' : '#10B981'">
-                {{ simulationResult.rateAfter }}%
-              </span>
-              <span class="sim-sub">{{ simulationResult.absentAfter }} / {{ simulationResult.totalMembers }}
-                {{ 'TEAM_ABSENCES.SIM_ABSENT' | translate }}</span>
-            </div>
-          </div>
-
-          <!-- ✅ Absents pendant la période -->
-          @if (simulationResult.absentEmployeeNames) {
-          <div class="sim-card" style="margin-top:10px; padding:10px 14px; border-left:3px solid #EF4444;">
-            <span class="sim-label">Déjà absent(s) pendant cette période</span>
-            <span class="sim-sub" style="color:#EF4444; margin-top:4px;">
-              {{ simulationResult.absentEmployeeNames }}
-            </span>
-          </div>
-          }
-
-          <!-- ✅ Dernière absence de l'employé -->
-          @if (simulationResult.lastAbsenceStart) {
-          <div class="sim-card" style="margin-top:10px; padding:10px 14px; border-left:3px solid #3B8AB2;">
-            <span class="sim-label">Dernière absence de {{ selectedRequest?.employeeName }}</span>
-            <span class="sim-sub" style="margin-top:4px;">
-              {{ simulationResult.lastAbsenceCategory }} —
-              {{ simulationResult.lastAbsenceStart }} → {{ simulationResult.lastAbsenceEnd }}
-            </span>
-          </div>
-          } @else {
-          <div class="sim-card" style="margin-top:10px; padding:10px 14px; border-left:3px solid #10B981;">
-            <span class="sim-label">Dernière absence de {{ selectedRequest?.employeeName }}</span>
-            <span class="sim-sub" style="color:#10B981; margin-top:4px;">Aucune absence précédente</span>
-          </div>
-          }
-
-          <!-- Message Groq -->
-          <div class="simulation-message" [class.alert]="simulationResult.alert" style="margin-top:10px;">
-            {{ simulationResult.message }}
-          </div>
-
-        </div>
-        }
+      @if (isSimulating) {
+      <div class="sim-loading">
+        <dx-load-indicator [visible]="true" height="24" width="24"></dx-load-indicator>
+        <span>{{ 'TEAM_ABSENCES.SIMULATING' | translate }}</span>
       </div>
-      <div class="form-actions">
+      }
+
+      @if (!isSimulating && simulationResult) {
+      <div class="sim-body">
+
+        <p class="sim-employee">
+          <strong>{{ selectedRequest?.employeeName }}</strong>
+          <span>{{ selectedRequest?.startDate | date:'dd/MM/yyyy' }} → {{ selectedRequest?.endDate | date:'dd/MM/yyyy'
+            }}</span>
+        </p>
+
+        <div class="sim-comparison">
+          <div class="sim-card" [class.sim-card--alert]="simulationResult?.rateBefore >= 50">
+            <span class="sim-card__label">{{ 'TEAM_ABSENCES.SIM_BEFORE' | translate }}</span>
+            <span class="sim-card__value" [class.color-green]="simulationResult?.rateBefore < 30"
+              [class.color-orange]="simulationResult?.rateBefore >= 30 && simulationResult?.rateBefore < 50"
+              [class.color-red]="simulationResult?.rateBefore >= 50">
+              {{ simulationResult?.rateBefore }}%
+            </span>
+            <span class="sim-card__sub">{{ simulationResult?.absentBefore }} / {{ simulationResult?.totalMembers }} {{
+              'TEAM_ABSENCES.SIM_ABSENT' | translate }}</span>
+          </div>
+          <div class="sim-arrow">→</div>
+          <div class="sim-card" [class.sim-card--alert]="simulationResult?.rateAfter >= 50">
+            <span class="sim-card__label">{{ 'TEAM_ABSENCES.SIM_AFTER' | translate }}</span>
+            <span class="sim-card__value" [class.color-green]="simulationResult?.rateAfter < 30"
+              [class.color-orange]="simulationResult?.rateAfter >= 30 && simulationResult?.rateAfter < 50"
+              [class.color-red]="simulationResult?.rateAfter >= 50">
+              {{ simulationResult?.rateAfter }}%
+            </span>
+            <span class="sim-card__sub">{{ simulationResult?.absentAfter }} / {{ simulationResult?.totalMembers }} {{
+              'TEAM_ABSENCES.SIM_ABSENT' | translate }}</span>
+          </div>
+        </div>
+
+        @if (simulationResult?.absentEmployeeNames) {
+        <div class="sim-info sim-info--red">
+          <span class="sim-info__label">Déjà absent(s) pendant cette période</span>
+          <span class="sim-info__value">{{ simulationResult?.absentEmployeeNames }}</span>
+        </div>
+        }
+
+        @if (simulationResult?.lastAbsenceStart) {
+        <div class="sim-info sim-info--blue">
+          <span class="sim-info__label">Dernière absence de {{ selectedRequest?.employeeName }}</span>
+          <span class="sim-info__value">{{ simulationResult?.lastAbsenceCategory }} — {{
+            simulationResult?.lastAbsenceStart }} → {{ simulationResult?.lastAbsenceEnd }}</span>
+        </div>
+        } @else {
+        <div class="sim-info sim-info--green">
+          <span class="sim-info__label">Dernière absence de {{ selectedRequest?.employeeName }}</span>
+          <span class="sim-info__value">Aucune absence précédente</span>
+        </div>
+        }
+
+        @if (simulationResult?.isLongLeave) {
+        <div class="sim-info" [ngClass]="simulationResult?.hasDocument ? 'sim-info--blue' : 'sim-info--red'">
+          <span class="sim-info__label" style="display:flex; align-items:center; gap:6px;">
+            {{ simulationResult?.hasDocument ? 'Analyse du dossier médical' : 'Dossier médical manquant' }}
+            @if (simulationResult?.hasDocument) {
+            <span class="badge approved" style="font-size:11px; padding:2px 8px;">Dossier fourni</span>
+            }
+          </span>
+          @if (simulationResult?.hasDocument && simulationResult?.medicalAnalysis) {
+          <span class="sim-info__value" style="white-space:pre-line; line-height:1.6; font-weight:400;">
+            {{ simulationResult?.medicalAnalysis }}
+          </span>
+          } @else if (simulationResult?.hasDocument && !simulationResult?.medicalAnalysis) {
+          <span class="sim-info__value" style="font-weight:400; color:var(--color-text-secondary);">
+            Analyse en cours...
+          </span>
+          } @else {
+          <span class="sim-info__value">
+            Aucun document fourni pour ce congé de longue durée.
+          </span>
+          }
+        </div>
+        }
+
+        <div class="sim-message" [class.sim-message--warning]="simulationResult?.alert"
+          [class.sim-message--success]="!simulationResult?.alert">
+          <i class="dx-icon dx-icon-warning" *ngIf="simulationResult?.alert"></i>
+          {{ simulationResult?.message }}
+        </div>
+
+      </div>
+      }
+
+      <div class="sim-footer">
         <dx-button [text]="'TEAM_ABSENCES.CANCEL' | translate" (onClick)="showSimulatePopup = false"></dx-button>
         @if (!isSimulating && simulationResult) {
         <dx-button [text]="'TEAM_ABSENCES.REJECT' | translate" type="danger"
@@ -245,74 +287,81 @@
   <!-- Popup Simulation Multi -->
   <dx-popup [(visible)]="showMultiSimulatePopup" [width]="520" [height]="'auto'" [maxHeight]="'85vh'"
     [title]="'TEAM_ABSENCES.SIMULATE_MULTI_TITLE' | translate" [showCloseButton]="true">
-    <div *dxTemplate="let data of 'content'" class="profile-form">
-      <div class="form-section">
-        @if (isMultiSimulating) {
-        <div style="display:flex; align-items:center; gap:12px; padding:16px 0;">
-          <dx-load-indicator [visible]="true" height="24" width="24"></dx-load-indicator>
-          <span style="color:var(--color-text-secondary); font-size:14px;">
-            {{ 'TEAM_ABSENCES.SIMULATING' | translate }}
-          </span>
+    <div *dxTemplate="let data of 'content'" class="sim-popup-content">
+
+      @if (isMultiSimulating) {
+      <div class="sim-loading">
+        <dx-load-indicator [visible]="true" height="24" width="24"></dx-load-indicator>
+        <span>{{ 'TEAM_ABSENCES.SIMULATING' | translate }}</span>
+      </div>
+      }
+
+      @if (!isMultiSimulating && multiSimulationResult) {
+      <div class="sim-body">
+
+        <div class="sim-comparison">
+          <div class="sim-card" [class.sim-card--alert]="multiSimulationResult?.rateBefore >= 50">
+            <span class="sim-card__label">{{ 'TEAM_ABSENCES.SIM_BEFORE' | translate }}</span>
+            <span class="sim-card__value" [class.color-green]="multiSimulationResult?.rateBefore < 30"
+              [class.color-orange]="multiSimulationResult?.rateBefore >= 30 && multiSimulationResult?.rateBefore < 50"
+              [class.color-red]="multiSimulationResult?.rateBefore >= 50">
+              {{ multiSimulationResult?.rateBefore }}%
+            </span>
+            <span class="sim-card__sub">{{ multiSimulationResult?.absentBefore }} / {{
+              multiSimulationResult?.totalMembers
+              }} {{ 'TEAM_ABSENCES.SIM_ABSENT' | translate }}</span>
+          </div>
+          <div class="sim-arrow">→</div>
+          <div class="sim-card" [class.sim-card--alert]="multiSimulationResult?.rateAfter >= 50">
+            <span class="sim-card__label">{{ 'TEAM_ABSENCES.SIM_AFTER' | translate }}</span>
+            <span class="sim-card__value" [class.color-green]="multiSimulationResult?.rateAfter < 30"
+              [class.color-orange]="multiSimulationResult?.rateAfter >= 30 && multiSimulationResult?.rateAfter < 50"
+              [class.color-red]="multiSimulationResult?.rateAfter >= 50">
+              {{ multiSimulationResult?.rateAfter }}%
+            </span>
+            <span class="sim-card__sub">{{ multiSimulationResult?.absentAfter }} / {{
+              multiSimulationResult?.totalMembers
+              }} {{ 'TEAM_ABSENCES.SIM_ABSENT' | translate }}</span>
+          </div>
         </div>
-        }
-        @if (!isMultiSimulating && multiSimulationResult) {
-        <div class="multi-simulation-result">
-          <div class="simulation-comparison" style="margin-bottom:16px;">
-            <div class="sim-card before">
-              <span class="sim-label">{{ 'TEAM_ABSENCES.SIM_BEFORE' | translate }}</span>
-              <span class="sim-value">{{ multiSimulationResult.rateBefore }}%</span>
-              <span class="sim-sub">
-                {{ multiSimulationResult.absentBefore }} / {{ multiSimulationResult.totalMembers }}
-                {{ 'TEAM_ABSENCES.SIM_ABSENT' | translate }}
-              </span>
-            </div>
-            <div class="sim-arrow">→</div>
-            <div class="sim-card after" [class.alert]="multiSimulationResult.rateAfter >= 50">
-              <span class="sim-label">{{ 'TEAM_ABSENCES.SIM_AFTER' | translate }}</span>
-              <span class="sim-value">{{ multiSimulationResult.rateAfter }}%</span>
-              <span class="sim-sub">
-                {{ multiSimulationResult.absentAfter }} / {{ multiSimulationResult.totalMembers }}
-                {{ 'TEAM_ABSENCES.SIM_ABSENT' | translate }}
-              </span>
-            </div>
-          </div>
 
-          <div class="simulation-comparison" style="gap:8px; flex-wrap:wrap; margin-bottom:12px;">
-            <div class="sim-card" style="flex:1; min-width:120px; text-align:center;">
-              <span class="sim-label">Période</span>
-              <span class="sim-value" style="font-size:12px; font-weight:500;">
-                {{ multiSimulationResult.dailyImpacts[0]?.date }} →
-                {{ multiSimulationResult.dailyImpacts[totalDays - 1]?.date }}
-              </span>
-            </div>
-            <div class="sim-card" style="flex:1; min-width:100px; text-align:center;">
-              <span class="sim-label">Jours critiques</span>
-              <span class="sim-value">{{ criticalDays }} / {{ totalDays }}</span>
-            </div>
+        <div class="sim-stats-row">
+          <div class="sim-stat">
+            <span class="sim-stat__label">Période</span>
+            <span class="sim-stat__value">
+              {{ multiSimulationResult?.dailyImpacts?.[0]?.date }} → {{ multiSimulationResult?.dailyImpacts?.[totalDays
+              - 1]?.date }}
+            </span>
           </div>
+          <div class="sim-stat">
+            <span class="sim-stat__label">Jours critiques</span>
+            <span class="sim-stat__value sim-stat__value--red">{{ criticalDays }} / {{ totalDays }}</span>
+          </div>
+        </div>
 
-          @if (multiSimulationResult.conflicts?.length > 0) {
-          <div class="conflicts-section" style="margin-bottom:12px;">
-            <h4 style="font-size:13px; font-weight:600; margin-bottom:8px; color:var(--color-text-danger);">
-              ⚠️ {{ 'TEAM_ABSENCES.CONFLICTS' | translate }} ({{ multiSimulationResult.conflicts.length }})
-            </h4>
-            @for (conflict of multiSimulationResult.conflicts; track conflict.startDate) {
-            <div class="conflict-item">
-              <span class="conflict-dates">{{ conflict.startDate }} → {{ conflict.endDate }}</span>
-              <span class="conflict-rate" [class.red]="conflict.rate >= 50">{{ conflict.rate }}%</span>
-              <span class="conflict-names">{{ conflict.employeeNames.join(', ') }}</span>
-            </div>
-            }
+        @if (multiSimulationResult?.conflicts?.length > 0) {
+        <div class="sim-conflicts">
+          <p class="sim-conflicts__title">
+            ⚠️ {{ 'TEAM_ABSENCES.CONFLICTS' | translate }} ({{ multiSimulationResult?.conflicts?.length }})
+          </p>
+          @for (conflict of multiSimulationResult?.conflicts; track conflict.startDate) {
+          <div class="sim-conflict-item">
+            <span class="sim-conflict-item__dates">{{ conflict.startDate }} → {{ conflict.endDate }}</span>
+            <span class="sim-conflict-item__rate">{{ conflict.rate }}%</span>
+            <span class="sim-conflict-item__names">{{ conflict.employeeNames.join(', ') }}</span>
           </div>
           }
-
-          <div class="simulation-message" [class.alert]="multiSimulationResult.rateAfter >= 50">
-            {{ multiSimulationResult.groqAnalysis }}
-          </div>
         </div>
         }
+
+        <div class="sim-message sim-message--warning">
+          {{ multiSimulationResult?.groqAnalysis }}
+        </div>
+
       </div>
-      <div class="form-actions">
+      }
+
+      <div class="sim-footer">
         <dx-button [text]="'TEAM_ABSENCES.CANCEL' | translate" (onClick)="showMultiSimulatePopup = false"></dx-button>
       </div>
     </div>

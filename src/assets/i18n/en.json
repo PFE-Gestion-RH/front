@@ -107,7 +107,9 @@
     "VIEW": "View"
   },
   "EMPLOYEE_DASHBOARD": {
+    "ACTIONS": "Actions",
     "LOADING": "Loading…",
+    "CANCEL": "Cancel" ,  
     "REMAINING_LEAVES": "Remaining Leaves",
     "USED_LEAVES": "Used Leaves",
     "PENDING_REQUESTS": "Pending Requests",

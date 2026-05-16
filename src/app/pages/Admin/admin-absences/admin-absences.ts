@@ -2,6 +2,7 @@ import { Component, effect, OnInit, OnDestroy, ChangeDetectorRef, ViewEncapsulat
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import { firstValueFrom, Subscription } from 'rxjs';
 import { SharedService } from '../../../services/shared.service';
 import { ToastType } from '../../../components/toast/toast';
@@ -56,7 +57,12 @@ export class AdminAbsences implements OnInit, OnDestroy {
   isLoadingDecision = false;
   decisionSupport: any = null;
 
-  // ✅ FILTRE CATÉGORIE
+  // ✅ Document viewer
+  showDocumentPopup = false;
+  documentUrl: SafeResourceUrl | null = null;
+  documentType: 'pdf' | 'image' | null = null;
+  currentDocumentBase64 = '';
+
   categories: any[] = [];
   selectedCategoryId: number | null = null;
 
@@ -69,7 +75,8 @@ export class AdminAbsences implements OnInit, OnDestroy {
     private sharedService: SharedService,
     private cdr: ChangeDetectorRef,
     private signalRService: SignalRService,
-    private translate: TranslateService
+    private translate: TranslateService,
+    private sanitizer: DomSanitizer
   ) {
     effect(() => {
       const view = this.sharedService.viewMode();
@@ -123,7 +130,6 @@ export class AdminAbsences implements OnInit, OnDestroy {
     return new HttpHeaders({ Authorization: `Bearer ${this.sharedService.getToken()}` });
   }
 
-  // ✅ Charger les catégories depuis l'API
   loadCategories(): void {
     this.http.get<ApiResponse<any>>(
       `${environment.apiUrl}/leave-categories`,
@@ -142,7 +148,6 @@ export class AdminAbsences implements OnInit, OnDestroy {
     });
   }
 
-  // ✅ Quand l'utilisateur change la catégorie
   onCategoryChange(): void {
     this.onFilterChange();
   }
@@ -162,6 +167,33 @@ export class AdminAbsences implements OnInit, OnDestroy {
         calculateCellValue: (row: any) => row.employeeRole === 'TeamLead' ? 'Team Lead' : (row.employeeRole ?? '')
       },
       { dataField: 'teamName', caption: this.translate.instant('ADMIN_ABSENCES.TEAM'), allowFiltering: true },
+
+      // ✅ Colonne Document
+      {
+        caption: 'Document',
+        allowFiltering: false,
+        allowSorting: false,
+        width: 110,
+        cellTemplate: (container: any, options: any) => {
+          const doc = options.data.document;
+          if (doc) {
+            const btn = document.createElement('button');
+            btn.className = 'doc-link-btn';
+            btn.innerHTML = `<i class="dx-icon dx-icon-doc"></i> Voir`;
+            btn.onclick = (e) => {
+              e.stopPropagation();
+              this.openDocumentViewer(doc);
+            };
+            container.append(btn);
+          } else {
+            const span = document.createElement('span');
+            span.textContent = '—';
+            span.style.color = '#9CA3AF';
+            container.append(span);
+          }
+        }
+      },
+
       {
         caption: this.translate.instant('ADMIN_ABSENCES.STATUS'),
         cellTemplate: (container: any, options: any) => {
@@ -205,6 +237,38 @@ export class AdminAbsences implements OnInit, OnDestroy {
         }
       }
     ];
+  }
+
+  // ✅ Ouvre le document dans la popup
+  openDocumentViewer(documentBase64: string): void {
+    if (!documentBase64) return;
+
+    this.currentDocumentBase64 = documentBase64;
+
+    if (documentBase64.includes('application/pdf')) {
+      this.documentType = 'pdf';
+    } else if (documentBase64.includes('image/')) {
+      this.documentType = 'image';
+    } else {
+      this.documentType = 'image';
+    }
+
+    this.documentUrl = this.sanitizer.bypassSecurityTrustResourceUrl(documentBase64);
+    this.showDocumentPopup = true;
+    this.cdr.detectChanges();
+  }
+
+  // ✅ Télécharge le document
+  downloadDocument(): void {
+    if (!this.currentDocumentBase64) return;
+
+    const extension = this.documentType === 'pdf' ? 'pdf' : 'png';
+    const link = document.createElement('a');
+    link.href = this.currentDocumentBase64;
+    link.download = `document_medical_${Date.now()}.${extension}`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
   }
 
   openDecisionSupport(request: any): void {
@@ -270,7 +334,6 @@ export class AdminAbsences implements OnInit, OnDestroy {
         const skip = loadOptions.skip ?? 0;
         const page = Math.floor(skip / take) + 1;
 
-        // ✅ Construire l'URL avec les filtres
         let url = `${environment.apiUrl}/demande/all/absences?page=${page}&pageSize=${take}`;
         if (this.pendingOnly) url += '&status=PendingAdministration';
         if (this.selectedCategoryId) url += `&categoryId=${this.selectedCategoryId}`;

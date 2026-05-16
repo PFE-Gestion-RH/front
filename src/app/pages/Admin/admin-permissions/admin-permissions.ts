@@ -53,6 +53,10 @@ export class AdminPermissions implements OnInit, OnDestroy {
   rejectionReason = '';
   pendingOnly = false;
 
+  showSimulatePopup = false;
+  isSimulating = false;
+  simulationResult: any = null;
+
   private newRequestSub!: Subscription;
   getCardData = (rowData: any) => rowData;
 
@@ -75,7 +79,6 @@ export class AdminPermissions implements OnInit, OnDestroy {
   ngOnInit(): void {
     this.applyView();
     window.addEventListener('resize', this.onResize);
-
     this.buildColumns();
     this.initSharedDataSource();
     this.translate.onLangChange.subscribe(() => {
@@ -94,9 +97,7 @@ export class AdminPermissions implements OnInit, OnDestroy {
     window.removeEventListener('resize', this.onResize);
   }
 
-  private onResize = (): void => {
-    this.applyView();
-  }
+  private onResize = (): void => { this.applyView(); }
 
   private applyView(): void {
     const user = JSON.parse(localStorage.getItem('user') || '{}');
@@ -147,7 +148,7 @@ export class AdminPermissions implements OnInit, OnDestroy {
       },
       {
         caption: this.translate.instant('ADMIN_PERMISSIONS.ACTIONS'),
-        minWidth: 220,
+        minWidth: 280,
         cellTemplate: (container: any, options: any) => {
           const data = options.data;
 
@@ -159,6 +160,11 @@ export class AdminPermissions implements OnInit, OnDestroy {
             return;
           }
 
+          const simulateBtn = document.createElement('button');
+          simulateBtn.className = 'action-btn simulate-btn';
+          simulateBtn.innerHTML = `<i class="dx-icon dx-icon-chart"></i> Analyse`;
+          simulateBtn.onclick = () => this.simulateRequest(data);
+
           const approveBtn = document.createElement('button');
           approveBtn.className = 'action-btn approve-btn';
           approveBtn.innerHTML = `<i class="dx-icon dx-icon-check"></i> ${this.translate.instant('ADMIN_PERMISSIONS.APPROVE')}`;
@@ -169,10 +175,39 @@ export class AdminPermissions implements OnInit, OnDestroy {
           rejectBtn.innerHTML = `<i class="dx-icon dx-icon-close"></i> ${this.translate.instant('ADMIN_PERMISSIONS.REJECT')}`;
           rejectBtn.onclick = () => this.rejectRequest(data);
 
-          container.append(approveBtn, rejectBtn);
+          container.append(simulateBtn, approveBtn, rejectBtn);
         }
       }
     ];
+  }
+
+  simulateRequest(request: any): void {
+    this.selectedRequest = request;
+    this.simulationResult = null;
+    this.isSimulating = true;
+    this.showSimulatePopup = true;
+    this.cdr.detectChanges();
+
+    this.http.get<ApiResponse<any>>(
+      `${environment.apiUrl}/demande/${request.id}/simulate-permission-admin`,
+      { headers: this.getHeaders() }
+    ).subscribe({
+      next: (res) => {
+        if (res.isSuccess) {
+          this.simulationResult = res.data;
+        } else {
+          this.sharedService.showToastMessage(ToastType.Error, res.error || 'Simulation failed');
+          this.showSimulatePopup = false;
+        }
+        this.isSimulating = false;
+        this.cdr.detectChanges();
+      },
+      error: () => {
+        this.isSimulating = false;
+        this.showSimulatePopup = false;
+        this.cdr.detectChanges();
+      }
+    });
   }
 
   onFilterChange(): void {
@@ -215,7 +250,10 @@ export class AdminPermissions implements OnInit, OnDestroy {
         ).then(res => {
           if (res.isSuccess) {
             const data = res.data;
-            return { data: Array.isArray(data) ? data : data.items ?? [], totalCount: Array.isArray(data) ? data.length : data.totalCount ?? 0 };
+            return {
+              data: Array.isArray(data) ? data : data.items ?? [],
+              totalCount: Array.isArray(data) ? data.length : data.totalCount ?? 0
+            };
           }
           return { data: [], totalCount: 0 };
         });

@@ -13,9 +13,10 @@
       </dx-check-box>
     </div>
 
-    <div class="table-view" *ngIf="activeView === 'grid'"> <dx-data-grid [dataSource]="sharedDataSource"
-        [columns]="columns" [showBorders]="false" [showRowLines]="true" [showColumnLines]="false"
-        [hoverStateEnabled]="true" keyExpr="id" [remoteOperations]="{ paging: true, filtering: false, sorting: false }">
+    <div class="table-view" *ngIf="activeView === 'grid'">
+      <dx-data-grid [dataSource]="sharedDataSource" [columns]="columns" [showBorders]="false" [showRowLines]="true"
+        [showColumnLines]="false" [hoverStateEnabled]="true" keyExpr="id"
+        [remoteOperations]="{ paging: true, filtering: false, sorting: false }">
         <dxo-load-panel [enabled]="false"></dxo-load-panel>
         <dxo-search-panel [visible]="true" [placeholder]="'ADMIN_PERMISSIONS.SEARCH' | translate"></dxo-search-panel>
         <dxo-selection mode="none"></dxo-selection>
@@ -27,8 +28,8 @@
       </dx-data-grid>
     </div>
 
-    <div class="cards-view" [class.is-loading]="isLoading" *ngIf="activeView === 'card'"> <dx-card-view
-        [dataSource]="cardDataSource" keyExpr="id" [cardMinWidth]="280" cardsPerRow="auto"
+    <div class="cards-view" [class.is-loading]="isLoading" *ngIf="activeView === 'card'">
+      <dx-card-view [dataSource]="cardDataSource" keyExpr="id" [cardMinWidth]="280" cardsPerRow="auto"
         [remoteOperations]="{ paging: true }">
         <dxo-card-view-search-panel [visible]="true"
           [placeholder]="'ADMIN_PERMISSIONS.SEARCH' | translate"></dxo-card-view-search-panel>
@@ -53,20 +54,14 @@
             </div>
             <div class="card-info">
               <h4 class="card-name">{{ params.field.value?.employeeName }}</h4>
-
-              <!-- Role -->
               <span class="card-role">
                 <i class="dx-icon dx-icon-user"></i>
                 {{ params.field.value?.employeeRole === 'TeamLead' ? 'Team Lead' : params.field.value?.employeeRole }}
               </span>
-
-              <!-- Reason -->
               <span class="card-reason" *ngIf="params.field.value?.reason">
                 <i class="dx-icon dx-icon-comment"></i>
                 {{ params.field.value?.reason }}
               </span>
-
-              <!-- Team -->
               <span class="card-team">
                 <i class="dx-icon dx-icon-group"></i>
                 {{ params.field.value?.teamName }}
@@ -86,6 +81,10 @@
           <div class="card-divider"></div>
           <div class="card-actions">
             @if (params.field.value?.status === 'PendingAdministration') {
+            <button class="action-btn simulate-btn"
+              (click)="simulateRequest(params.field.value); $event.stopPropagation()">
+              <i class="dx-icon dx-icon-chart"></i> Analyse
+            </button>
             <button class="action-btn approve-btn"
               (click)="approveRequest(params.field.value); $event.stopPropagation()">
               <i class="dx-icon dx-icon-check"></i> {{ 'ADMIN_PERMISSIONS.APPROVE' | translate }}
@@ -100,6 +99,100 @@
     </div>
   </div>
 
+  <!-- Popup Simulation Permission Admin -->
+  <dx-popup [(visible)]="showSimulatePopup" [width]="480" [height]="'auto'" [maxHeight]="'85vh'"
+    title="Simulation d'approbation — Permission" [showCloseButton]="true">
+    <div *dxTemplate="let data of 'content'" class="sim-popup-content">
+
+      @if (isSimulating) {
+      <div class="sim-loading">
+        <dx-load-indicator [visible]="true" height="24" width="24"></dx-load-indicator>
+        <span>Analyse en cours...</span>
+      </div>
+      }
+
+      @if (!isSimulating && simulationResult) {
+      <div class="sim-body">
+
+        <p class="sim-employee">
+          <strong>{{ selectedRequest?.employeeName }}</strong>
+          <span>{{ selectedRequest?.startDate | date:'dd/MM/yyyy' }}
+            {{ selectedRequest?.startTime?.substring(0,5) }} → {{ selectedRequest?.endTime?.substring(0,5) }}</span>
+        </p>
+
+        @if (simulationResult.hasHourlyConflict) {
+        <div class="sim-info sim-info--red">
+          <span class="sim-info__label">Conflit horaire détecté</span>
+          <span class="sim-info__value">{{ simulationResult.conflictDetail }}</span>
+        </div>
+        }
+
+        <div class="sim-comparison">
+          <div class="sim-card" [class.sim-card--alert]="simulationResult.rateBefore >= 50">
+            <span class="sim-card__label">Avant</span>
+            <span class="sim-card__value" [class.color-green]="simulationResult.rateBefore < 30"
+              [class.color-orange]="simulationResult.rateBefore >= 30 && simulationResult.rateBefore < 50"
+              [class.color-red]="simulationResult.rateBefore >= 50">
+              {{ simulationResult.rateBefore }}%
+            </span>
+            <span class="sim-card__sub">{{ simulationResult.unavailableBefore }} / {{ simulationResult.totalMembers }}
+              indisponible(s)</span>
+          </div>
+          <div class="sim-arrow">→</div>
+          <div class="sim-card" [class.sim-card--alert]="simulationResult.rateAfter >= 50">
+            <span class="sim-card__label">Après</span>
+            <span class="sim-card__value" [class.color-green]="simulationResult.rateAfter < 30"
+              [class.color-orange]="simulationResult.rateAfter >= 30 && simulationResult.rateAfter < 50"
+              [class.color-red]="simulationResult.rateAfter >= 50">
+              {{ simulationResult.rateAfter }}%
+            </span>
+            <span class="sim-card__sub">{{ simulationResult.unavailableAfter }} / {{ simulationResult.totalMembers }}
+              indisponible(s)</span>
+          </div>
+        </div>
+
+        @if (simulationResult.absentEmployeeNames) {
+        <div class="sim-info sim-info--red">
+          <span class="sim-info__label">Absents ce jour</span>
+          <span class="sim-info__value">{{ simulationResult.absentEmployeeNames }}</span>
+        </div>
+        }
+
+        @if (simulationResult.permissionEmployeeNames) {
+        <div class="sim-info sim-info--orange">
+          <span class="sim-info__label">Déjà en permission ce jour</span>
+          <span class="sim-info__value">{{ simulationResult.permissionEmployeeNames }}</span>
+        </div>
+        }
+
+        @if (!simulationResult.absentEmployeeNames && !simulationResult.permissionEmployeeNames) {
+        <div class="sim-info sim-info--green">
+          <span class="sim-info__label">Disponibilité équipe</span>
+          <span class="sim-info__value">Aucun autre membre absent ou en permission ce jour</span>
+        </div>
+        }
+
+        <div class="sim-message" [class.sim-message--warning]="simulationResult.alert"
+          [class.sim-message--success]="!simulationResult.alert">
+          {{ simulationResult.message }}
+        </div>
+
+      </div>
+      }
+
+      <div class="sim-footer">
+        <dx-button text="Fermer" (onClick)="showSimulatePopup = false"></dx-button>
+        @if (!isSimulating && simulationResult) {
+        <dx-button text="Rejeter" type="danger"
+          (onClick)="showSimulatePopup = false; rejectRequest(selectedRequest)"></dx-button>
+        <dx-button text="Approuver" type="default"
+          (onClick)="showSimulatePopup = false; approveRequest(selectedRequest)"></dx-button>
+        }
+      </div>
+    </div>
+  </dx-popup>
+
+  <!-- Popup Approve -->
   <dx-popup [(visible)]="showApprovePopup" [width]="400" [height]="'auto'" [maxHeight]="'80vh'"
     [title]="'ADMIN_PERMISSIONS.APPROVE_TITLE' | translate" [showCloseButton]="!isProcessing">
     <div *dxTemplate="let data of 'content'" class="profile-form">
@@ -123,6 +216,7 @@
     </div>
   </dx-popup>
 
+  <!-- Popup Reject -->
   <dx-popup [(visible)]="showRejectPopup" [width]="400" [height]="'auto'" [maxHeight]="'80vh'"
     [title]="'ADMIN_PERMISSIONS.REJECT_TITLE' | translate" [showCloseButton]="!isProcessing">
     <div *dxTemplate="let data of 'content'" class="profile-form">
@@ -141,6 +235,7 @@
     </div>
   </dx-popup>
 
+  <!-- Popup Reason -->
   <dx-popup [(visible)]="showReasonPopup" [width]="400" [height]="'auto'" [maxHeight]="'80vh'"
     [title]="'ADMIN_PERMISSIONS.REASON_TITLE' | translate" [showCloseButton]="!isProcessing">
     <div *dxTemplate="let data of 'content'" class="profile-form">
@@ -163,4 +258,5 @@
       </div>
     </div>
   </dx-popup>
+
 </div>

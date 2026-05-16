@@ -86,6 +86,16 @@
               ({{ params.field.value?.numberOfDays }}d)
             </span>
           </div>
+
+          <!-- ✅ Document médical -->
+          <div class="card-document-row" *ngIf="params.field.value?.document">
+            <button class="card-document-link"
+              (click)="openDocumentViewer(params.field.value?.document); $event.stopPropagation()">
+              <i class="dx-icon dx-icon-doc"></i>
+              Voir document médical
+            </button>
+          </div>
+
           <div class="card-divider"></div>
           <div class="card-actions">
             @if (params.field.value?.status === 'PendingAdministration') {
@@ -107,97 +117,110 @@
     </div>
   </div>
 
-  <!-- Popup Aide à la décision -->
-  <dx-popup [(visible)]="showDecisionPopup" [width]="480" [height]="'auto'" [maxHeight]="'90vh'"
-    title="Aide à la décision" [showCloseButton]="true">
-    <div *dxTemplate="let data of 'content'" class="profile-form">
-      <div class="form-section">
+<!-- Popup Aide à la décision -->
+<dx-popup [(visible)]="showDecisionPopup" [width]="480" [height]="'auto'" [maxHeight]="'90vh'"
+  title="Aide à la décision" [showCloseButton]="true">
+  <div *dxTemplate="let data of 'content'" class="sim-popup-content">
 
-        @if (isLoadingDecision) {
-        <div style="display:flex; align-items:center; gap:12px; padding:16px 0;">
-          <dx-load-indicator [visible]="true" height="24" width="24"></dx-load-indicator>
-          <span style="color:var(--color-text-secondary); font-size:14px;">Analyse en cours...</span>
-        </div>
-        }
+    @if (isLoadingDecision) {
+    <div class="sim-loading">
+      <dx-load-indicator [visible]="true" height="24" width="24"></dx-load-indicator>
+      <span>Analyse en cours...</span>
+    </div>
+    }
 
-        @if (!isLoadingDecision && decisionSupport) {
+    @if (!isLoadingDecision && decisionSupport) {
+    <div class="sim-body">
 
-        <!-- Employé & Période -->
-        <div style="margin-bottom:16px;">
-          <p style="font-size:14px; font-weight:500; color:var(--color-text-primary); margin-bottom:6px;">
-            <strong>{{ decisionSupport.employeeName }}</strong> —
-            {{ decisionSupport.startDate }} → {{ decisionSupport.endDate }}
-          </p>
-          <span class="badge pending">{{ decisionSupport.caseType }}</span>
-        </div>
+      <p class="sim-employee">
+        <strong>{{ decisionSupport.employeeName }}</strong>
+        <span>{{ decisionSupport.startDate }} → {{ decisionSupport.endDate }}</span>
+      </p>
 
-        <!-- Taux d'occupation -->
-        <div class="sim-card" style="margin-bottom:12px; padding:12px 16px;">
-          <span class="sim-label">Taux d'occupation de l'équipe</span>
-          <span class="sim-value" [style.color]="decisionSupport.occupationRate >= 50 ? '#EF4444' :
-                           decisionSupport.occupationRate >= 30 ? '#F59E0B' : '#10B981'">
-            {{ decisionSupport.occupationRate }}%
-          </span>
-          <span class="sim-sub">{{ decisionSupport.extraInfo }}</span>
-        </div>
+      <span class="badge pending" style="align-self:flex-start;">{{ decisionSupport.caseType }}</span>
 
-        <!-- Score de priorité -->
-        <div class="sim-card" style="margin-bottom:12px; padding:12px 16px;">
-          <span class="sim-label">Score de priorité</span>
-          <span class="badge {{ getPriorityClass(decisionSupport.priorityScore) }}"
-            style="margin-top:4px; display:inline-block;">
+      <div class="sim-card" style="text-align:left; padding:12px 16px;">
+        <span class="sim-card__label">Taux d'occupation de l'équipe</span>
+        <span class="sim-card__value"
+          [class.color-green]="decisionSupport.occupationRate < 30"
+          [class.color-orange]="decisionSupport.occupationRate >= 30 && decisionSupport.occupationRate < 50"
+          [class.color-red]="decisionSupport.occupationRate >= 50"
+          style="font-size:22px;">
+          {{ decisionSupport.occupationRate }}%
+        </span>
+        <span class="sim-card__sub">{{ decisionSupport.extraInfo }}</span>
+      </div>
+
+      <div class="sim-card" style="text-align:left; padding:12px 16px;">
+        <span class="sim-card__label">Score de priorité</span>
+        <div style="display:flex; align-items:center; gap:10px; margin-top:6px;">
+          <span class="badge {{ getPriorityClass(decisionSupport.priorityScore) }}">
             {{ decisionSupport.priorityScore }}/24
           </span>
-          <span class="sim-sub" style="margin-top:4px;">{{ decisionSupport.priorityReason }}</span>
+          <span class="sim-card__sub">{{ decisionSupport.priorityReason }}</span>
         </div>
-
-        <!-- Analyse dossier médical -->
-        @if (decisionSupport.hasDocument) {
-        <div class="sim-card" style="margin-bottom:12px; padding:12px 16px; border-left: 3px solid #3B8AB2;">
-          <span class="sim-label" style="display:flex; align-items:center; gap:6px; margin-bottom:8px;">
-            <i class="dx-icon dx-icon-doc" style="color:#3B8AB2;"></i>
-            Analyse du dossier médical
-            <span class="badge approved" style="font-size:11px; padding:2px 8px;">Dossier fourni</span>
-          </span>
-          @if (decisionSupport.medicalAnalysis) {
-          <span class="sim-sub" style="white-space: pre-line; line-height:1.6;">
-            {{ decisionSupport.medicalAnalysis }}
-          </span>
-          } @else {
-          <span class="sim-sub" style="color:var(--color-text-secondary);">Analyse en cours...</span>
-          }
-        </div>
-        }
-
-        @if (!decisionSupport.hasDocument && decisionSupport.caseType === 'Congé de longue durée') {
-        <div class="sim-card" style="margin-bottom:12px; padding:12px 16px; border-left: 3px solid #EF4444;">
-          <span class="sim-label" style="display:flex; align-items:center; gap:6px;">
-            <i class="dx-icon dx-icon-warning" style="color:#EF4444;"></i>
-            Dossier médical manquant
-          </span>
-          <span class="sim-sub" style="color:#EF4444; margin-top:4px;">
-            Aucun document fourni pour ce congé de longue durée.
-          </span>
-        </div>
-        }
-
-        <!-- Recommandation GroqAI -->
-        <div class="simulation-message" [class.alert]="decisionSupport.occupationRate >= 50" style="margin-top:4px;">
-          {{ decisionSupport.groqRecommendation }}
-        </div>
-        }
-
       </div>
-      <div class="form-actions">
-        <dx-button text="Fermer" (onClick)="showDecisionPopup = false"></dx-button>
-        @if (!isLoadingDecision && decisionSupport) {
-        <dx-button text="Rejeter" type="danger" (onClick)="showDecisionPopup = false; rejectRequest(selectedRequest)">
-        </dx-button>
-        <dx-button text="Approuver" type="default"
-          (onClick)="showDecisionPopup = false; approveRequest(selectedRequest)">
-        </dx-button>
-        }
+
+      @if (decisionSupport.hasDocument) {
+      <div class="sim-info sim-info--blue">
+        <span class="sim-info__label" style="display:flex; align-items:center; gap:6px;">
+          <i class="dx-icon dx-icon-doc"></i> Analyse du dossier médical
+          <span class="badge approved" style="font-size:11px; padding:2px 8px;">Dossier fourni</span>
+        </span>
+        <span class="sim-info__value" style="white-space:pre-line; line-height:1.6; font-weight:400;">
+          {{ decisionSupport.medicalAnalysis ?? 'Analyse en cours...' }}
+        </span>
       </div>
+      }
+
+      @if (!decisionSupport.hasDocument && decisionSupport.caseType === 'Congé de longue durée') {
+      <div class="sim-info sim-info--red">
+        <span class="sim-info__label">
+          <i class="dx-icon dx-icon-warning"></i> Dossier médical manquant
+        </span>
+        <span class="sim-info__value">Aucun document fourni pour ce congé de longue durée.</span>
+      </div>
+      }
+
+      <div class="sim-message"
+        [class.sim-message--warning]="decisionSupport.occupationRate >= 50"
+        [class.sim-message--success]="decisionSupport.occupationRate < 50">
+        {{ decisionSupport.groqRecommendation }}
+      </div>
+
+    </div>
+    }
+
+    <div class="sim-footer">
+      <dx-button text="Fermer" (onClick)="showDecisionPopup = false"></dx-button>
+      @if (!isLoadingDecision && decisionSupport) {
+      <dx-button text="Rejeter" type="danger"
+        (onClick)="showDecisionPopup = false; rejectRequest(selectedRequest)"></dx-button>
+      <dx-button text="Approuver" type="default"
+        (onClick)="showDecisionPopup = false; approveRequest(selectedRequest)"></dx-button>
+      }
+    </div>
+  </div>
+</dx-popup>
+
+  <!-- ✅ Popup Visualisation Document -->
+  <dx-popup [(visible)]="showDocumentPopup" [width]="'80%'" [height]="'90%'" title="Document médical"
+    [showCloseButton]="true">
+    <div *dxTemplate="let data of 'content'" class="document-viewer">
+
+      <div class="document-actions">
+        <dx-button text="Télécharger" type="default" icon="download" (onClick)="downloadDocument()">
+        </dx-button>
+      </div>
+
+      <div class="document-content">
+        <iframe *ngIf="documentType === 'pdf'" [src]="documentUrl" width="100%" height="100%" style="border: none;">
+        </iframe>
+
+        <img *ngIf="documentType === 'image'" [src]="documentUrl" alt="Document médical"
+          style="max-width: 100%; max-height: 100%; object-fit: contain;" />
+      </div>
+
     </div>
   </dx-popup>
 

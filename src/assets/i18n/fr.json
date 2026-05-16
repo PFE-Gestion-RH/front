@@ -78,7 +78,9 @@
     "VIEW": "Voir"
   },
   "EMPLOYEE_DASHBOARD": {
+    "ACTIONS": "Actions",
     "LOADING": "Chargement…",
+    "CANCEL": "Annuler",
     "REMAINING_LEAVES": "Congés restants",
     "USED_LEAVES": "Congés utilisés",
     "PENDING_REQUESTS": "Demandes en attente",

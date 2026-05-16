@@ -365,3 +365,27 @@ $radius: 8px;
     display: block;
   }
 }
+.cancel-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: #fef2f2;
+  color: #EF4444;
+  border: 1px solid #fecaca;
+  padding: 5px 10px;
+  border-radius: var(--border-radius-md);
+  font-size: 12px;
+  cursor: pointer;
+  transition: background 0.2s;
+
+  &:hover:not(:disabled) {
+    background: #fee2e2;
+  }
+
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+
+  i { font-size: 13px; }
+}
